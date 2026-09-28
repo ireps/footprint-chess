@@ -1,0 +1,369 @@
+/* Footprint Chess: Robots theme and layout. --cell is set from JavaScript (app.js, layout()). */
+
+:root {
+  --cell: 64px;
+  --blueprint: #1b4f72;
+  --blueprint-line: rgba(255, 255, 255, 0.07);
+  --sq-light: #eaf4f9;
+  --sq-dark: #a9cce0;
+  --ink: #1d2b36;
+  --far: #3d4853;
+  --far-icon: #66737f;
+  --home: #2e8b57;
+  --home-icon: #ffe066;
+  --rail: rgba(9, 32, 48, 0.45);
+  --active: #ffe066;
+  --dur: 1;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background-color: var(--blueprint);
+  background-image:
+    linear-gradient(var(--blueprint-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--blueprint-line) 1px, transparent 1px);
+  background-size: 24px 24px;
+  color: #fff;
+  font-family: "Trebuchet MS", "Roboto", sans-serif;
+  overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* Layout: board left, rail right in landscape; rail below in portrait. */
+
+.app {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 100%;
+  padding: 12px;
+}
+
+.stage {
+  display: flex;
+  flex-direction: column;
+  border-radius: calc(var(--cell) * 0.2);
+  overflow: hidden;
+  box-shadow: 0 0 0 4px var(--ink), 0 10px 0 4px rgba(0, 0, 0, 0.25);
+}
+
+.strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  width: calc(var(--cell) * 8);
+  height: calc(var(--cell) * 0.55);
+}
+
+.strip-far { background: var(--far); color: var(--far-icon); }
+.strip-home { background: var(--home); color: var(--home-icon); }
+
+.strip-icon {
+  width: calc(var(--cell) * 0.34);
+  height: calc(var(--cell) * 0.34);
+}
+
+.strip-icon.big {
+  width: calc(var(--cell) * 0.46);
+  height: calc(var(--cell) * 0.46);
+}
+
+.board {
+  position: relative;
+  width: calc(var(--cell) * 8);
+  height: calc(var(--cell) * 8);
+  touch-action: none;
+}
+
+.squares {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  width: 100%;
+  height: 100%;
+}
+
+.sq.light { background: var(--sq-light); }
+.sq.dark { background: var(--sq-dark); }
+
+.layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Everything on the board is one cell in size and positioned with transform: translate(col * 100%, row * 100%). */
+.piece, .item, .fp, .spark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 12.5%;
+  height: 12.5%;
+}
+
+.piece > svg, .item > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.piece > svg { padding: 4%; }
+.item > svg { padding: 6%; }
+
+/* Selected piece: a ring under it, no looping motion. */
+.piece.selected::before {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 2%;
+  height: 22%;
+  border-radius: 50%;
+  background: rgba(255, 224, 102, 0.75);
+  box-shadow: 0 0 0 3px var(--ink);
+}
+
+.piece.enter > svg { animation: enter calc(450ms * var(--dur)) cubic-bezier(0.3, 1.6, 0.5, 1); }
+.piece.bounce > svg { animation: bounce calc(360ms * var(--dur)) ease-out; }
+.piece.wiggle > svg { animation: wiggle calc(400ms * var(--dur)) ease-in-out; }
+.piece.nudge > svg { animation: bounce calc(420ms * var(--dur)) ease-out 2; }
+.piece.cheer > svg { animation: cheer calc(700ms * var(--dur)) ease-in-out; }
+.piece.poof > svg { animation: poof calc(380ms * var(--dur)) ease-in forwards; }
+.item.collect > svg { animation: collect calc(420ms * var(--dur)) ease-out forwards; }
+
+@keyframes enter {
+  from { transform: scale(0.2); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-18%) scale(1.06, 0.96); }
+  70% { transform: translateY(0) scale(0.96, 1.04); }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-12deg); }
+  50% { transform: rotate(10deg); }
+  75% { transform: rotate(-6deg); }
+}
+
+@keyframes cheer {
+  0% { transform: translateY(0) rotate(0); }
+  50% { transform: translateY(-30%) rotate(180deg); }
+  100% { transform: translateY(0) rotate(360deg); }
+}
+
+@keyframes poof {
+  to { transform: scale(1.5); opacity: 0; }
+}
+
+@keyframes collect {
+  40% { transform: scale(1.6); opacity: 1; }
+  to { transform: scale(0.2); opacity: 0; }
+}
+
+/* Footprints: two tread marks in the piece's colour (--tc). Captures get a ring. */
+.print {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  animation: fp-pop calc(260ms * var(--dur)) cubic-bezier(0.3, 1.5, 0.5, 1) backwards;
+}
+
+.print::before, .print::after {
+  content: "";
+  position: absolute;
+  width: 17%;
+  height: 32%;
+  border-radius: 50% 50% 45% 45%;
+  background: var(--tc);
+  box-shadow: 0 0 0 2px var(--ink);
+}
+
+/* Two steps, one ahead of the other, so they read as walking. */
+.print::before { left: 29%; top: 18%; transform: rotate(-10deg); }
+.print::after { right: 29%; top: 46%; transform: rotate(10deg); }
+
+.print.capture::before {
+  transform: none;
+  top: 6%;
+  left: 6%;
+  width: 88%;
+  height: 88%;
+  border-radius: 50%;
+  background: transparent;
+  border: 5px dashed var(--tc);
+  box-shadow: none;
+}
+
+.print.capture::after { display: none; }
+
+.pulse .print { animation: fp-pulse calc(500ms * var(--dur)) ease-in-out 2; }
+
+.item.target::before {
+  content: "";
+  position: absolute;
+  top: 4%;
+  left: 4%;
+  width: 92%;
+  height: 92%;
+  border-radius: 50%;
+  border: 5px solid var(--tc);
+  box-shadow: 0 0 0 2px var(--ink);
+  animation: fp-pop calc(260ms * var(--dur)) cubic-bezier(0.3, 1.5, 0.5, 1) backwards;
+  animation-delay: inherit;
+}
+
+.pulse .item.target::before { animation: fp-pulse calc(500ms * var(--dur)) ease-in-out 2; }
+
+@keyframes fp-pop {
+  from { transform: scale(0); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes fp-pulse {
+  50% { transform: scale(1.3); }
+}
+
+.spark > span {
+  position: absolute;
+  top: 38%;
+  left: 38%;
+  width: 24%;
+  height: 24%;
+  border-radius: 50%;
+  background: #fff6c2;
+  box-shadow: 0 0 8px 3px rgba(255, 224, 102, 0.8);
+  animation: spark calc(500ms * var(--dur)) ease-out forwards;
+}
+
+@keyframes spark {
+  from { transform: scale(0); opacity: 1; }
+  60% { transform: scale(1.2); opacity: 1; }
+  to { transform: scale(0.4); opacity: 0; }
+}
+
+.confetti {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(var(--cell) * 0.18);
+  height: calc(var(--cell) * 0.28);
+  border-radius: 3px;
+  border: 2px solid var(--ink);
+}
+
+/* Rail */
+
+.rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 18px;
+  background: var(--rail);
+}
+
+.stars {
+  display: flex;
+  gap: 2px;
+}
+
+.slot {
+  width: 30px;
+  height: 30px;
+  opacity: 0.25;
+  filter: grayscale(1);
+}
+
+.slot > svg { display: block; width: 100%; height: 100%; }
+
+.slot.on {
+  opacity: 1;
+  filter: none;
+  animation: bounce calc(360ms * var(--dur)) ease-out;
+}
+
+.characters {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.char, .tool {
+  display: block;
+  width: 76px;
+  height: 76px;
+  padding: 2px;
+  border: 4px solid transparent;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.14);
+  cursor: pointer;
+  color: #fff;
+}
+
+.char > svg, .tool > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.char.active {
+  border-color: var(--active);
+  background: rgba(255, 224, 102, 0.22);
+}
+
+.tool {
+  width: 56px;
+  height: 56px;
+  padding: 10px;
+}
+
+.char:focus-visible, .tool:focus-visible {
+  outline: 4px solid #fff;
+  outline-offset: 2px;
+}
+
+/* Short screens (tablet in landscape): smaller character buttons so all six fit. */
+@media (max-height: 820px) and (orientation: landscape) {
+  .char { width: 64px; height: 64px; }
+  .characters { gap: 6px; }
+  .tool { width: 48px; height: 48px; padding: 8px; }
+  .slot { width: 22px; height: 22px; }
+}
+
+@media (orientation: portrait) {
+  .app { flex-direction: column; }
+  .rail { flex-direction: row; flex-wrap: wrap; justify-content: center; }
+  .characters { flex-direction: row; }
+  .stars { flex-direction: column; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur: 0.01; }
+}

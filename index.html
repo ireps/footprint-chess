@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; media-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#1b4f72">
+<title>Footprint Chess</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Robots theme. Silhouettes keep the real chess shapes so they map onto a real set. -->
+    <symbol id="robots-r" viewBox="0 0 100 100">
+      <g stroke="#1d2b36" stroke-width="3" stroke-linejoin="round">
+        <rect x="16" y="78" width="68" height="13" rx="6.5" fill="#34434f"/>
+        <path d="M22 78 V14 H34 V22 H44 V14 H56 V22 H66 V14 H78 V78 Z" fill="#f59e2e"/>
+        <rect x="30" y="36" width="40" height="22" rx="6" fill="#1d2b36"/>
+      </g>
+      <circle cx="42" cy="47" r="4.5" fill="#8ff3ff"/>
+      <circle cx="58" cy="47" r="4.5" fill="#8ff3ff"/>
+      <circle cx="30" cy="68" r="2.5" fill="#1d2b36"/>
+      <circle cx="70" cy="68" r="2.5" fill="#1d2b36"/>
+      <g fill="#8da2b3"><circle cx="27" cy="84.5" r="3"/><circle cx="42" cy="84.5" r="3"/><circle cx="58" cy="84.5" r="3"/><circle cx="73" cy="84.5" r="3"/></g>
+    </symbol>
+
+    <symbol id="robots-b" viewBox="0 0 100 100">
+      <g stroke="#1d2b36" stroke-width="3" stroke-linejoin="round">
+        <rect x="22" y="78" width="56" height="13" rx="6.5" fill="#34434f"/>
+        <rect x="30" y="63" width="40" height="15" rx="5" fill="#ec5f99"/>
+        <path d="M50 14 C68 24 72 46 68 63 H32 C28 46 32 24 50 14 Z" fill="#ec5f99"/>
+        <circle cx="50" cy="11" r="5" fill="#ffe066"/>
+        <rect x="37" y="42" width="26" height="14" rx="5" fill="#1d2b36"/>
+      </g>
+      <path d="M44 34 L58 23" stroke="#1d2b36" stroke-width="5" stroke-linecap="round" fill="none"/>
+      <circle cx="45" cy="49" r="3.2" fill="#8ff3ff"/>
+      <circle cx="55" cy="49" r="3.2" fill="#8ff3ff"/>
+    </symbol>
+
+    <symbol id="robots-q" viewBox="0 0 100 100">
+      <g stroke="#1d2b36" stroke-width="3" stroke-linejoin="round">
+        <rect x="20" y="78" width="60" height="13" rx="6.5" fill="#34434f"/>
+        <path d="M28 40 H72 L68 78 H32 Z" fill="#9a6ce0"/>
+        <path d="M24 42 L28 17 L40 30 L50 13 L60 30 L72 17 L76 42 Z" fill="#9a6ce0"/>
+        <circle cx="28" cy="15" r="4.5" fill="#ffe066"/>
+        <circle cx="50" cy="11" r="4.5" fill="#ffe066"/>
+        <circle cx="72" cy="15" r="4.5" fill="#ffe066"/>
+        <rect x="35" y="46" width="30" height="17" rx="5" fill="#1d2b36"/>
+      </g>
+      <circle cx="44" cy="52" r="3.2" fill="#8ff3ff"/>
+      <circle cx="56" cy="52" r="3.2" fill="#8ff3ff"/>
+      <path d="M45 58 Q50 61 55 58" stroke="#8ff3ff" stroke-width="2" stroke-linecap="round" fill="none"/>
+    </symbol>
+
+    <symbol id="robots-k" viewBox="0 0 100 100">
+      <g stroke="#1d2b36" stroke-width="3" stroke-linejoin="round">
+        <rect x="20" y="78" width="60" height="13" rx="6.5" fill="#34434f"/>
+        <path d="M46 3 H54 V8 H60 V15 H54 V20 H46 V15 H40 V8 H46 Z" fill="#f5d23b"/>
+        <path d="M28 36 V22 L37 28 L50 19 L63 28 L72 22 V36 Z" fill="#f5d23b"/>
+        <rect x="26" y="34" width="48" height="44" rx="10" fill="#f5d23b"/>
+        <rect x="33" y="44" width="34" height="18" rx="6" fill="#1d2b36"/>
+      </g>
+      <path d="M38 52 Q42 56 46 52 M54 52 Q58 56 62 52" stroke="#8ff3ff" stroke-width="3" stroke-linecap="round" fill="none"/>
+      <path d="M79 22 H86 L79 30 H86" stroke="#1d2b36" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </symbol>
+
+    <symbol id="robots-n" viewBox="0 0 100 100">
+      <rect x="22" y="80" width="56" height="11" rx="5.5" fill="#34434f" stroke="#1d2b36" stroke-width="3"/>
+      <path d="M38 63 L62 67 L38 71 L62 75 L38 80" stroke="#1d2b36" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <path d="M38 63 L62 67 L38 71 L62 75 L38 80" stroke="#8da2b3" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <path d="M30 63 V40 C30 24 40 14 54 14 L58 5 L64 14 C74 20 80 30 80 40 L74 46 L62 42 L60 63 Z" fill="#36c2ce" stroke="#1d2b36" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M36 30 L42 26 M34 40 L41 36 M34 50 L41 46" stroke="#1d2b36" stroke-width="3" stroke-linecap="round" fill="none"/>
+      <circle cx="62" cy="28" r="5.5" fill="#1d2b36"/>
+      <circle cx="62" cy="28" r="2.6" fill="#8ff3ff"/>
+      <circle cx="74" cy="39" r="2" fill="#1d2b36"/>
+    </symbol>
+
+    <symbol id="robots-p" viewBox="0 0 100 100">
+      <g stroke="#1d2b36" stroke-width="3" stroke-linejoin="round">
+        <rect x="22" y="78" width="56" height="13" rx="6.5" fill="#34434f"/>
+        <path d="M34 52 H66 L71 78 H29 Z" fill="#6ccb5f"/>
+        <path d="M50 17 V9" fill="none"/>
+        <circle cx="50" cy="7" r="4" fill="#ffe066"/>
+        <circle cx="50" cy="34" r="17" fill="#6ccb5f"/>
+        <rect x="37" y="27" width="26" height="14" rx="7" fill="#1d2b36"/>
+      </g>
+      <circle cx="44" cy="34" r="3.5" fill="#8ff3ff"/>
+      <circle cx="56" cy="34" r="3.5" fill="#8ff3ff"/>
+    </symbol>
+
+    <symbol id="robots-x" viewBox="0 0 100 100">
+      <g stroke="#1d2b36" stroke-width="3" stroke-linejoin="round">
+        <rect x="20" y="78" width="60" height="13" rx="6.5" fill="#34434f"/>
+        <path d="M50 27 L50 16 L58 10" fill="none"/>
+        <path d="M24 30 L74 24 L78 78 H22 Z" fill="#7a8088"/>
+      </g>
+      <path d="M56 62 Q64 55 70 63 Q68 71 58 71 Z" fill="#c0692f"/>
+      <circle cx="40" cy="46" r="9" fill="#1d2b36"/>
+      <circle cx="40" cy="46" r="4" fill="#ff8a5b"/>
+      <circle cx="62" cy="43" r="5" fill="#1d2b36"/>
+      <circle cx="62" cy="43" r="2" fill="#ff8a5b"/>
+      <circle cx="30" cy="34" r="2.5" fill="#1d2b36"/>
+      <circle cx="70" cy="30" r="2.5" fill="#1d2b36"/>
+    </symbol>
+
+    <symbol id="robots-star" viewBox="0 0 100 100">
+      <path d="M50 14 L59.4 39.1 L86.1 40.3 L65.2 56.9 L72.3 82.7 L50 68 L27.7 82.7 L34.8 56.9 L13.9 40.3 L40.6 39.1 Z" fill="#ffd23f" stroke="#c98a00" stroke-width="4" stroke-linejoin="round"/>
+    </symbol>
+
+    <symbol id="ic-gear" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" stroke-width="16" stroke-dasharray="11 9"/>
+      <circle cx="50" cy="50" r="26" fill="currentColor"/>
+      <circle cx="50" cy="50" r="9" fill="#3d4853"/>
+    </symbol>
+
+    <symbol id="ic-bolt" viewBox="0 0 100 100">
+      <path d="M58 6 L22 56 H46 L38 94 L78 40 H54 Z" fill="currentColor"/>
+    </symbol>
+
+    <symbol id="ic-sound-on" viewBox="0 0 100 100">
+      <path d="M16 38 H34 L56 18 V82 L34 62 H16 Z" fill="currentColor"/>
+      <path d="M68 34 Q78 50 68 66 M78 24 Q94 50 78 76" stroke="currentColor" stroke-width="7" stroke-linecap="round" fill="none"/>
+    </symbol>
+
+    <symbol id="ic-sound-off" viewBox="0 0 100 100">
+      <path d="M16 38 H34 L56 18 V82 L34 62 H16 Z" fill="currentColor"/>
+      <path d="M68 38 L88 62 M88 38 L68 62" stroke="currentColor" stroke-width="7" stroke-linecap="round" fill="none"/>
+    </symbol>
+  </defs>
+</svg>
+
+<main class="app">
+  <section class="stage" aria-label="Board">
+    <div class="strip strip-far" aria-hidden="true">
+      <svg class="strip-icon big"><use href="#ic-gear"/></svg>
+      <svg class="strip-icon"><use href="#ic-gear"/></svg>
+      <svg class="strip-icon big"><use href="#ic-gear"/></svg>
+      <svg class="strip-icon"><use href="#ic-gear"/></svg>
+      <svg class="strip-icon big"><use href="#ic-gear"/></svg>
+      <svg class="strip-icon"><use href="#ic-gear"/></svg>
+    </div>
+    <div class="board" id="board">
+      <div class="squares" id="squares"></div>
+      <div class="layer" id="items"></div>
+      <div class="layer" id="pieces"></div>
+      <div class="layer" id="footprints"></div>
+      <div class="layer" id="fx"></div>
+    </div>
+    <div class="strip strip-home" aria-hidden="true">
+      <svg class="strip-icon"><use href="#ic-bolt"/></svg>
+      <svg class="strip-icon"><use href="#ic-bolt"/></svg>
+      <svg class="strip-icon"><use href="#ic-bolt"/></svg>
+      <svg class="strip-icon"><use href="#ic-bolt"/></svg>
+      <svg class="strip-icon"><use href="#ic-bolt"/></svg>
+      <svg class="strip-icon"><use href="#ic-bolt"/></svg>
+    </div>
+  </section>
+
+  <nav class="rail" aria-label="Characters">
+    <div class="stars" id="stars"></div>
+    <div class="characters" id="characters"></div>
+    <button class="tool" id="sound-toggle" type="button" aria-pressed="true" aria-label="Sound">
+      <svg aria-hidden="true" focusable="false"><use href="#ic-sound-on"/></svg>
+    </button>
+  </nav>
+</main>
+
+<script src="js/rules.js"></script>
+<script src="js/levels.js"></script>
+<script src="js/sound.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
