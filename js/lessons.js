@@ -8,7 +8,8 @@
  * turn it into animation.
  *
  * Wording rule for every voice line: never "left", "right", or a square
- * name like e4. Say "toward the junkyard", "back toward the charging
+ * name like e4, in English or Telugu (Telugu ఎడమ "left" and కుడి "right"
+ * are also banned). Say "toward the junkyard", "back toward the charging
  * station", "across", "slanty" instead. Enforced by tests/lessons.test.js.
  *
  * Classic script: exposes window.FC.lessons in the browser and
@@ -22,56 +23,67 @@
   var R = isNode ? require('./rules.js') : root.FC.rules;
 
   /*
-   * LINES: every voice line the lesson player can say. ms is an estimated
-   * spoken length (not a recording length) used to pace the watch script
-   * before real recordings exist, and as a guard timer once they do.
+   * Languages the app can speak. English is the default (the owner's
+   * decision); Telugu is the alternative, chosen with ?lang=te. Anything
+   * that needs "the current language, else the app default" should fall
+   * back to DEFAULT_LANG, not to LANGS[0], so the two stay independent.
+   */
+  var LANGS = ['en', 'te'];
+  var DEFAULT_LANG = 'en';
+
+  /*
+   * LINES: every voice line the lesson player can say, in both languages.
+   * ms is an estimated spoken length (not a recording length) used to pace
+   * the watch script before real recordings exist, and as a guard timer
+   * once they do. It is shared by both languages: close enough for pacing,
+   * and simpler than keeping two estimates in sync.
    */
   var LINES = {
     /* hello */
-    'hello-1': { text: 'Meet your robot.', ms: 1400 },
-    'hello-2': { text: 'Tap your robot to see its footprints.', ms: 2800 },
-    'hello-3': { text: 'Tap a footprint, and off it goes!', ms: 2800 },
+    'hello-1': { en: 'Meet your robot.', te: 'ఇదిగో, నీ రోబో!', ms: 1400 },
+    'hello-2': { en: 'Tap your robot to see its footprints.', te: 'నీ రోబోని నొక్కు, దాని అడుగుల గుర్తులు కనిపిస్తాయి.', ms: 2800 },
+    'hello-3': { en: 'Tap a footprint, and off it goes!', te: 'ఒక అడుగు గుర్తుని నొక్కు, అది అక్కడికి వెళ్తుంది!', ms: 2800 },
 
     /* rook: Rail bot */
-    'rook-1': { text: 'Rail bot only moves in straight lines.', ms: 2500 },
-    'rook-2': { text: 'It can glide all the way toward the junkyard.', ms: 3300 },
-    'rook-3': { text: 'Or it can glide straight across, just as far.', ms: 3000 },
+    'rook-1': { en: 'Rail bot only moves in straight lines.', te: 'రైల్ బాట్ ఎప్పుడూ తిన్నగానే వెళ్తుంది.', ms: 2500 },
+    'rook-2': { en: 'It can glide all the way toward the junkyard.', te: 'అది జంక్ యార్డ్ వైపు సాఫీగా చాలా దూరం వెళ్లగలదు.', ms: 3300 },
+    'rook-3': { en: 'Or it can glide straight across, just as far.', te: 'లేదా అడ్డంగా కూడా అంతే దూరం వెళ్లగలదు.', ms: 3000 },
 
     /* bishop: Slide bot */
-    'bishop-1': { text: 'Slide bot only moves on slanty lines.', ms: 2500 },
-    'bishop-2': { text: 'It always stays on its own colour.', ms: 2500 },
-    'bishop-3': { text: 'Watch it swoosh the other way.', ms: 2200 },
+    'bishop-1': { en: 'Slide bot only moves on slanty lines.', te: 'స్లైడ్ బాట్ ఎప్పుడూ వాలుగానే వెళ్తుంది.', ms: 2500 },
+    'bishop-2': { en: 'It always stays on its own colour.', te: 'అది ఎప్పుడూ తన రంగు గడుల మీదే ఉంటుంది.', ms: 2500 },
+    'bishop-3': { en: 'Watch it swoosh the other way.', te: 'చూడు, ఇప్పుడు ఇంకో వైపు జారుతుంది!', ms: 2200 },
 
     /* queen: Star bot */
-    'queen-1': { text: 'Star bot moves like Rail bot and Slide bot together.', ms: 3300 },
-    'queen-2': { text: 'Straight lines, just like Rail bot.', ms: 2200 },
-    'queen-3': { text: 'And slanty lines too, with sparkles!', ms: 2200 },
+    'queen-1': { en: 'Star bot moves like Rail bot and Slide bot together.', te: 'స్టార్ బాట్ రైల్ బాట్ లాగా, స్లైడ్ బాట్ లాగా కూడా వెళ్తుంది.', ms: 3300 },
+    'queen-2': { en: 'Straight lines, just like Rail bot.', te: 'రైల్ బాట్ లాగా తిన్నగా.', ms: 2200 },
+    'queen-3': { en: 'And slanty lines too, with sparkles!', te: 'వాలుగా కూడా, మెరుపులతో!', ms: 2200 },
 
     /* king: Sleepy bot */
-    'king-1': { text: 'Sleepy bot only takes one little step.', ms: 2500 },
-    'king-2': { text: 'But it can step any way it likes.', ms: 2700 },
-    'king-3': { text: 'Then it needs a little rest.', ms: 2200 },
+    'king-1': { en: 'Sleepy bot only takes one little step.', te: 'స్లీపీ బాట్ ఒక్క చిన్న అడుగు మాత్రమే వేస్తుంది.', ms: 2500 },
+    'king-2': { en: 'But it can step any way it likes.', te: 'కానీ ఏ వైపుకైనా వేయగలదు.', ms: 2700 },
+    'king-3': { en: 'Then it needs a little rest.', te: 'తర్వాత దానికి కొంచెం విశ్రాంతి కావాలి.', ms: 2200 },
 
     /* knight: Spring bot */
-    'knight-1': { text: 'Spring bot hops in a special shape.', ms: 2500 },
-    'knight-2': { text: 'It hops two, then one to the side.', ms: 2700 },
-    'knight-3': { text: 'It can even jump over junk bots!', ms: 2700 },
+    'knight-1': { en: 'Spring bot hops in a special shape.', te: 'స్ప్రింగ్ బాట్ ప్రత్యేకంగా గెంతుతుంది.', ms: 2500 },
+    'knight-2': { en: 'It hops two, then one to the side.', te: 'రెండు గడులు గెంతి, తర్వాత పక్కకి ఒకటి.', ms: 2700 },
+    'knight-3': { en: 'It can even jump over junk bots!', te: 'అది జంక్ బాట్ల మీదుగా కూడా దూకగలదు!', ms: 2700 },
 
     /* bump: capturing a junk bot */
-    'bump-1': { text: 'Uh oh, a junk bot is in the way!', ms: 3000 },
-    'bump-2': { text: 'Land on it, and bump! It is gone.', ms: 2700 },
-    'bump-3': { text: 'See? The way is clear now.', ms: 2500 },
+    'bump-1': { en: 'Uh oh, a junk bot is in the way!', te: 'అయ్యో, దారిలో ఒక జంక్ బాట్ ఉంది!', ms: 3000 },
+    'bump-2': { en: 'Land on it, and bump! It is gone.', te: 'దాని మీదకి వెళ్ళు, ఢాం! అది మాయం.', ms: 2700 },
+    'bump-3': { en: 'See? The way is clear now.', te: 'చూశావా? ఇప్పుడు దారి ఖాళీ.', ms: 2500 },
 
     /* pawn: Mini bot */
-    'pawn-1': { text: 'Mini bot marches straight toward the junkyard.', ms: 2500 },
-    'pawn-2': { text: 'Its very first step can be two squares.', ms: 2700 },
-    'pawn-3': { text: 'After that, just one small step at a time.', ms: 3300 },
+    'pawn-1': { en: 'Mini bot marches straight toward the junkyard.', te: 'మినీ బాట్ జంక్ యార్డ్ వైపు తిన్నగా నడుస్తుంది.', ms: 2500 },
+    'pawn-2': { en: 'Its very first step can be two squares.', te: 'మొదటి అడుగులో రెండు గడులు వెళ్లగలదు.', ms: 2700 },
+    'pawn-3': { en: 'After that, just one small step at a time.', te: 'ఆ తర్వాత, ఒక్కోసారి ఒక్క చిన్న అడుగే.', ms: 3300 },
 
     /* generic practice-flow lines, reused by every lesson */
-    'your-turn': { text: 'Now you try!', ms: 1400 },
-    'tap-robot': { text: 'Tap your robot.', ms: 1400 },
-    'tap-footprint': { text: 'Tap a footprint.', ms: 1400 },
-    'great': { text: 'Great job!', ms: 1100 }
+    'your-turn': { en: 'Now you try!', te: 'ఇప్పుడు నువ్వు చెయ్యి!', ms: 1400 },
+    'tap-robot': { en: 'Tap your robot.', te: 'నీ రోబోని నొక్కు.', ms: 1400 },
+    'tap-footprint': { en: 'Tap a footprint.', te: 'ఒక అడుగు గుర్తుని నొక్కు.', ms: 1400 },
+    'great': { en: 'Great job!', te: 'భలే! చాలా బాగుంది!', ms: 1100 }
   };
 
   var PRACTICE_LINES = ['your-turn', 'tap-robot', 'tap-footprint', 'great'];
@@ -372,6 +384,8 @@
   }
 
   var api = {
+    LANGS: LANGS,
+    DEFAULT_LANG: DEFAULT_LANG,
     LINES: LINES,
     PRACTICE_LINES: PRACTICE_LINES,
     LESSONS: LESSONS,

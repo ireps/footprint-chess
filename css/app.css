@@ -431,6 +431,21 @@ body {
   display: none;
 }
 
+.tool-lang {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.lang-glyph {
+  display: block;
+  line-height: 1;
+  font-size: 34px;
+  font-weight: bold;
+  text-align: center;
+}
+
 .char:focus-visible, .tool:focus-visible {
   outline: 4px solid #fff;
   outline-offset: 2px;
@@ -441,6 +456,8 @@ body {
   .char { width: 64px; height: 64px; }
   .characters { gap: 6px; }
   .tool { width: 48px; height: 48px; padding: 8px; }
+  .tool-lang { padding: 0; }
+  .lang-glyph { font-size: 26px; }
   .slot { width: 22px; height: 22px; }
 }
 

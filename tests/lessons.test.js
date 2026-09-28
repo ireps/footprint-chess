@@ -10,6 +10,8 @@ const voiceClips = require('../js/voice-clips.js');
 const ROOT = path.join(__dirname, '..');
 const NO_LEFT_RIGHT = /\b(left|right)\b/i;
 const NO_SQUARE_NAME = /\b[a-h][1-8]\b/;
+const NO_TELUGU_LEFT_RIGHT = /ఎడమ|కుడి/;
+const HAS_TELUGU_SCRIPT = /[ఀ-౿]/;
 
 /* ---------- helpers shared by several tests ---------- */
 
@@ -22,7 +24,8 @@ function cloneBoard(board) {
   return board.map(row => row.slice());
 }
 
-/* Parse the "id | line | delivery note" table out of docs/VOICE-SCRIPT.md. */
+/* Parse the "id | English | Telugu | delivery note" table out of
+   docs/VOICE-SCRIPT.md. */
 function parseVoiceScript() {
   const text = fs.readFileSync(path.join(ROOT, 'docs', 'VOICE-SCRIPT.md'), 'utf8');
   const rows = {};
@@ -30,10 +33,10 @@ function parseVoiceScript() {
     const trimmed = line.trim();
     if (!trimmed.startsWith('|') || !trimmed.endsWith('|')) continue;
     const cells = trimmed.slice(1, -1).split('|').map(c => c.trim());
-    if (cells.length < 2) continue;
+    if (cells.length < 3) continue;
     if (cells[0] === 'id') continue; // header
     if (/^-+$/.test(cells[0])) continue; // separator row
-    rows[cells[0]] = cells[1];
+    rows[cells[0]] = { en: cells[1], te: cells[2] };
   }
   return rows;
 }
@@ -138,40 +141,71 @@ test('lesson order is hello, rook, bishop, queen, king, knight, bump, pawn', () 
     ['hello', 'rook', 'bishop', 'queen', 'king', 'knight', 'bump', 'pawn']);
 });
 
-test('no LINES text says left, right, or a square name', () => {
+test('every LINES entry has non-empty English and Telugu text', () => {
   for (const [id, line] of Object.entries(L.LINES)) {
-    assert.ok(!NO_LEFT_RIGHT.test(line.text), `${id}: contains "left" or "right"`);
-    assert.ok(!NO_SQUARE_NAME.test(line.text), `${id}: contains a square name`);
+    assert.ok(typeof line.en === 'string' && line.en.trim().length > 0, `${id}: missing English text`);
+    assert.ok(typeof line.te === 'string' && line.te.trim().length > 0, `${id}: missing Telugu text`);
   }
 });
 
-test('every line is short enough for a 6-year-old (about 12 words or fewer)', () => {
+test('every Telugu line actually contains Telugu script', () => {
   for (const [id, line] of Object.entries(L.LINES)) {
-    const words = line.text.trim().split(/\s+/).length;
+    assert.ok(HAS_TELUGU_SCRIPT.test(line.te), `${id}: Telugu text has no Telugu script`);
+  }
+});
+
+test('no LINES text says left, right, or a square name, in English or Telugu', () => {
+  for (const [id, line] of Object.entries(L.LINES)) {
+    assert.ok(!NO_LEFT_RIGHT.test(line.en), `${id}: English contains "left" or "right"`);
+    assert.ok(!NO_SQUARE_NAME.test(line.en), `${id}: English contains a square name`);
+    assert.ok(!NO_TELUGU_LEFT_RIGHT.test(line.te), `${id}: Telugu contains ఎడమ or కుడి`);
+  }
+});
+
+test('every English line is short enough for a 6-year-old (about 12 words or fewer)', () => {
+  for (const [id, line] of Object.entries(L.LINES)) {
+    const words = line.en.trim().split(/\s+/).length;
     assert.ok(words <= 12, `${id}: ${words} words is too long`);
   }
 });
 
 /* ---------- docs/VOICE-SCRIPT.md ---------- */
 
-test('docs/VOICE-SCRIPT.md lists exactly the LINES ids, with the same text', () => {
+test('docs/VOICE-SCRIPT.md lists exactly the LINES ids, with the same English and Telugu text', () => {
   const rows = parseVoiceScript();
   const linesIds = Object.keys(L.LINES).sort();
   const docIds = Object.keys(rows).sort();
   assert.deepEqual(docIds, linesIds, 'VOICE-SCRIPT.md ids do not match LINES ids');
   for (const id of linesIds) {
-    assert.equal(rows[id], L.LINES[id].text, `${id}: VOICE-SCRIPT.md text does not match LINES`);
+    assert.equal(rows[id].en, L.LINES[id].en, `${id}: VOICE-SCRIPT.md English text does not match LINES`);
+    assert.equal(rows[id].te, L.LINES[id].te, `${id}: VOICE-SCRIPT.md Telugu text does not match LINES`);
   }
+});
+
+/* ---------- js/lessons.js: LANGS / DEFAULT_LANG ---------- */
+
+test('LANGS is English then Telugu, and DEFAULT_LANG is English', () => {
+  assert.deepEqual(L.LANGS, ['en', 'te']);
+  assert.equal(L.DEFAULT_LANG, 'en');
 });
 
 /* ---------- js/voice-clips.js ---------- */
 
+test('voice-clips.js has an array only for each language in LANGS', () => {
+  assert.equal(typeof voiceClips, 'object');
+  assert.deepEqual(Object.keys(voiceClips).sort(), L.LANGS.slice().sort());
+  for (const lang of Object.keys(voiceClips)) {
+    assert.ok(Array.isArray(voiceClips[lang]), `voice-clips.js: "${lang}" is not an array`);
+  }
+});
+
 test('every voice-clips.js id has a matching audio file and a LINES entry', () => {
-  assert.ok(Array.isArray(voiceClips));
-  for (const id of voiceClips) {
-    assert.ok(L.LINES[id], `voice-clips.js: "${id}" is not in LINES`);
-    const file = path.join(ROOT, 'audio', 'voice', id + '.mp3');
-    assert.ok(fs.existsSync(file), `voice-clips.js: missing ${file}`);
+  for (const lang of Object.keys(voiceClips)) {
+    for (const id of voiceClips[lang]) {
+      assert.ok(L.LINES[id], `voice-clips.js: "${lang}/${id}" is not in LINES`);
+      const file = path.join(ROOT, 'audio', 'voice', lang, id + '.mp3');
+      assert.ok(fs.existsSync(file), `voice-clips.js: missing ${file}`);
+    }
   }
 });
 

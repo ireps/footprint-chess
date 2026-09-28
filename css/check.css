@@ -16,4 +16,7 @@ td { word-break: break-word; }
 .bad { color: #ff8a80; }
 .actions { display: flex; gap: 12px; flex-wrap: wrap; }
 button { font: inherit; font-size: 1.1rem; padding: 12px 18px; border: 0; border-radius: 12px; background: #ffe066; color: #1d2b36; cursor: pointer; }
+h2 { margin: 24px 0 4px; font-size: 1.3rem; }
+table.voices th { width: auto; font-weight: normal; }
+table.voices button { font-size: 0.9rem; padding: 6px 12px; }
 a { color: #ffe066; }

@@ -8,7 +8,8 @@ Footprint Chess is made for young children. It collects nothing.
 - Nothing is stored on the device.
 - The app only loads its own files from the site, including lesson voice clips when they are needed. It makes no requests to other sites.
 - Nothing about the child is recorded. Which lessons have played is remembered only until the page is closed or reloaded.
-- If a voice clip is not available, the app may use the device's built-in speech to read the fixed lesson line aloud. On some devices, depending on their settings, the speech engine may send that text to its provider. The text is the same short lesson line for every child and contains nothing about the child.
+- The app has two languages, English (default) and Telugu. The choice comes only from `?lang=` in the address bar; it is not stored anywhere, and switching languages sends no request anywhere.
+- If a voice clip is not available, the app may use the device's built-in speech to read the fixed lesson line aloud, in whichever language is selected. On some devices, depending on their settings, the speech engine may send that text to its provider. The text is the same short lesson line for every child and contains nothing about the child.
 
 ## Hosting
 

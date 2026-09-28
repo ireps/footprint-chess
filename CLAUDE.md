@@ -11,7 +11,7 @@ The public docs are README.md, SECURITY.md, PRIVACY.md, docs/DESIGN.md and docs/
 ## Target platform facts (researched)
 
 - Silk on Fire OS 5 appears to top out at Silk 108 / Chromium 108. Older builds (Chromium 65 to 94) have been seen on the same model, so write code that degrades gracefully.
-- speechSynthesis on Silk / Fire OS 5 is unverified. Plan on recorded audio clips and treat text-to-speech as an optional extra.
+- speechSynthesis on Silk / Fire OS 5 is unverified. Plan on recorded audio clips, one set per language (`audio/voice/en/`, `audio/voice/te/`), generated with `tools/make-voice.js` and optionally replaced by the parent's own recording; treat text-to-speech as an optional fallback, not the primary path.
 - Android 5.1 does not trust Let's Encrypt's ISRG Root X1. Keep using the github.io address and avoid custom domains.
 - If full chess rules are ever needed, chess.js 0.10.3 (classic UMD `chess.min.js`, global `Chess`) is the version that runs on old browsers. Vendor it into the repo; never load it from a CDN. Extending `js/rules.js` is preferred over adding a dependency.
 - Hardware: 2 GB RAM, 1280x800 CSS pixels in landscape. Animate only transform and opacity. Do not use Stockfish or WASM engines.
@@ -38,12 +38,13 @@ The public docs are README.md, SECURITY.md, PRIVACY.md, docs/DESIGN.md and docs/
 - Lessons are animated "watch, then do": a 10 to 15 second scripted animation on the real board (a small script of moves, highlights and voice cues, not video), a ghost hand showing where to tap, and replay and skip buttons. One idea per lesson.
 - Themes switchable at any time: Robots (done), Space, Dinosaurs, and Adventure (an original comic-adventure explorer). No copyrighted characters; Tintin was requested and declined. Artwork must be original and not resemble existing characters.
 - Progress: no login and no cookies. Picture-based profiles (tap your avatar) stored in localStorage on the device. Show progress as a collection (characters met, sticker book), not scores. Include an optional backup code for moving progress between devices. No backend.
-- Sound effects are synthesized with Web Audio (`js/sound.js`), so there are no sound-effect files. Lesson voice lines are the only audio files: `audio/voice/<id>.mp3`, listed in `js/voice-clips.js`, with the text in `docs/VOICE-SCRIPT.md` and `js/lessons.js`.
+- Sound effects are synthesized with Web Audio (`js/sound.js`), so there are no sound-effect files. Lesson voice lines are the only audio files: `audio/voice/<lang>/<id>.mp3` (one folder per language), listed per language in `js/voice-clips.js`, with the text in `docs/VOICE-SCRIPT.md` and `js/lessons.js`.
+- English is the default language; Telugu is the alternative, chosen with `?lang=te` (nothing is stored on the device). A side-bar button switches language at any time. `js/lessons.js` exports `LANGS` and `DEFAULT_LANG`; `js/voice.js` falls back from a clip in the current language to device speech in the current language to, for Telugu only, the same two steps in English, to silence. English never falls back to Telugu.
 
 ## Status and roadmap
 
 1. Foundation: done (stage 1).
-2. Lesson player: done (stage 2), awaiting tablet testing. Eight lessons (hello, the six pieces, bump) in `js/lessons.js`, run by `js/player.js` on `js/board.js`. Voice: the owner chose clips generated with an external text-to-speech tool from `docs/VOICE-SCRIPT.md`, possibly re-recorded by the parent later under the same file names. No clips exist yet; until then the player falls back to speechSynthesis, then to silence with estimated timings. Claude cannot record audio.
+2. Lesson player: done (stage 2), awaiting tablet testing. Eight lessons (hello, the six pieces, bump) in `js/lessons.js`, run by `js/player.js` on `js/board.js`, each with English (default) and Telugu (`?lang=te`) text and a language switch button. Voice: the owner chose clips generated with `tools/make-voice.js` (Azure neural TTS) from `docs/VOICE-SCRIPT.md`, possibly re-recorded by the parent later under the same file names. No clips exist yet in either language; until then the player falls back to speechSynthesis, then to silence with estimated timings. Claude cannot record audio or call Azure on the owner's behalf.
 3. Games: catch the mouse, pawn race, mini-games against a simple bot (random legal moves with a preference for captures).
 4. Themes: Space, Dinosaurs, Adventure, plus a theme switcher.
 5. Profiles: picture profiles, sticker book, parent corner (long-press to open; calm mode; backup code). Update PRIVACY.md in the same change.
@@ -67,4 +68,5 @@ Not implemented in the rules yet: check, checkmate, castling, en passant, promot
 - Enable Pages, Enforce HTTPS, private vulnerability reporting, and secret scanning with push protection (docs/SETUP.md).
 - Open check.html on the Fire HD and report the results, especially Chromium version, speech voices and sound.
 - Generate the voice clips from docs/VOICE-SCRIPT.md and add them (recording spec in that file).
+- Create an Azure Speech key. Do not generate clips until the voice lines are rewritten with real chess terminology (planned next); then run tools/make-voice.js.
 - Test stage 2 on the tablet and with the child.

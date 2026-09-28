@@ -52,12 +52,16 @@ Each lesson teaches one idea as "watch, then do" on the real board.
 
 ### Voice
 
-The voice lines are listed in [VOICE-SCRIPT.md](VOICE-SCRIPT.md). A line plays from a recorded clip if one exists, otherwise through the device's speech synthesis, otherwise silently with its estimated length so the pacing stays the same. The sound button in the side bar turns voice off together with the sound effects.
+The voice lines are listed in [VOICE-SCRIPT.md](VOICE-SCRIPT.md), in English and Telugu. English is the default language; Telugu is chosen with `?lang=te` in the address bar, and a language button in the side bar switches at any time without losing a line already playing. `document.documentElement.lang` stays `en`, since the app's own labels are all English; only the spoken lesson lines change.
+
+For the current language, a line plays from a recorded clip if one exists, otherwise through the device's speech synthesis, otherwise, when the language is Telugu, the same two steps again in English, otherwise silently with its estimated length so the pacing stays the same. English never falls back to Telugu. Device speech is deliberately soft: a slightly slow rate and a slightly raised pitch, with a voice chosen to sound less flat than the browser default where one is available. The sound button in the side bar turns voice off together with the sound effects.
+
+Voice clips are generated with Azure's neural text-to-speech using [tools/make-voice.js](../tools/make-voice.js); see VOICE-SCRIPT.md for how to run it and for the recording spec that also applies to a parent's own recordings.
 
 ## Roadmap
 
 1. **Foundation (done).** Board, footprints, move animations, Robots theme, star rounds, device check page.
-2. **Lesson player (done, voice clips pending).** Short scripted animations played on the real board ("watch, then do"), a ghost hand that shows where to tap, replay and skip, and voice clips.
+2. **Lesson player (done, voice clips pending).** Short scripted animations played on the real board ("watch, then do"), a ghost hand that shows where to tap, replay and skip, lesson text in English and Telugu with a language switch, and voice clips.
 3. **Games.** Catch the mouse, pawn race, and small games against a simple bot using only the pieces met so far.
 4. **Themes.** Space, Dinosaurs and Adventure, with a theme switcher that can be used at any time.
 5. **Profiles.** Picture profiles, a sticker book, and a parent corner with calm mode and a backup code. Progress is stored on the device only.

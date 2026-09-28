@@ -1,7 +1,7 @@
 /*
  * Footprint Chess: star rounds, the rail, and the ready/lesson/round flow.
- * Depends on FC.rules, FC.levels, FC.lessons, FC.sound, FC.board and
- * FC.player (loaded before this file).
+ * Depends on FC.rules, FC.levels, FC.lessons, FC.sound, FC.voice, FC.board
+ * and FC.player (loaded before this file).
  * DOM is built with createElement/textContent only (see SECURITY.md).
  */
 (function () {
@@ -12,6 +12,7 @@
   var L = FC.levels;
   var LS = FC.lessons;
   var S = FC.sound;
+  var V = FC.voice;
   var B = FC.board;
   var P = FC.player;
 
@@ -36,6 +37,8 @@
     stars: byId('stars'),
     characters: byId('characters'),
     sound: byId('sound-toggle'),
+    lang: byId('lang-toggle'),
+    langGlyph: byId('lang-glyph'),
     lessonReplay: byId('lesson-replay'),
     lessonSkip: byId('lesson-skip')
   };
@@ -66,6 +69,64 @@
   function byId(id) { return document.getElementById(id); }
   function key(r, c) { return r + ',' + c; }
 
+  /* ---------- language ---------- */
+
+  // Simple, dependency-free ?lang= reader: no URLSearchParams needed. English
+  // is the default (no param, or an unrecognised value); ?lang=te bookmarks
+  // Telugu. FC.voice.setLang falls back to the default for anything else.
+  function parseLangFromUrl() {
+    var m = /[?&]lang=([^&]*)/.exec(window.location.search || '');
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+
+  // Shows the OTHER language's glyph: tapping switches to it.
+  function langGlyph(lang) {
+    return lang === 'te' ? 'A' : 'అ';
+  }
+
+  function langName(lang) {
+    return lang === 'te' ? 'Telugu' : 'English';
+  }
+
+  function updateLangButton() {
+    var lang = V.getLang();
+    dom.langGlyph.textContent = langGlyph(lang);
+    dom.lang.setAttribute('aria-label', 'Language: ' + langName(lang));
+  }
+
+  // Rewrites ?lang= in place, keeping any other query parameters and the
+  // hash. English (the default) is expressed by leaving the param out
+  // entirely, so a bookmark for it stays a plain URL.
+  function setUrlLang(lang) {
+    if (!window.history || typeof window.history.replaceState !== 'function') return;
+    try {
+      var raw = window.location.search ? window.location.search.slice(1) : '';
+      var kept = raw.split('&').filter(function (p) {
+        return p && p.split('=')[0] !== 'lang';
+      });
+      if (lang !== LS.DEFAULT_LANG) {
+        kept.push('lang=' + encodeURIComponent(lang));
+      }
+      var search = kept.length ? '?' + kept.join('&') : '';
+      window.history.replaceState(null, '', window.location.pathname + search + window.location.hash);
+    } catch (e) {
+      // Bookmarkable URL is a nicety, not required; ignore failures.
+    }
+  }
+
+  function onLangToggle() {
+    S.unlock();
+    var next = V.getLang() === 'te' ? 'en' : 'te';
+    V.setLang(next);
+    updateLangButton();
+    setUrlLang(next);
+    var lesson = P.active() ? P.lesson() : null;
+    if (lesson) {
+      V.preload(LS.lineIds(lesson).concat(LS.PRACTICE_LINES), function () {});
+    }
+    S.play('select');
+  }
+
   /* ---------- static UI ---------- */
 
   function buildRail() {
@@ -93,6 +154,7 @@
 
     dom.lessonReplay.addEventListener('click', onReplay);
     dom.lessonSkip.addEventListener('click', onSkip);
+    dom.lang.addEventListener('click', onLangToggle);
 
     dom.sound.addEventListener('click', function () {
       S.unlock();
@@ -430,9 +492,11 @@
   /* ---------- start ---------- */
 
   function init() {
+    V.setLang(parseLangFromUrl());
     B.init(onBoardTap);
     buildRail();
     updateToolButtons();
+    updateLangButton();
     P.prepare(LS.get('hello'));
     mode = 'ready';
   }

@@ -69,10 +69,83 @@
     voiceCell.className = english.length ? 'ok' : 'warn';
   }
 
-  if (hasSpeech) {
-    window.speechSynthesis.onvoiceschanged = reportVoices;
-    window.setTimeout(reportVoices, 1500);
+  /* ---------- speech voice list ---------- */
+
+  var voiceListBody = document.getElementById('voice-list');
+  var EN_TEST_LINE = 'Hop, hop, turn!';
+  var TE_TEST_LINE = 'ఇదిగో, నీ రోబో!';
+
+  function testLineFor(voice) {
+    var lang = (voice.lang || '').slice(0, 2).toLowerCase();
+    return lang === 'te' ? TE_TEST_LINE : EN_TEST_LINE;
   }
+
+  function speakVoice(voice) {
+    try {
+      window.speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(testLineFor(voice));
+      u.voice = voice;
+      u.lang = voice.lang;
+      u.rate = 0.85;
+      u.pitch = 1.1;
+      u.onend = function () { status.textContent = 'Finished: ' + voice.name + '.'; };
+      u.onerror = function (ev) { status.textContent = 'Voice error (' + voice.name + '): ' + (ev.error || 'unknown'); };
+      window.speechSynthesis.speak(u);
+      status.textContent = 'Speaking: ' + voice.name + '...';
+    } catch (e) {
+      status.textContent = 'Voice test failed: ' + e.message;
+    }
+  }
+
+  function buildVoiceRow(voice) {
+    var tr = document.createElement('tr');
+    var nameTd = document.createElement('td');
+    nameTd.textContent = voice.name;
+    var langTd = document.createElement('td');
+    langTd.textContent = voice.lang;
+    var sourceTd = document.createElement('td');
+    sourceTd.textContent = voice.localService ? 'Local' : 'Network';
+    var actionTd = document.createElement('td');
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = 'Test';
+    btn.addEventListener('click', function () { speakVoice(voice); });
+    actionTd.appendChild(btn);
+    tr.appendChild(nameTd);
+    tr.appendChild(langTd);
+    tr.appendChild(sourceTd);
+    tr.appendChild(actionTd);
+    voiceListBody.appendChild(tr);
+  }
+
+  function buildVoiceList() {
+    while (voiceListBody.firstChild) voiceListBody.removeChild(voiceListBody.firstChild);
+    var voices = hasSpeech ? (window.speechSynthesis.getVoices() || []) : [];
+    if (!voices.length) {
+      var tr = document.createElement('tr');
+      var td = document.createElement('td');
+      td.setAttribute('colspan', '4');
+      td.textContent = hasSpeech
+        ? 'No voices reported (headless browsers often report zero; a real device may need a moment).'
+        : 'Speech is not available in this browser.';
+      tr.appendChild(td);
+      voiceListBody.appendChild(tr);
+      return;
+    }
+    voices.forEach(buildVoiceRow);
+  }
+
+  if (hasSpeech) {
+    window.speechSynthesis.onvoiceschanged = function () {
+      reportVoices();
+      buildVoiceList();
+    };
+    window.setTimeout(function () {
+      reportVoices();
+      buildVoiceList();
+    }, 1500);
+  }
+  buildVoiceList();
 
   document.getElementById('test-sound').addEventListener('click', function () {
     var AC = window.AudioContext || window.webkitAudioContext;
