@@ -38,12 +38,12 @@ The public docs are README.md, SECURITY.md, PRIVACY.md, docs/DESIGN.md and docs/
 - Lessons are animated "watch, then do": a 10 to 15 second scripted animation on the real board (a small script of moves, highlights and voice cues, not video), a ghost hand showing where to tap, and replay and skip buttons. One idea per lesson.
 - Themes switchable at any time: Robots (done), Space, Dinosaurs, and Adventure (an original comic-adventure explorer). No copyrighted characters; Tintin was requested and declined. Artwork must be original and not resemble existing characters.
 - Progress: no login and no cookies. Picture-based profiles (tap your avatar) stored in localStorage on the device. Show progress as a collection (characters met, sticker book), not scores. Include an optional backup code for moving progress between devices. No backend.
-- Sound effects are synthesized with Web Audio (`js/sound.js`), so there are no audio files.
+- Sound effects are synthesized with Web Audio (`js/sound.js`), so there are no sound-effect files. Lesson voice lines are the only audio files: `audio/voice/<id>.mp3`, listed in `js/voice-clips.js`, with the text in `docs/VOICE-SCRIPT.md` and `js/lessons.js`.
 
 ## Status and roadmap
 
 1. Foundation: done (stage 1).
-2. Lesson player: next. See the lesson design above. Open decision for the owner: voice clips recorded by the parent, or generated with an external text-to-speech tool from a script Claude writes. About 30 short lines. Claude cannot record audio.
+2. Lesson player: done (stage 2), awaiting tablet testing. Eight lessons (hello, the six pieces, bump) in `js/lessons.js`, run by `js/player.js` on `js/board.js`. Voice: the owner chose clips generated with an external text-to-speech tool from `docs/VOICE-SCRIPT.md`, possibly re-recorded by the parent later under the same file names. No clips exist yet; until then the player falls back to speechSynthesis, then to silence with estimated timings. Claude cannot record audio.
 3. Games: catch the mouse, pawn race, mini-games against a simple bot (random legal moves with a preference for captures).
 4. Themes: Space, Dinosaurs, Adventure, plus a theme switcher.
 5. Profiles: picture profiles, sticker book, parent corner (long-press to open; calm mode; backup code). Update PRIVACY.md in the same change.
@@ -66,3 +66,5 @@ Not implemented in the rules yet: check, checkmate, castling, en passant, promot
 
 - Enable Pages, Enforce HTTPS, private vulnerability reporting, and secret scanning with push protection (docs/SETUP.md).
 - Open check.html on the Fire HD and report the results, especially Chromium version, speech voices and sound.
+- Generate the voice clips from docs/VOICE-SCRIPT.md and add them (recording spec in that file).
+- Test stage 2 on the tablet and with the child.

@@ -73,10 +73,23 @@
     }
   }
 
+  // The AudioContext once unlocked, or null before the first tap.
+  function context() {
+    return ctx;
+  }
+
+  // Where other sounds (js/voice.js) should connect to, so voice shares the
+  // one unlocked context and its volume moves with the master gain.
+  function output() {
+    return master || (ctx ? ctx.destination : null);
+  }
+
   root.FC = root.FC || {};
   root.FC.sound = {
     unlock: unlock,
     play: play,
+    context: context,
+    output: output,
     setEnabled: function (value) { enabled = !!value; },
     isEnabled: function () { return enabled; }
   };

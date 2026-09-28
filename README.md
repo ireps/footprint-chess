@@ -16,7 +16,7 @@ Details are in [docs/DESIGN.md](docs/DESIGN.md).
 
 ## Status
 
-Stage 1 of 6 is complete: board, tap-to-move, footprints for all six pieces, the Robots theme, star-collecting rounds, sound effects and a device check page (`check.html`). The roadmap is in [docs/DESIGN.md](docs/DESIGN.md#roadmap).
+Stages 1 and 2 of 6 are complete: board, tap-to-move, footprints for all six pieces, the Robots theme, star-collecting rounds, sound effects, a device check page (`check.html`), and a lesson player with eight "watch, then do" lessons. Voice clips for the lessons have not been recorded yet (see [docs/VOICE-SCRIPT.md](docs/VOICE-SCRIPT.md)). The roadmap is in [docs/DESIGN.md](docs/DESIGN.md#roadmap).
 
 ## Run locally
 
@@ -38,7 +38,7 @@ Requires Node.js 18 or later. There is nothing to install.
 node --test
 ```
 
-The tests cover the movement rules (`js/rules.js`) and round generation (`js/levels.js`).
+The tests cover the movement rules (`js/rules.js`), round generation (`js/levels.js`) and the lesson scripts (`js/lessons.js`): every move is legal, timings fit, and no line says left, right or a square name.
 
 ## Deploy
 
@@ -53,11 +53,17 @@ css/app.css       App styles and animations.
 css/check.css     Device check page styles.
 js/rules.js       Movement rules. No DOM access. Tested.
 js/levels.js      Round generation. No DOM access. Tested.
+js/lessons.js     Lesson scripts and voice line text. No DOM access. Tested.
 js/sound.js       Sound effects generated with the Web Audio API.
-js/app.js         Board UI, input and animations.
+js/voice-clips.js Ids of the voice lines that have a recorded clip.
+js/voice.js       Plays voice clips, with speech and silent fallbacks.
+js/board.js       Board view: pieces, footprints, animations, ghost hand.
+js/player.js      Lesson player: runs a lesson's watch and practice parts.
+js/app.js         App flow: lessons, star rounds, side bar.
+audio/voice/      Lesson voice clips (MP3), once recorded.
 js/check.js       Device check page logic.
 tests/            Node test files.
-docs/             Design notes and setup instructions.
+docs/             Design notes, setup instructions and the voice script.
 ```
 
 ## Browser support and coding rules

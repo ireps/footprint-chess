@@ -129,12 +129,32 @@
       <path d="M16 38 H34 L56 18 V82 L34 62 H16 Z" fill="currentColor"/>
       <path d="M68 38 L88 62 M88 38 L68 62" stroke="currentColor" stroke-width="7" stroke-linecap="round" fill="none"/>
     </symbol>
+
+    <!-- Ghost hand: a pointing hand, index finger up, fingertip at the top
+         centre of the viewBox so js/board.js can land it exactly on a
+         square centre. -->
+    <symbol id="ic-hand" viewBox="0 0 100 100">
+      <g stroke="#1d2b36" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+        <rect x="42" y="4" width="16" height="44" rx="8" fill="#ffffff"/>
+        <path d="M31 38 C31 33 35 29 40 29 H60 C72 29 81 39 81 52 V68 C81 83 69 95 53 95 H47 C35 95 25 88 20 77 L12 60 C9 53 12 46 18 44 C23 42 29 45 32 51 L36 60 V38 Z" fill="#ffffff"/>
+      </g>
+    </symbol>
+
+    <symbol id="ic-replay" viewBox="0 0 100 100">
+      <path d="M82 52 A32 32 0 1 1 63 22" fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="round"/>
+      <path d="M60 7 L83 22 L59 35 Z" fill="currentColor"/>
+    </symbol>
+
+    <symbol id="ic-skip" viewBox="0 0 100 100">
+      <path d="M13 20 L50 50 L13 80 Z" fill="currentColor"/>
+      <path d="M50 20 L87 50 L50 80 Z" fill="currentColor"/>
+    </symbol>
   </defs>
 </svg>
 
 <main class="app">
   <section class="stage" aria-label="Board">
-    <div class="strip strip-far" aria-hidden="true">
+    <div class="strip strip-far" id="strip-far" aria-hidden="true">
       <svg class="strip-icon big"><use href="#ic-gear"/></svg>
       <svg class="strip-icon"><use href="#ic-gear"/></svg>
       <svg class="strip-icon big"><use href="#ic-gear"/></svg>
@@ -144,12 +164,14 @@
     </div>
     <div class="board" id="board">
       <div class="squares" id="squares"></div>
+      <div class="layer" id="marks"></div>
       <div class="layer" id="items"></div>
       <div class="layer" id="pieces"></div>
       <div class="layer" id="footprints"></div>
       <div class="layer" id="fx"></div>
+      <div class="layer" id="guide"></div>
     </div>
-    <div class="strip strip-home" aria-hidden="true">
+    <div class="strip strip-home" id="strip-home" aria-hidden="true">
       <svg class="strip-icon"><use href="#ic-bolt"/></svg>
       <svg class="strip-icon"><use href="#ic-bolt"/></svg>
       <svg class="strip-icon"><use href="#ic-bolt"/></svg>
@@ -162,6 +184,12 @@
   <nav class="rail" aria-label="Characters">
     <div class="stars" id="stars"></div>
     <div class="characters" id="characters"></div>
+    <button class="tool" id="lesson-replay" type="button" aria-label="Watch again">
+      <svg aria-hidden="true" focusable="false"><use href="#ic-replay"/></svg>
+    </button>
+    <button class="tool" id="lesson-skip" type="button" aria-label="Skip" hidden>
+      <svg aria-hidden="true" focusable="false"><use href="#ic-skip"/></svg>
+    </button>
     <button class="tool" id="sound-toggle" type="button" aria-pressed="true" aria-label="Sound">
       <svg aria-hidden="true" focusable="false"><use href="#ic-sound-on"/></svg>
     </button>
@@ -170,7 +198,12 @@
 
 <script src="js/rules.js"></script>
 <script src="js/levels.js"></script>
+<script src="js/lessons.js"></script>
 <script src="js/sound.js"></script>
+<script src="js/voice-clips.js"></script>
+<script src="js/voice.js"></script>
+<script src="js/board.js"></script>
+<script src="js/player.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

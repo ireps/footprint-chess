@@ -6,7 +6,9 @@ Footprint Chess is made for young children. It collects nothing.
 
 - No accounts, names, cookies, analytics or advertising.
 - Nothing is stored on the device.
-- After the page loads, the app makes no network requests. It only loads its own files from the site.
+- The app only loads its own files from the site, including lesson voice clips when they are needed. It makes no requests to other sites.
+- Nothing about the child is recorded. Which lessons have played is remembered only until the page is closed or reloaded.
+- If a voice clip is not available, the app may use the device's built-in speech to read the fixed lesson line aloud. On some devices, depending on their settings, the speech engine may send that text to its provider. The text is the same short lesson line for every child and contains nothing about the child.
 
 ## Hosting
 

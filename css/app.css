@@ -85,6 +85,16 @@ body {
   height: calc(var(--cell) * 0.46);
 }
 
+/* Landmark pulse (js/board.js landmark()): finite, transform only. */
+.strip.lit .strip-icon {
+  animation: landmark-pulse calc(400ms * var(--dur)) ease-in-out 2;
+}
+
+@keyframes landmark-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.35); }
+}
+
 .board {
   position: relative;
   width: calc(var(--cell) * 8);
@@ -113,7 +123,7 @@ body {
 }
 
 /* Everything on the board is one cell in size and positioned with transform: translate(col * 100%, row * 100%). */
-.piece, .item, .fp, .spark {
+.piece, .item, .fp, .spark, .glow, .ripple {
   position: absolute;
   top: 0;
   left: 0;
@@ -277,6 +287,77 @@ body {
   border: 2px solid var(--ink);
 }
 
+/* Glow: a square highlight in the hero's colour (--tc), set per node by
+   js/board.js glow(). Pop in on creation, like .print already does. */
+.glow::before {
+  content: "";
+  position: absolute;
+  top: 12%;
+  left: 12%;
+  width: 76%;
+  height: 76%;
+  border-radius: 22%;
+  background: var(--tc);
+  opacity: 0.35;
+  box-shadow: 0 0 0 3px var(--tc);
+  animation: glow-pop calc(260ms * var(--dur)) cubic-bezier(0.3, 1.5, 0.5, 1) backwards;
+}
+
+@keyframes glow-pop {
+  from { transform: scale(0.4); opacity: 0; }
+  to { transform: scale(1); opacity: 0.35; }
+}
+
+/* Ghost hand: js/board.js positions it with its own transform (see hand()),
+   since it is not one cell in size. The fingertip is the top centre of
+   ic-hand's viewBox, so transform-origin sits there too, for a natural
+   press. */
+.hand {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--cell);
+  height: var(--cell);
+  transform-origin: 50% 50%;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity calc(220ms * var(--dur)) ease-out;
+}
+
+.hand.away {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* Fingertip (top centre of the drawing) at the centre of the cell. */
+.hand > svg {
+  position: absolute;
+  display: block;
+  left: 7.5%;
+  top: 50%;
+  width: 85%;
+  height: 105%;
+}
+
+/* Ripple ring under a hand press. */
+.ripple::before {
+  content: "";
+  position: absolute;
+  top: 15%;
+  left: 15%;
+  width: 70%;
+  height: 70%;
+  border-radius: 50%;
+  border: 4px solid #fff;
+  box-shadow: 0 0 0 2px var(--ink);
+  animation: ripple calc(350ms * var(--dur)) ease-out forwards;
+}
+
+@keyframes ripple {
+  from { transform: scale(0.3); opacity: 0.9; }
+  to { transform: scale(1.4); opacity: 0; }
+}
+
 /* Rail */
 
 .rail {
@@ -342,6 +423,12 @@ body {
   width: 56px;
   height: 56px;
   padding: 10px;
+}
+
+/* .char, .tool sets display: block above, which (same specificity, later in
+   the cascade) would otherwise beat the UA stylesheet's [hidden] rule. */
+.tool[hidden] {
+  display: none;
 }
 
 .char:focus-visible, .tool:focus-visible {
