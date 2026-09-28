@@ -31,7 +31,7 @@ For the GitHub account that owns the repository: turn on two-factor authenticati
    - **CSS grid, Pointer events, Web Animations, Web Audio:** all should be Yes.
    - **Speech voices:** note the number of English voices. Zero means spoken lessons will use recorded audio clips.
 3. Tap **Play test sound** and **Test speech** and note what happens.
-4. Open the game. Tap the robot, then tap a footprint.
+4. Open the game. Tap the rook card, then follow the lesson: tap the piece, then tap a footprint.
 
 ## Troubleshooting
 

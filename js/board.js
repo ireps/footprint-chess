@@ -1,7 +1,7 @@
 /*
  * Footprint Chess: board view (DOM, layout and animation only).
  * No round or lesson logic lives here; see js/app.js.
- * Depends on FC.rules and FC.sound (loaded before this file).
+ * Depends on FC.rules, FC.lessons and FC.sound (loaded before this file).
  * DOM is built with createElement/textContent only (see SECURITY.md).
  */
 (function () {
@@ -12,14 +12,16 @@
   var S = FC.sound;
 
   var THEME = 'robots';
-  var TYPE_ORDER = ['r', 'b', 'q', 'k', 'n', 'p'];
+  // Real chess names are looked up from FC.lessons.PIECE_NAMES by callers
+  // (app.js, player.js); this table only carries the look, not the words.
+  var TYPE_ORDER = FC.lessons.TYPE_ORDER;
   var TYPES = {
-    r: { name: 'Rail bot, the rook', color: '#f59e2e' },
-    b: { name: 'Slide bot, the bishop', color: '#ec5f99' },
-    q: { name: 'Star bot, the queen', color: '#9a6ce0' },
-    k: { name: 'Sleepy bot, the king', color: '#f5d23b' },
-    n: { name: 'Spring bot, the knight', color: '#36c2ce' },
-    p: { name: 'Mini bot, the pawn', color: '#6ccb5f' }
+    r: { color: '#f59e2e', tint: '#ffe7c7' },
+    b: { color: '#ec5f99', tint: '#ffe0ee' },
+    q: { color: '#9a6ce0', tint: '#ece2fb' },
+    k: { color: '#f5d23b', tint: '#fff5c6' },
+    n: { color: '#36c2ce', tint: '#d8f5f7' },
+    p: { color: '#6ccb5f', tint: '#e1f6dc' }
   };
   var CONFETTI_COLORS = ['#f59e2e', '#ec5f99', '#9a6ce0', '#f5d23b', '#36c2ce', '#6ccb5f', '#ffffff'];
   var SVG_NS = 'http://www.w3.org/2000/svg';
@@ -115,12 +117,27 @@
   function layout() {
     var w = window.innerWidth;
     var h = window.innerHeight;
-    var pad = 12;
-    var rail = 110;
-    var boardRows = 8 + 2 * 0.55; // board plus the two landmark strips
-    var cell = h > w
-      ? Math.min((h - rail - pad * 3) / boardRows, (w - pad * 2) / 8)
-      : Math.min((h - pad * 2) / boardRows, (w - rail - pad * 3) / 8);
+    var pad = 16;      // .app padding
+    var framePad = 24; // .scene padding, both sides
+    var boardRows = 8 + 2 * 0.85; // board plus the two edge strips
+    var cell;
+    if (h > w) {
+      // Portrait: scene above, panel below (a fixed-ish strip reserved for it).
+      var panelH = 190;
+      var gap = 12;
+      cell = Math.min(
+        (h - panelH - pad * 2 - gap - framePad) / boardRows,
+        (w - pad * 2 - framePad) / 8
+      );
+    } else {
+      // Landscape: scene and panel side by side.
+      var panelW = 300;
+      var gapL = 24;
+      cell = Math.min(
+        (h - pad * 2 - framePad) / boardRows,
+        (w - panelW - pad * 2 - gapL - framePad) / 8
+      );
+    }
     cell = Math.max(24, Math.floor(cell));
     document.documentElement.style.setProperty('--cell', cell + 'px');
   }
@@ -148,10 +165,13 @@
     return node;
   }
 
+  // An opponent pawn (the only kind of target/foe the app ever places):
+  // always the dark-coloured robot pawn, real chess name "pawn". Used both
+  // for capture-round targets (js/app.js) and lesson foes (js/player.js).
   function addItem(r, c) {
     var node = document.createElement('div');
     node.className = 'item';
-    node.appendChild(svgUse(THEME + '-star'));
+    node.appendChild(svgUse(THEME + '-p-dark'));
     place(node, r, c);
     dom.items.appendChild(node);
     return node;
@@ -173,7 +193,8 @@
       var delay = (reduceMotion ? 0 : Math.min(dist * 55, 330)) + 'ms';
       var item = itemsByKey[key(m.r, m.c)];
       if (item) {
-        // A reachable star gets a ring instead of footprints, so the star stays visible.
+        // A reachable target (an opponent pawn) gets a dashed ring instead
+        // of a footprint, so the pawn stays visible.
         item.style.setProperty('--tc', color);
         item.style.animationDelay = delay;
         item.classList.add('target');
@@ -236,7 +257,7 @@
     }
 
     if (type === 'k') {
-      // Sleepy shuffle: lean, step, lean back.
+      // Careful shuffle: lean, step, lean back.
       return {
         duration: 560,
         easing: 'ease-in-out',
@@ -314,7 +335,35 @@
     later(function () { node.remove(); }, 400);
   }
 
-  function confetto() {
+  function confetto(container, size) {
+    var node = document.createElement('div');
+    node.className = 'bit';
+    node.style.background = CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)];
+    node.style.left = (4 + Math.random() * 92) + '%';
+    node.style.top = (2 + Math.random() * 30) + '%';
+    var spin = (Math.random() * 2 - 1) * 200;
+    node.style.transform = 'rotate(' + spin + 'deg)';
+    container.appendChild(node);
+    var fall = 55 + Math.random() * 35;
+    animate(node, [
+      { transform: 'translateY(0) rotate(' + spin + 'deg)', opacity: 1 },
+      { transform: 'translateY(' + fall + 'vh) rotate(' + (spin + 260) + 'deg)', opacity: 1, offset: 0.75 },
+      { transform: 'translateY(' + (fall + 10) + 'vh) rotate(' + (spin + 300) + 'deg)', opacity: 0 }
+    ], 1400 + Math.random() * 500, 'ease-in', function () { node.remove(); });
+  }
+
+  // In-board celebration burst (a round's own win moment), confined to the
+  // board's fx layer so it sits behind any card that follows.
+  function confettiInBoard(count) {
+    if (reduceMotion) return;
+    for (var i = 0; i < count; i++) {
+      later((function (i2) {
+        return function () { boardConfetto(i2); };
+      })(i), 0);
+    }
+  }
+
+  function boardConfetto() {
     var node = document.createElement('div');
     node.className = 'confetti';
     node.style.background = CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)];
@@ -332,38 +381,41 @@
     ], 900 + Math.random() * 400, 'ease-out', function () { node.remove(); });
   }
 
-  function confetti(count) {
+  // Full-screen confetti for the Won card. Self-removing; safe to call
+  // repeatedly (each call is its own overlay).
+  function screenConfetti(count) {
     if (reduceMotion) return;
-    for (var i = 0; i < count; i++) confetto();
+    var layer = document.createElement('div');
+    layer.className = 'confetti-burst';
+    layer.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(layer);
+    for (var i = 0; i < count; i++) confetto(layer);
+    later(function () { layer.remove(); }, 2200);
   }
 
-  /* ---------- glow and landmark (step 4) ---------- */
+  /* ---------- glow and landmark ---------- */
 
   // Highlight a set of squares (a soft ring/fill in the given colour). An
-  // empty list clears them. Player.js passes the hero's colour (the spec's
-  // glow(squares) has no colour parameter, but the glow is drawn "in the
-  // hero colour via --tc"; board.js has no lesson/type state of its own to
-  // derive that from, so the colour is an optional second argument here and
-  // falls back to the theme's --active gold when omitted).
+  // empty list clears them.
   function glow(squares, color) {
     clear(dom.marks);
     (squares || []).forEach(function (sq) {
       var node = document.createElement('div');
       node.className = 'glow';
-      node.style.setProperty('--tc', color || 'var(--active)');
+      node.style.setProperty('--tc', color || 'var(--gold)');
       place(node, sq[0], sq[1]);
       dom.marks.appendChild(node);
     });
   }
 
-  // Pulse the far or home landmark strip. Finite (CSS handles the iteration
+  // Pulse the far or home edge strip. Finite (CSS handles the iteration
   // count) so nothing loops while the child is thinking.
   function landmark(edge) {
     var node = edge === 'home' ? dom.stripHome : dom.stripFar;
     if (node) replay(node, 'lit');
   }
 
-  /* ---------- ghost hand (step 4) ---------- */
+  /* ---------- ghost hand ---------- */
 
   function ensureHand() {
     if (!handNode) {
@@ -380,9 +432,6 @@
   // with its own transform rather than pos()/place(): the fingertip (the top
   // centre of ic-hand's viewBox) lands on the square centre, in --cell units
   // so it tracks the board at any size.
-  // The hand box is one cell; its drawing is offset in CSS so the fingertip
-  // sits at the box centre. Plain percentages (no calc/var) so the keyframes
-  // interpolate on older Chromium too.
   function handTransform(r, c, scale) {
     return 'translate(' + (c * 100) + '%,' + (r * 100) + '%) scale(' + scale + ')';
   }
@@ -479,6 +528,7 @@
     THEME: THEME,
     reduceMotion: reduceMotion,
     init: init,
+    layout: layout,
     clearAll: clearAll,
     addPiece: addPiece,
     addItem: addItem,
@@ -492,15 +542,16 @@
     moveHero: moveHero,
     poof: poof,
     sparkle: sparkle,
-    confetti: confetti,
+    confetti: confettiInBoard,
+    screenConfetti: screenConfetti,
     glow: glow,
     landmark: landmark,
     hand: hand,
     handRest: handRest,
     hideHand: hideHand,
-    // Not in the step-1 spec list, but app.js's rail (svgUse) and star-relocation
-    // animation (pos) need the same primitives board.js already builds, so they are
-    // exposed here rather than duplicated.
+    // Not pure board rendering, but app.js's home/panel screens (svgUse) and
+    // target-relocation animation (pos) need the same primitives board.js
+    // already builds, so they are exposed here rather than duplicated.
     svgUse: svgUse,
     pos: pos
   };

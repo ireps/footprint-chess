@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; media-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#bfeee8">
+<title>Footprint Chess: for grown-ups</title>
+<link rel="stylesheet" href="css/help.css">
+</head>
+<body>
+<main>
+  <h1>Footprint Chess</h1>
+  <p class="lede">A quick guide for the grown-up in the room.</p>
+
+  <section class="card">
+    <h2>What it teaches</h2>
+    <p>
+      Footprint Chess teaches how each chess piece moves and captures, using
+      real chess terms (rook, bishop, queen, king, knight, pawn, capture).
+      It never uses the words left, right, or a square name like e4, since
+      those are hard for many young children. Instead, tapping a piece marks
+      every square it can reach with footprints.
+    </p>
+    <p>
+      The pieces are drawn as robot characters, but this is decoration only:
+      every piece is always named with its real chess name, both in speech
+      and in writing, with a small badge showing the real piece shape.
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>The flow</h2>
+    <dl>
+      <dt>Home</dt>
+      <dd>Six piece cards. The glowing card is a suggestion, not a
+        requirement: any card can be tapped at any time, and nothing is ever
+        locked.</dd>
+      <dt>Meet</dt>
+      <dd>The first time a piece is chosen, a card shows the real piece
+        shape next to its robot character and says its name.</dd>
+      <dt>Lesson</dt>
+      <dd>A short "watch, then do" animation on the board: it plays once by
+        itself, then the child repeats it by tapping the piece and then a
+        footprint. A ghost hand shows where to tap. There is no way to fail;
+        a wrong tap just makes the piece wiggle.</dd>
+      <dt>Mission</dt>
+      <dd>Before every round, a card states the goal out loud and in
+        pictures: capture all three pawns.</dd>
+      <dt>Round</dt>
+      <dd>The child moves the chosen piece around the board to capture three
+        opponent pawns. Each capture fills a slot in the side panel.</dd>
+      <dt>Won</dt>
+      <dd>A short celebration, then a choice: play the same piece again, try
+        the next piece, or go back to the home screen.</dd>
+    </dl>
+  </section>
+
+  <section class="card">
+    <h2>On the board</h2>
+    <dl>
+      <dt>Footprints</dt>
+      <dd>Appear on every square the selected piece can move to.</dd>
+      <dt>Dashed ring</dt>
+      <dd>Marks a square that can be captured this turn, whether it holds an
+        opponent pawn during a round or a lesson's practice target.</dd>
+      <dt>Captured pawns</dt>
+      <dd>Vanish from the board with a small effect and a sound, and fill a
+        slot in the side panel's goal.</dd>
+      <dt>The other side / your side</dt>
+      <dd>The board never rotates: the child's side is always the near
+        (bottom) edge, and the opponent's side is always the far (top) edge.
+        These are the only two edges the app ever refers to; it never says
+        left or right.</dd>
+    </dl>
+  </section>
+
+  <section class="card">
+    <h2>Buttons</h2>
+    <dl>
+      <dt>Replay</dt>
+      <dd>Plays the current piece's introduction again, starting from the
+        Meet card.</dd>
+      <dt>Skip</dt>
+      <dd>Shown only during a lesson. Jumps ahead to the Mission card for
+        the piece being taught.</dd>
+      <dt>Language</dt>
+      <dd>Switches between English and Telugu at any time. The button shows
+        the name of the language it will switch to.</dd>
+      <dt>Sound</dt>
+      <dd>Turns sound effects and spoken lines on or off together.</dd>
+      <dt>Home</dt>
+      <dd>Returns to the home screen and stops whatever is happening.</dd>
+    </dl>
+  </section>
+
+  <section class="card">
+    <h2>Language</h2>
+    <p>
+      English is the default. Telugu is available at
+      <code>?lang=te</code> added to the address, for example
+      <code>https://ireps.github.io/footprint-chess/?lang=te</code>, so it
+      can be bookmarked separately. The language button in the side panel
+      (and on the home screen) switches at any time without losing whatever
+      is currently being said.
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>Sound and motion</h2>
+    <p>
+      Spoken lines and sound effects can be turned off with the sound
+      button; both are optional extras, not required to play. All effects
+      are generated in the browser (no audio files), except the lesson
+      voice lines, which use a recorded clip when one exists and otherwise
+      fall back to the device's own speech, or to silence.
+    </p>
+    <p>
+      If the device's accessibility settings ask for reduced motion, the
+      app shortens its animations automatically. Nothing on screen loops or
+      flashes while the child is deciding what to tap next.
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>Privacy</h2>
+    <p>
+      Nothing is stored: there is no login, no account, no cookies and no
+      tracking. Progress is not currently saved between visits. See
+      <a href="PRIVACY.md">PRIVACY.md</a> for details.
+    </p>
+  </section>
+
+  <a class="back" href="./">Back to the game</a>
+</main>
+</body>
+</html>

@@ -12,6 +12,8 @@ const NO_LEFT_RIGHT = /\b(left|right)\b/i;
 const NO_SQUARE_NAME = /\b[a-h][1-8]\b/;
 const NO_TELUGU_LEFT_RIGHT = /ఎడమ|కుడి/;
 const HAS_TELUGU_SCRIPT = /[ఀ-౿]/;
+const BANNED_EN = /\b(bots?|robots?|junk\w*|charging|bump\w*|rail bot|slide bot|star bot|sleepy|spring bot|mini bot)\b/i;
+const BANNED_TE = /రోబో|బాట్|జంక్|ఎడమ|కుడి/;
 
 /* ---------- helpers shared by several tests ---------- */
 
@@ -92,34 +94,48 @@ test('every practice task is legal, chained from the setup position', () => {
   }
 });
 
-test('bump practice accepts only the junk square, pawn practice has no captures', () => {
-  const bump = L.get('bump');
-  assert.equal(bump.practice.length, 1);
-  assert.equal(bump.practice[0].accept, 'only');
-  assert.deepEqual(bump.practice[0].to, bump.setup.junk[0]);
-
-  const pawn = L.get('pawn');
-  assert.equal(pawn.setup.junk.length, 0);
-  const start = L.boardFor(pawn);
-  const board = start.board;
-  let hero = start.hero.slice();
-  for (const task of pawn.practice) {
-    const moves = R.movesFor(board, hero[0], hero[1]);
-    const mv = moves.find(m => m.r === task.to[0] && m.c === task.to[1]);
-    assert.ok(mv && !mv.capture, 'pawn practice task must not be a capture');
-    applyMove(board, hero, task.to, pawn.type);
-    hero = task.to.slice();
+test('every capture-<type> and pawn-capture practice task is a capture, and accepts only that square', () => {
+  for (const type of L.TYPE_ORDER) {
+    const lesson = L.get(L.captureLessonFor(type));
+    assert.ok(lesson, `no lesson for captureLessonFor(${type})`);
+    assert.equal(lesson.practice.length, 1);
+    assert.equal(lesson.practice[0].accept, 'only');
+    const start = L.boardFor(lesson);
+    const moves = R.movesFor(start.board, start.hero[0], start.hero[1]);
+    const mv = moves.find(m => m.r === lesson.practice[0].to[0] && m.c === lesson.practice[0].to[1]);
+    assert.ok(mv && mv.capture, `${lesson.id}: practice task is not a capture`);
   }
+});
+
+test('the knight lesson jumps over a foe pawn without capturing it', () => {
+  const knight = L.get('knight');
+  assert.deepEqual(knight.setup.foes, [[6, 1]]);
+  const start = L.boardFor(knight);
+  const moves = R.movesFor(start.board, start.hero[0], start.hero[1]);
+  const hop = moves.find(m => m.r === 5 && m.c === 2);
+  assert.ok(hop && !hop.capture, 'knight should land on 5,2 without capturing the pawn it jumps');
+  assert.deepEqual(start.board[6][1], { type: 'p', team: 'foe' }, 'the jumped-over pawn must still be on the board');
+});
+
+test('pawn-capture: the hero cannot capture straight ahead, only on the slant', () => {
+  const lesson = L.get('pawn-capture');
+  assert.deepEqual(lesson.setup.foes, [[5, 3], [5, 4]]);
+  const start = L.boardFor(lesson);
+  const moves = R.movesFor(start.board, start.hero[0], start.hero[1]);
+  assert.equal(moves.length, 1, 'the straight-ahead pawn must block the march with no capture');
+  assert.deepEqual(moves[0], { r: 5, c: 4, capture: true });
 });
 
 test('pawn hero starts on row 6 so the first step can be a double step', () => {
   const pawn = L.get('pawn');
   assert.equal(pawn.setup.hero[0], 6);
+  const pawnCapture = L.get('pawn-capture');
+  assert.equal(pawnCapture.setup.hero[0], 6);
 });
 
 /* ---------- line ids and content ---------- */
 
-test('every said id and every PRACTICE_LINES id exists in LINES, and no LINES entry is unused', () => {
+test('every said id, every PRACTICE_LINES id and every APP_LINES id exists in LINES, and no LINES entry is unused', () => {
   const used = new Set();
   for (const lesson of L.LESSONS) {
     for (const id of L.lineIds(lesson)) {
@@ -131,20 +147,27 @@ test('every said id and every PRACTICE_LINES id exists in LINES, and no LINES en
     assert.ok(L.LINES[id], `PRACTICE_LINES: unknown line "${id}"`);
     used.add(id);
   }
+  for (const id of L.APP_LINES) {
+    assert.ok(L.LINES[id], `APP_LINES: unknown line "${id}"`);
+    used.add(id);
+  }
   for (const id of Object.keys(L.LINES)) {
     assert.ok(used.has(id), `LINES entry "${id}" is never used`);
   }
 });
 
-test('lesson order is hello, rook, bishop, queen, king, knight, bump, pawn', () => {
-  assert.deepEqual(L.LESSONS.map(l => l.id),
-    ['hello', 'rook', 'bishop', 'queen', 'king', 'knight', 'bump', 'pawn']);
+test('lesson order is hello, rook, bishop, queen, king, knight, pawn, then a capture lesson per type', () => {
+  assert.deepEqual(L.LESSONS.map(l => l.id), [
+    'hello', 'rook', 'bishop', 'queen', 'king', 'knight', 'pawn',
+    'capture-r', 'capture-b', 'capture-q', 'capture-k', 'capture-n', 'pawn-capture'
+  ]);
 });
 
-test('every LINES entry has non-empty English and Telugu text', () => {
+test('every LINES entry has non-empty English and Telugu text and a positive ms estimate', () => {
   for (const [id, line] of Object.entries(L.LINES)) {
     assert.ok(typeof line.en === 'string' && line.en.trim().length > 0, `${id}: missing English text`);
     assert.ok(typeof line.te === 'string' && line.te.trim().length > 0, `${id}: missing Telugu text`);
+    assert.ok(typeof line.ms === 'number' && line.ms >= 1100, `${id}: bad ms estimate`);
   }
 });
 
@@ -159,6 +182,13 @@ test('no LINES text says left, right, or a square name, in English or Telugu', (
     assert.ok(!NO_LEFT_RIGHT.test(line.en), `${id}: English contains "left" or "right"`);
     assert.ok(!NO_SQUARE_NAME.test(line.en), `${id}: English contains a square name`);
     assert.ok(!NO_TELUGU_LEFT_RIGHT.test(line.te), `${id}: Telugu contains ఎడమ or కుడి`);
+  }
+});
+
+test('no LINES text uses a robot name, "bot", "robot", junk, charging or bump, in either language', () => {
+  for (const [id, line] of Object.entries(L.LINES)) {
+    assert.ok(!BANNED_EN.test(line.en), `${id}: English contains banned robot-theme wording`);
+    assert.ok(!BANNED_TE.test(line.te), `${id}: Telugu contains banned robot-theme wording`);
   }
 });
 
@@ -187,6 +217,51 @@ test('docs/VOICE-SCRIPT.md lists exactly the LINES ids, with the same English an
 test('LANGS is English then Telugu, and DEFAULT_LANG is English', () => {
   assert.deepEqual(L.LANGS, ['en', 'te']);
   assert.equal(L.DEFAULT_LANG, 'en');
+});
+
+/* ---------- PIECE_NAMES / TYPE_ORDER ---------- */
+
+test('TYPE_ORDER lists every piece type once, and PIECE_NAMES has a name for each, in every language', () => {
+  assert.deepEqual(L.TYPE_ORDER.slice().sort(), ['b', 'k', 'n', 'p', 'q', 'r']);
+  assert.equal(new Set(L.TYPE_ORDER).size, L.TYPE_ORDER.length);
+  for (const lang of L.LANGS) {
+    assert.ok(L.PIECE_NAMES[lang], `PIECE_NAMES missing language "${lang}"`);
+    for (const type of L.TYPE_ORDER) {
+      const name = L.PIECE_NAMES[lang][type];
+      assert.ok(typeof name === 'string' && name.trim().length > 0, `PIECE_NAMES.${lang}.${type} missing`);
+    }
+  }
+});
+
+test('PIECE_NAMES uses the agreed Telugu piece names', () => {
+  assert.deepEqual(L.PIECE_NAMES.te, {
+    k: 'రాజు', q: 'మంత్రి', r: 'ఏనుగు', b: 'ఒంటె', n: 'గుర్రం', p: 'భటుడు'
+  });
+});
+
+/* ---------- lessonFor / captureLessonFor ---------- */
+
+test('lessonFor maps every type to its introductory lesson id', () => {
+  assert.equal(L.lessonFor('r'), 'rook');
+  assert.equal(L.lessonFor('b'), 'bishop');
+  assert.equal(L.lessonFor('q'), 'queen');
+  assert.equal(L.lessonFor('k'), 'king');
+  assert.equal(L.lessonFor('n'), 'knight');
+  assert.equal(L.lessonFor('p'), 'pawn');
+  for (const type of L.TYPE_ORDER) {
+    assert.ok(L.get(L.lessonFor(type)), `lessonFor(${type}) is not a real lesson id`);
+  }
+});
+
+test('captureLessonFor maps the pawn to pawn-capture, and every other type to capture-<type>', () => {
+  assert.equal(L.captureLessonFor('p'), 'pawn-capture');
+  for (const type of L.TYPE_ORDER) {
+    if (type === 'p') continue;
+    assert.equal(L.captureLessonFor(type), 'capture-' + type);
+  }
+  for (const type of L.TYPE_ORDER) {
+    assert.ok(L.get(L.captureLessonFor(type)), `captureLessonFor(${type}) is not a real lesson id`);
+  }
 });
 
 /* ---------- js/voice-clips.js ---------- */
@@ -220,7 +295,7 @@ test('suggestMove returns the preferred square when it is legal', () => {
 test('suggestMove prefers a legal capture when the preferred square is not legal', () => {
   const board = R.emptyBoard();
   board[7][0] = { type: 'r', team: 'me' };
-  board[7][3] = { type: 'x', team: 'foe' };
+  board[7][3] = { type: 'p', team: 'foe' };
   // Preferred square is off the rook's lines entirely, so it falls back.
   const result = L.suggestMove(board, [7, 0], [6, 6]);
   const moves = R.movesFor(board, 7, 0);
@@ -242,7 +317,7 @@ test('suggestMove falls back to the legal move closest to row 0, deterministical
 test('suggestMove returns null when the hero has no legal moves', () => {
   const board = R.emptyBoard();
   board[0][0] = { type: 'p', team: 'me' };
-  board[1][0] = { type: 'x', team: 'foe' };
+  board[1][0] = { type: 'p', team: 'foe' };
   // Pawn on row 0 with team 'me' also has no forward square on the board.
   assert.equal(L.suggestMove(board, [0, 0], [5, 5]), null);
 });
@@ -254,14 +329,14 @@ test('get returns a lesson by id, or null', () => {
   assert.equal(L.get('nope'), null);
 });
 
-test('boardFor places the hero and junk bots from setup, nothing else', () => {
-  const bump = L.get('bump');
-  const state = L.boardFor(bump);
-  assert.deepEqual(state.hero, bump.setup.hero);
-  const [hr, hc] = bump.setup.hero;
-  assert.deepEqual(state.board[hr][hc], { type: bump.type, team: 'me' });
-  for (const [jr, jc] of bump.setup.junk) {
-    assert.deepEqual(state.board[jr][jc], { type: 'x', team: 'foe' });
+test('boardFor places the hero and foe pawns from setup, nothing else', () => {
+  const knight = L.get('knight');
+  const state = L.boardFor(knight);
+  assert.deepEqual(state.hero, knight.setup.hero);
+  const [hr, hc] = knight.setup.hero;
+  assert.deepEqual(state.board[hr][hc], { type: knight.type, team: 'me' });
+  for (const [fr, fc] of knight.setup.foes) {
+    assert.deepEqual(state.board[fr][fc], { type: 'p', team: 'foe' });
   }
   let occupied = 0;
   for (let r = 0; r < 8; r++) {
@@ -269,5 +344,5 @@ test('boardFor places the hero and junk bots from setup, nothing else', () => {
       if (state.board[r][c]) occupied += 1;
     }
   }
-  assert.equal(occupied, 1 + bump.setup.junk.length);
+  assert.equal(occupied, 1 + knight.setup.foes.length);
 });

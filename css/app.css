@@ -1,18 +1,49 @@
-/* Footprint Chess: Robots theme and layout. --cell is set from JavaScript (app.js, layout()). */
+/*
+ * Footprint Chess: layout, look and animation. --cell is set from
+ * JavaScript (js/board.js, layout()).
+ *
+ * Real chess terminology everywhere; the robot artwork is decoration only
+ * (see CLAUDE.md, "Design decisions"). Colours and proportions follow the
+ * approved mockup (scratchpad mock/mockup.html, mock/template.html).
+ */
 
 :root {
   --cell: 64px;
-  --blueprint: #1b4f72;
-  --blueprint-line: rgba(255, 255, 255, 0.07);
-  --sq-light: #eaf4f9;
-  --sq-dark: #a9cce0;
-  --ink: #1d2b36;
-  --far: #3d4853;
-  --far-icon: #66737f;
-  --home: #2e8b57;
-  --home-icon: #ffe066;
-  --rail: rgba(9, 32, 48, 0.45);
-  --active: #ffe066;
+
+  --bg: #bfeee8;
+  --bg2: #dff8f4;
+  --ink: #26315a;
+  --card: #ffffff;
+
+  --sq-light: #fff8e8;
+  --sq-dark: #c4e6d4;
+
+  --frame: #34406b;
+  --frame-shadow: #232c4d;
+
+  --gold: #ffc93c;
+  --gold-dk: #e09a00;
+
+  --r: #f59e2e;
+  --b: #ec5f99;
+  --q: #9a6ce0;
+  --k: #f5d23b;
+  --n: #36c2ce;
+  --p: #6ccb5f;
+
+  --r-tint: #ffe7c7;
+  --b-tint: #ffe0ee;
+  --q-tint: #ece2fb;
+  --k-tint: #fff5c6;
+  --n-tint: #d8f5f7;
+  --p-tint: #e1f6dc;
+
+  --far-bg: #3a4260;
+  --far-fg: #566089;
+  --home-bg: #ffe7a8;
+  --home-fg: #f3c969;
+
+  --panel-w: 300px;
   --dur: 1;
 }
 
@@ -24,18 +55,15 @@ html, body {
 }
 
 body {
-  background-color: var(--blueprint);
-  background-image:
-    linear-gradient(var(--blueprint-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--blueprint-line) 1px, transparent 1px);
-  background-size: 24px 24px;
-  color: #fff;
+  background: var(--bg);
+  color: var(--ink);
   font-family: "Trebuchet MS", "Roboto", sans-serif;
   overflow: hidden;
   -webkit-user-select: none;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  position: relative;
 }
 
 .sprite {
@@ -45,23 +73,36 @@ body {
   overflow: hidden;
 }
 
-/* Layout: board left, rail right in landscape; rail below in portrait. */
+/* Soft decorative circles, purely visual. */
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--bg2);
+  pointer-events: none;
+}
+
+.blob-a { width: 520px; height: 520px; left: -160px; top: -180px; }
+.blob-b { width: 380px; height: 380px; right: -120px; bottom: -140px; }
+.blob-c { width: 160px; height: 160px; left: 40%; bottom: -60px; }
+
+/* ---------- layout: scene left, panel right in landscape; panel below in portrait ---------- */
 
 .app {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 24px;
   height: 100%;
-  padding: 12px;
+  padding: 16px;
+  position: relative;
 }
 
-.stage {
-  display: flex;
-  flex-direction: column;
-  border-radius: calc(var(--cell) * 0.2);
-  overflow: hidden;
-  box-shadow: 0 0 0 4px var(--ink), 0 10px 0 4px rgba(0, 0, 0, 0.25);
+.scene {
+  position: relative;
+  background: var(--frame);
+  border-radius: 30px;
+  padding: 12px;
+  box-shadow: 0 10px 0 var(--frame-shadow), 0 18px 30px rgba(20, 40, 60, 0.25);
 }
 
 .strip {
@@ -69,30 +110,25 @@ body {
   align-items: center;
   justify-content: space-around;
   width: calc(var(--cell) * 8);
-  height: calc(var(--cell) * 0.55);
+  height: calc(var(--cell) * 0.85);
 }
 
-.strip-far { background: var(--far); color: var(--far-icon); }
-.strip-home { background: var(--home); color: var(--home-icon); }
+.strip-far { background: var(--far-bg); color: var(--far-fg); border-radius: 20px 20px 0 0; }
+.strip-home { background: var(--home-bg); color: var(--home-fg); border-radius: 0 0 20px 20px; }
 
-.strip-icon {
-  width: calc(var(--cell) * 0.34);
-  height: calc(var(--cell) * 0.34);
-}
-
-.strip-icon.big {
-  width: calc(var(--cell) * 0.46);
-  height: calc(var(--cell) * 0.46);
+.cl-icon {
+  width: calc(var(--cell) * 0.4);
+  height: calc(var(--cell) * 0.56);
 }
 
 /* Landmark pulse (js/board.js landmark()): finite, transform only. */
-.strip.lit .strip-icon {
+.strip.lit .cl-icon {
   animation: landmark-pulse calc(400ms * var(--dur)) ease-in-out 2;
 }
 
 @keyframes landmark-pulse {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.35); }
+  50% { transform: scale(1.3); }
 }
 
 .board {
@@ -149,7 +185,7 @@ body {
   bottom: 2%;
   height: 22%;
   border-radius: 50%;
-  background: rgba(255, 224, 102, 0.75);
+  background: rgba(255, 201, 60, 0.75);
   box-shadow: 0 0 0 3px var(--ink);
 }
 
@@ -158,7 +194,7 @@ body {
 .piece.wiggle > svg { animation: wiggle calc(400ms * var(--dur)) ease-in-out; }
 .piece.nudge > svg { animation: bounce calc(420ms * var(--dur)) ease-out 2; }
 .piece.cheer > svg { animation: cheer calc(700ms * var(--dur)) ease-in-out; }
-.piece.poof > svg { animation: poof calc(380ms * var(--dur)) ease-in forwards; }
+.piece.poof > svg, .item.poof > svg { animation: poof calc(380ms * var(--dur)) ease-in forwards; }
 .item.collect > svg { animation: collect calc(420ms * var(--dur)) ease-out forwards; }
 
 @keyframes enter {
@@ -194,7 +230,7 @@ body {
   to { transform: scale(0.2); opacity: 0; }
 }
 
-/* Footprints: two tread marks in the piece's colour (--tc). Captures get a ring. */
+/* Footprints: two tread marks in the piece's colour (--tc). Captures get a dashed ring. */
 .print {
   position: absolute;
   top: 0;
@@ -234,6 +270,26 @@ body {
 
 .pulse .print { animation: fp-pulse calc(500ms * var(--dur)) ease-in-out 2; }
 
+/* Every remaining round target keeps a static dashed ring the whole time
+   it is on the board (mock-play.png), not only while it happens to be
+   reachable this turn. No animation: it must not loop while the child is
+   thinking. */
+.item.round-target::before {
+  content: "";
+  position: absolute;
+  top: 8%;
+  left: 8%;
+  width: 84%;
+  height: 84%;
+  border-radius: 50%;
+  border: 4px dashed rgba(236, 95, 60, 0.75);
+}
+
+/* A target square already occupied (an opponent pawn) that the selected
+   piece can capture this turn: the same ring, but in the piece's colour
+   and popping in, directly on the item instead of a footprint on top of
+   it. Wins over the plain .round-target ring above (later in source,
+   same specificity) whenever both classes are present. */
 .item.target::before {
   content: "";
   position: absolute;
@@ -242,8 +298,7 @@ body {
   width: 92%;
   height: 92%;
   border-radius: 50%;
-  border: 5px solid var(--tc);
-  box-shadow: 0 0 0 2px var(--ink);
+  border: 5px dashed var(--tc);
   animation: fp-pop calc(260ms * var(--dur)) cubic-bezier(0.3, 1.5, 0.5, 1) backwards;
   animation-delay: inherit;
 }
@@ -285,6 +340,24 @@ body {
   height: calc(var(--cell) * 0.28);
   border-radius: 3px;
   border: 2px solid var(--ink);
+}
+
+/* Full-screen confetti burst for the Won card. */
+.confetti-burst {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 25;
+}
+
+.confetti-burst .bit {
+  position: absolute;
+  width: 12px;
+  height: 18px;
+  border-radius: 3px;
 }
 
 /* Glow: a square highlight in the hero's colour (--tc), set per node by
@@ -358,114 +431,488 @@ body {
   to { transform: scale(1.4); opacity: 0; }
 }
 
-/* Rail */
+/* ---------- side panel ---------- */
 
-.rail {
+.panel {
+  width: var(--panel-w);
+  background: var(--card);
+  border-radius: 30px;
+  padding: 20px 18px;
+  box-shadow: 0 10px 0 #9fd8d0, 0 18px 30px rgba(20, 40, 60, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mission {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 10px;
-  border-radius: 18px;
-  background: var(--rail);
+  gap: 12px;
+  background: #fff3dc;
+  border-radius: 22px;
+  padding: 14px 12px;
 }
 
-.stars {
-  display: flex;
-  gap: 2px;
-}
-
-.slot {
-  width: 30px;
-  height: 30px;
-  opacity: 0.25;
-  filter: grayscale(1);
-}
-
-.slot > svg { display: block; width: 100%; height: 100%; }
-
-.slot.on {
-  opacity: 1;
-  filter: none;
-  animation: bounce calc(360ms * var(--dur)) ease-out;
-}
-
-.characters {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.char, .tool {
-  display: block;
-  width: 76px;
-  height: 76px;
-  padding: 2px;
-  border: 4px solid transparent;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.14);
-  cursor: pointer;
-  color: #fff;
-}
-
-.char > svg, .tool > svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-.char.active {
-  border-color: var(--active);
-  background: rgba(255, 224, 102, 0.22);
-}
-
-.tool {
-  width: 56px;
-  height: 56px;
-  padding: 10px;
-}
-
-/* .char, .tool sets display: block above, which (same specificity, later in
-   the cascade) would otherwise beat the UA stylesheet's [hidden] rule. */
-.tool[hidden] {
-  display: none;
-}
-
-.tool-lang {
+/* Sizing lives on #portrait (the side panel's mission portrait) and on
+   .card-portrait (the Meet/Mission cards' portrait) separately, so a
+   responsive override for one can never leak into the other: both share
+   this class only for the round border/background/centring. */
+.portrait {
+  border-radius: 50%;
+  border: 5px solid var(--ink);
+  background: #eef1fa;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex: none;
+}
+
+.portrait > svg { width: 78%; height: 78%; }
+
+#portrait { width: 96px; height: 96px; }
+
+.card-portrait { width: 150px; height: 150px; }
+.card-portrait.meet { width: 170px; height: 170px; }
+
+.portrait.type-r { border-color: var(--r); background: var(--r-tint); }
+.portrait.type-b { border-color: var(--b); background: var(--b-tint); }
+.portrait.type-q { border-color: var(--q); background: var(--q-tint); }
+.portrait.type-k { border-color: var(--k); background: var(--k-tint); }
+.portrait.type-n { border-color: var(--n); background: var(--n-tint); }
+.portrait.type-p { border-color: var(--p); background: var(--p-tint); }
+
+.goal { display: flex; gap: 10px; }
+
+.cap-slot {
+  width: 58px;
+  height: 58px;
+  border-radius: 16px;
+  border: 4px dashed #d4b47a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cap-slot > svg { width: 46px; height: 46px; opacity: 0.28; }
+
+.cap-slot.on {
+  border: 4px solid var(--gold);
+  background: #fff1c2;
+}
+
+.cap-slot.on > svg { opacity: 1; animation: bounce calc(360ms * var(--dur)) ease-out; }
+
+/* Generic type-coloured fill, for elements that don't need a border to
+   match (e.g. the home card's foot ellipse). */
+.tint-r { background: var(--r-tint); }
+.tint-b { background: var(--b-tint); }
+.tint-q { background: var(--q-tint); }
+.tint-k { background: var(--k-tint); }
+.tint-n { background: var(--n-tint); }
+.tint-p { background: var(--p-tint); }
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.tile {
+  height: 96px;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 4px solid transparent;
+  position: relative;
+  padding: 4px;
+}
+
+.tile.type-r { background: var(--r-tint); }
+.tile.type-b { background: var(--b-tint); }
+.tile.type-q { background: var(--q-tint); }
+.tile.type-k { background: var(--k-tint); }
+.tile.type-n { background: var(--n-tint); }
+.tile.type-p { background: var(--p-tint); }
+
+/* The robot drawings have padding built in, so draw them large and pull
+   them up slightly; the real-piece badge sits in the corner above them. */
+.tile > svg.bot { width: 66px; height: 66px; margin: 4px 0 -4px; }
+.tile .tile-name { font-size: 13px; font-weight: bold; color: var(--ink); margin-top: 2px; }
+
+.tile.active {
+  border-color: var(--ink);
+  box-shadow: 0 5px 0 var(--ink);
+  transform: translateY(-3px);
+}
+
+.tile-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.12);
+}
+
+.tile-badge > svg { width: 16px; height: 16px; }
+
+.tools {
+  display: flex;
+  justify-content: space-between;
+}
+
+.tool {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
   padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #eef3ff;
+  color: var(--ink);
+  box-shadow: 0 5px 0 #cfd8f0;
+  cursor: pointer;
 }
 
-.lang-glyph {
-  display: block;
-  line-height: 1;
-  font-size: 34px;
-  font-weight: bold;
-  text-align: center;
+.tool > svg { width: 32px; height: 32px; }
+
+.tool[hidden] { display: none; }
+
+.tool-lang { font-size: 30px; font-weight: bold; }
+.tool-lang .lang-glyph { font-size: 1em; }
+
+.lang-glyph { display: block; line-height: 1; }
+
+.tool:focus-visible { outline: 4px solid var(--ink); outline-offset: 2px; }
+
+/* ---------- overlay: dim + card (meet / mission / won) ---------- */
+
+/* Scoped to .scene (which is position: relative), not the full viewport:
+   the side panel stays bright and its tools stay usable while a card is
+   open, matching the approved mockup screenshots. */
+.overlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.char:focus-visible, .tool:focus-visible {
-  outline: 4px solid #fff;
-  outline-offset: 2px;
+.overlay[hidden] { display: none; }
+
+.dim {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 18px;
+  background: rgba(30, 40, 70, 0.5);
 }
 
-/* Short screens (tablet in landscape): smaller character buttons so all six fit. */
-@media (max-height: 820px) and (orientation: landscape) {
-  .char { width: 64px; height: 64px; }
-  .characters { gap: 6px; }
-  .tool { width: 48px; height: 48px; padding: 8px; }
-  .tool-lang { padding: 0; }
-  .lang-glyph { font-size: 26px; }
-  .slot { width: 22px; height: 22px; }
+.card {
+  position: relative;
+  background: var(--card);
+  border-radius: 36px;
+  padding: 28px 36px;
+  box-shadow: 0 12px 0 #c9d3ee, 0 24px 50px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  max-width: 92%;
+  cursor: pointer;
 }
+
+.card-row { display: flex; align-items: center; gap: 18px; }
+
+.plus { font-size: 54px; font-weight: bold; color: #b5bdd8; }
+
+.pawns3 { display: flex; gap: 8px; }
+.pawns3 > svg { width: 78px; height: 78px; }
+
+.caption { font-size: 22px; color: #6b7499; font-weight: bold; text-align: center; }
+
+.go-btn {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: #3dc46b;
+  box-shadow: 0 8px 0 #25944c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+}
+
+.go-btn > svg { width: 54px; height: 54px; margin-left: 8px; color: #fff; }
+
+/* Meet card */
+.meet-row { display: flex; align-items: center; gap: 26px; }
+
+.meet-real {
+  width: 170px;
+  height: 170px;
+  border-radius: 30px;
+  background: #f4f5f8;
+  border: 4px solid #d9dce7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+}
+
+.meet-real > svg { width: 68%; height: 68%; }
+
+.meet-arrow { width: 60px; height: 60px; color: #b5bdd8; }
+
+.big-name { font-size: 42px; font-weight: bold; color: var(--ink); text-align: center; }
+.big-name .sub { font-size: 30px; color: #6b7499; margin-left: 14px; }
+
+/* Won card */
+.trophy {
+  position: relative;
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff6d6 0 55%, #ffe38a 56% 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.trophy > svg { width: 68%; height: 68%; }
+
+.ray {
+  position: absolute;
+  top: -30px;
+  right: -30px;
+  bottom: -30px;
+  left: -30px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(rgba(255, 201, 60, 0.35) 0 12deg, transparent 12deg 24deg);
+  z-index: -1;
+}
+
+.btn-row { display: flex; gap: 26px; }
+
+.rbtn {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 7px 0 rgba(0, 0, 0, 0.18);
+  border: none;
+  cursor: pointer;
+  background: #eef3ff;
+  color: #5b6bb0;
+}
+
+.rbtn > svg { width: 52px; height: 52px; }
+
+.rbtn.rbtn-next { border: 5px solid transparent; }
+.rbtn.rbtn-next.type-r { background: var(--r-tint); border-color: var(--r); color: var(--ink); }
+.rbtn.rbtn-next.type-b { background: var(--b-tint); border-color: var(--b); color: var(--ink); }
+.rbtn.rbtn-next.type-q { background: var(--q-tint); border-color: var(--q); color: var(--ink); }
+.rbtn.rbtn-next.type-k { background: var(--k-tint); border-color: var(--k); color: var(--ink); }
+.rbtn.rbtn-next.type-n { background: var(--n-tint); border-color: var(--n); color: var(--ink); }
+.rbtn.rbtn-next.type-p { background: var(--p-tint); border-color: var(--p); color: var(--ink); }
+
+.rbtn:focus-visible, .go-btn:focus-visible, .card:focus-visible { outline: 4px solid var(--ink); outline-offset: 2px; }
+
+/* ---------- home screen ---------- */
+
+.homescreen {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 34px;
+}
+
+.homescreen[hidden] { display: none; }
+
+.corner {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  display: flex;
+  gap: 14px;
+}
+
+.logo { display: flex; align-items: center; gap: 16px; }
+
+.logo h1 {
+  margin: 0;
+  font-size: 56px;
+  letter-spacing: 1px;
+  color: var(--ink);
+  text-shadow: 0 5px 0 #fff;
+}
+
+.feet { display: flex; gap: 6px; }
+.feet span { width: 20px; height: 34px; border-radius: 50%; background: var(--r); display: block; }
+.feet span:nth-child(2) { margin-top: 18px; background: var(--b); }
+
+.home-cards {
+  display: flex;
+  gap: 22px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 96vw;
+}
+
+.home-card {
+  width: 150px;
+  height: 210px;
+  border-radius: 30px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 16px;
+  box-shadow: 0 8px 0 #9fd8d0;
+  position: relative;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.home-card > svg.bot { width: 110px; height: 110px; }
+
+.home-card .base {
+  width: 100px;
+  height: 16px;
+  border-radius: 50%;
+  margin-top: -10px;
+}
+
+.home-card .home-name { font-size: 20px; font-weight: bold; margin-top: 6px; color: var(--ink); }
+
+.home-card.suggested {
+  box-shadow: 0 8px 0 #9fd8d0, 0 0 0 6px var(--gold), 0 0 34px 10px rgba(255, 201, 60, 0.7);
+  transform: translateY(-10px);
+}
+
+.home-card-badge {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: #3dc46b;
+  box-shadow: 0 4px 0 #25944c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.home-card-badge > svg { width: 22px; height: 22px; margin-left: 3px; color: #fff; }
+
+.home-card-cl {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.12);
+}
+
+.home-card-cl > svg { width: 28px; height: 28px; }
+
+.home-card:focus-visible { outline: 4px solid var(--ink); outline-offset: 4px; }
+
+/* ---------- responsive ---------- */
 
 @media (orientation: portrait) {
-  .app { flex-direction: column; }
-  .rail { flex-direction: row; flex-wrap: wrap; justify-content: center; }
-  .characters { flex-direction: row; }
-  .stars { flex-direction: column; }
+  .app { flex-direction: column; gap: 12px; }
+  /* Three cards per row: 3 x 150px cards + 2 x 22px gaps. */
+  .home-cards { max-width: 500px; }
+  .panel {
+    width: 96vw; /* fallback for Chromium before 79, which lacks min() */
+    width: min(96vw, calc(var(--cell) * 8 + 24px));
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-areas: "tiles tiles" "mission tools";
+    gap: 10px;
+    align-items: center;
+  }
+  /* Tiles use the full width the panel has, one row of six. */
+  .tiles { grid-area: tiles; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+  .tile { height: 78px; }
+  .tile > svg.bot { width: 54px; height: 54px; margin: 0 0 -6px; }
+  .tile .tile-name { font-size: 12px; }
+  .tile-badge { width: 18px; height: 18px; }
+  .tile-badge > svg { width: 13px; height: 13px; }
+  .mission { grid-area: mission; flex-direction: row; padding: 8px; gap: 8px; }
+  #portrait { width: 60px; height: 60px; border-width: 3px; }
+  .goal { gap: 4px; }
+  .cap-slot { width: 34px; height: 34px; border-width: 3px; border-radius: 10px; }
+  .cap-slot > svg { width: 26px; height: 26px; }
+  /* flex-wrap, not a fixed-column grid: Skip only shows during a lesson,
+     so the tools row has 4 or 5 buttons depending on mode. */
+  .tools { grid-area: tools; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+  .tool { width: 50px; height: 50px; }
+  .tool > svg { width: 26px; height: 26px; }
+  .tool-lang { font-size: 28px; }
+
+  /* Meet/Mission cards: scale the portrait and real-piece box down
+     together so the card fits an 800px-wide screen, keeping the same
+     visual weight between the two boxes on the Meet card. */
+  .card-row { gap: 16px; }
+  .card-portrait { width: 110px; height: 110px; }
+  .card-portrait.meet { width: 128px; height: 128px; }
+  .meet-real { width: 128px; height: 128px; }
+  .meet-arrow { width: 46px; height: 46px; }
+  .big-name { font-size: 34px; }
+  .big-name .sub { font-size: 24px; }
+}
+
+@media (max-height: 820px) and (orientation: landscape) {
+  .panel { width: 300px; padding: 14px 12px; gap: 10px; }
+  .tile { height: 92px; }
+  .tile > svg.bot { width: 62px; height: 62px; }
+  #portrait { width: 76px; height: 76px; }
+  .cap-slot { width: 46px; height: 46px; }
+  .cap-slot > svg { width: 36px; height: 36px; }
+  .tool { width: 54px; height: 54px; }
+  .tool > svg { width: 30px; height: 30px; }
+  .tool-lang { font-size: 28px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -29,10 +29,11 @@ The public docs are README.md, SECURITY.md, PRIVACY.md, docs/DESIGN.md and docs/
 
 ## Design decisions (agreed with the owner)
 
-- Never say left, right or square names like e4. Show moves with footprints. The board never rotates, and the child is always at the bottom.
-- Landmarks replace directions: each theme has a home edge and a far edge (Robots: charging station at home, junkyard across). "Forward" means toward the far landmark.
-- Each piece is a character whose animation matches its rule (Robots theme): rook = Rail bot glides; bishop = Slide bot swooshes; queen = Star bot glides and leaves sparkles; king = Sleepy bot shuffles; knight = Spring bot hops twice (two squares, then one); pawn = Mini bot marches. Silhouettes keep the real chess shapes.
-- Short rounds (60 to 90 seconds), one goal each, no fail states. A wrong tap makes the piece wiggle and the footprints pulse. After 5 seconds idle, a hint plays.
+- Real chess terminology everywhere, in every language: rook, bishop, queen, king, knight, pawn, capture. Never a robot name (no "Rail bot", "Slide bot", etc.), never "bot" or "robot" in anything the child hears or reads, never junk/junkyard/charging station/bump. Never left, right or square names like e4. Show moves with footprints. The board never rotates, and the child is always at the bottom.
+- Edges replace directions: "your side" (row 7, the child's home edge) and "the other side" (row 0, the opponent's edge) are the only two edges ever named, in voice lines and on screen ("toward the other side"; Telugu అవతలి వైపు). "Forward" means toward the other side. Telugu piece names: king రాజు, queen మంత్రి, rook ఏనుగు, bishop ఒంటె, knight గుర్రం, pawn భటుడు, chess piece పావు, chess చదరంగం.
+- Each piece is drawn as a robot character whose animation matches its rule: rook glides; bishop swooshes; queen glides and leaves sparkles; king shuffles; knight hops twice (two squares, then one); pawn marches. Silhouettes keep the real chess shapes, and the robot art always appears with its real chess name and a small real-piece silhouette badge; the robot theme is decoration, not vocabulary. Opponent pieces are dark-coloured (the far side); the child's pieces are bright.
+- Rounds are "capture all three pawns": the child captures three opponent pawns (real captures, via the movement rules), not a separate collectible.
+- Every activity states its goal before it starts, in voice and in a picture, and has a clear ending. Short rounds (60 to 90 seconds), one goal each, no fail states. A wrong tap makes the piece wiggle and the footprints pulse. After 5 seconds idle, a hint plays.
 - No locked levels, ever. The suggested next level can glow, but everything can be tapped.
 - Motion answers the child's actions. Nothing loops while the child is thinking. Respect prefers-reduced-motion. A calm mode is planned for the parent corner.
 - Lessons are animated "watch, then do": a 10 to 15 second scripted animation on the real board (a small script of moves, highlights and voice cues, not video), a ghost hand showing where to tap, and replay and skip buttons. One idea per lesson.
@@ -44,7 +45,7 @@ The public docs are README.md, SECURITY.md, PRIVACY.md, docs/DESIGN.md and docs/
 ## Status and roadmap
 
 1. Foundation: done (stage 1).
-2. Lesson player: done (stage 2), awaiting tablet testing. Eight lessons (hello, the six pieces, bump) in `js/lessons.js`, run by `js/player.js` on `js/board.js`, each with English (default) and Telugu (`?lang=te`) text and a language switch button. Voice: the owner chose clips generated with `tools/make-voice.js` (Azure neural TTS) from `docs/VOICE-SCRIPT.md`, possibly re-recorded by the parent later under the same file names. No clips exist yet in either language; until then the player falls back to speechSynthesis, then to silence with estimated timings. Claude cannot record audio or call Azure on the owner's behalf.
+2. Lesson player: done (stage 2), awaiting tablet testing. A home screen (six piece cards); Meet, Mission and Won cards; capture rounds (capture three opponent pawns, via `js/levels.js`'s `createCaptureRound`); thirteen lessons (hello, one per piece, and a capturing lesson per piece) in `js/lessons.js`, run by `js/player.js` on `js/board.js`; a grown-ups guide (`help.html`); each with English (default) and Telugu (`?lang=te`) text and a language switch button. Real chess terminology throughout (see "Design decisions" above); the previous "star round"/robot-named-lesson design has been replaced. Voice: the owner chose clips generated with `tools/make-voice.js` (Azure neural TTS) from `docs/VOICE-SCRIPT.md`, possibly re-recorded by the parent later under the same file names. The owner added all 41 clips in both languages (audio/voice/en and audio/voice/te). A missing clip falls back to speechSynthesis, then to silence with estimated timings. Claude cannot record audio or call Azure on the owner's behalf.
 3. Games: catch the mouse, pawn race, mini-games against a simple bot (random legal moves with a preference for captures).
 4. Themes: Space, Dinosaurs, Adventure, plus a theme switcher.
 5. Profiles: picture profiles, sticker book, parent corner (long-press to open; calm mode; backup code). Update PRIVACY.md in the same change.
@@ -68,5 +69,5 @@ Not implemented in the rules yet: check, checkmate, castling, en passant, promot
 - Enable Pages, Enforce HTTPS, private vulnerability reporting, and secret scanning with push protection (docs/SETUP.md).
 - Open check.html on the Fire HD and report the results, especially Chromium version, speech voices and sound.
 - Generate the voice clips from docs/VOICE-SCRIPT.md and add them (recording spec in that file).
-- Create an Azure Speech key. Do not generate clips until the voice lines are rewritten with real chess terminology (planned next); then run tools/make-voice.js.
+- Listen to the voice clips on the tablet in both languages. If a line changes, regenerate or re-record that clip (tools/make-voice.js --only <id> --force).
 - Test stage 2 on the tablet and with the child.

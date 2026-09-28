@@ -1,12 +1,12 @@
 /*
  * Footprint Chess: the lesson player. Runs one lesson (watch, then practice)
  * on FC.board, using a lesson-local board (FC.lessons.boardFor) and
- * FC.rules.movesFor for legality. No round/rail logic lives here; see
- * js/app.js for when a lesson starts and what happens after it.
+ * FC.rules.movesFor for legality. No round/screen-flow logic lives here;
+ * see js/app.js for when a lesson starts and what happens after it.
  *
  * Every async callback (timers, hand/move/voice "done") checks a run token
- * bumped by stop(), so Skip, Replay or a character tap mid-lesson never
- * leaves a stray animation, sound or state change behind.
+ * bumped by stop(), so Skip, Replay or a piece tap mid-lesson never leaves
+ * a stray animation, sound or state change behind.
  *
  * Depends on FC.rules, FC.lessons, FC.voice, FC.sound and FC.board (all
  * loaded before this file). DOM is built with createElement/textContent
@@ -30,7 +30,7 @@
   var hooks = null;
   var local = null;      // { board, hero } from FC.lessons.boardFor
   var heroNode = null;
-  var junkNodes = {};    // "r,c" -> DOM node, for junk bots in the lesson
+  var foeNodes = {};     // "r,c" -> DOM node, for the lesson's opponent pawns
 
   var practicing = false;
   var taskIndex = 0;
@@ -51,9 +51,9 @@
 
   function placeSetup(lesson, animateEnter) {
     heroNode = B.addPiece(lesson.type, lesson.setup.hero[0], lesson.setup.hero[1]);
-    junkNodes = {};
-    (lesson.setup.junk || []).forEach(function (sq) {
-      junkNodes[key(sq[0], sq[1])] = B.addPiece('x', sq[0], sq[1]);
+    foeNodes = {};
+    (lesson.setup.foes || []).forEach(function (sq) {
+      foeNodes[key(sq[0], sq[1])] = B.addItem(sq[0], sq[1]);
     });
     if (animateEnter) B.replay(heroNode, 'enter');
   }
@@ -79,16 +79,16 @@
   }
 
   // Update the lesson-local board after a move; poof + sparkle + capture
-  // sound if it landed on a junk bot.
+  // sound if it landed on an opponent pawn.
   function land(from, to) {
     var board = local.board;
     var tokey = key(to[0], to[1]);
-    var captured = junkNodes[tokey];
+    var captured = foeNodes[tokey];
     board[to[0]][to[1]] = board[from[0]][from[1]];
     board[from[0]][from[1]] = null;
     local.hero = to.slice();
     if (captured) {
-      delete junkNodes[tokey];
+      delete foeNodes[tokey];
       B.poof(captured);
       B.sparkle(to[0], to[1], 0);
       S.play('capture');
@@ -98,8 +98,8 @@
   /* ---------- stop / prepare ---------- */
 
   // Cancels everything (timers, voice, hand, glow). Does not clear pieces;
-  // the caller is always about to start something else (another lesson, the
-  // star round, or the ready state).
+  // the caller is always about to start something else (another lesson, a
+  // capture round, or the ready state).
   function stop() {
     token += 1;
     current = null;
@@ -192,13 +192,13 @@
       var wmoves = R.movesFor(local.board, hero[0], hero[1]);
       heroNode.classList.add('selected');
       B.replay(heroNode, 'bounce');
-      B.showFootprints(lesson.type, hero, wmoves, {});
+      B.showFootprints(lesson.type, hero, wmoves, foeNodes);
       S.play('select');
       B.later(next, STEP_MS);
       return;
     }
     if (step.unselect) {
-      B.hideFootprints({});
+      B.hideFootprints(foeNodes);
       heroNode.classList.remove('selected');
       B.later(next, STEP_MS);
       return;
@@ -218,7 +218,7 @@
       return;
     }
     if (step.move) {
-      B.hideFootprints({});
+      B.hideFootprints(foeNodes);
       heroNode.classList.remove('selected');
       var from = local.hero.slice();
       var to = step.move;
@@ -277,7 +277,7 @@
     moves = R.movesFor(local.board, hero[0], hero[1]);
     heroNode.classList.add('selected');
     B.replay(heroNode, 'bounce');
-    B.showFootprints(current.type, hero, moves, {});
+    B.showFootprints(current.type, hero, moves, foeNodes);
     S.play('select');
     var task = current.practice[taskIndex];
     hintSq = hintFor(task, hero, moves);
@@ -295,7 +295,7 @@
   function completeTask(mv, myToken) {
     B.hideHand();
     restSq = null;
-    B.hideFootprints({});
+    B.hideFootprints(foeNodes);
     heroNode.classList.remove('selected');
     selected = false;
     busy = true;
@@ -373,7 +373,7 @@
 
   function onIdle(myToken) {
     if (myToken !== token || !practicing || busy) return;
-    sayLine(selected ? 'tap-footprint' : 'tap-robot', myToken);
+    sayLine(selected ? 'tap-footprint' : 'tap-piece', myToken);
     if (restSq) {
       B.hand(restSq[0], restSq[1], function () {
         if (myToken !== token) return;

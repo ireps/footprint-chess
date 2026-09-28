@@ -6,10 +6,10 @@ Live site: https://ireps.github.io/footprint-chess/
 
 ## How it teaches
 
-- No left, right or square names. Tapping a piece shows footprints on every square it can reach.
-- The board never rotates. The child's side is always at the bottom, next to a home landmark.
-- Each piece is a character whose movement animation matches its rule.
-- Short rounds, instant feedback, no fail states, no locked levels.
+- Real chess terms only: rook, bishop, queen, king, knight, pawn, capture. No left, right or square names. Tapping a piece shows footprints on every square it can reach.
+- The board never rotates. The child's side is always at the bottom ("your side"); the opponent's side is always at the top ("the other side").
+- Each piece is drawn as a robot character whose movement animation matches its rule, but every piece is always named and shown with its real chess shape; the robot theme is decoration, not vocabulary.
+- Short rounds: capture three opponent pawns. Instant feedback, no fail states, no locked levels.
 - No login, no tracking, no data collection.
 
 Details are in [docs/DESIGN.md](docs/DESIGN.md).
@@ -25,7 +25,7 @@ playing when you switch are not interrupted.
 
 ## Status
 
-Stages 1 and 2 of 6 are complete: board, tap-to-move, footprints for all six pieces, the Robots theme, star-collecting rounds, sound effects, a device check page (`check.html`), a lesson player with eight "watch, then do" lessons, and lesson text in English and Telugu with a language switch button. Voice clips for the lessons have not been recorded yet in either language (see [docs/VOICE-SCRIPT.md](docs/VOICE-SCRIPT.md)); until they are, the app falls back to the device's speech synthesis, or to silence. The roadmap is in [docs/DESIGN.md](docs/DESIGN.md#roadmap).
+Stages 1 and 2 of 6 are complete: a home screen, board, tap-to-move, footprints for all six pieces, the Robots theme (decoration only; every piece is always named and shown with its real chess shape), capture rounds (capture three opponent pawns), sound effects, a device check page (`check.html`), a lesson player with a "watch, then do" lesson and a capturing lesson for every piece, a grown-ups guide (`help.html`), and lesson text in English and Telugu with a language switch button. Every voice line has a clip in both languages (see [docs/VOICE-SCRIPT.md](docs/VOICE-SCRIPT.md)); if a clip is missing, the app falls back to the device's speech synthesis, or to silence. The roadmap is in [docs/DESIGN.md](docs/DESIGN.md#roadmap).
 
 ## Run locally
 
@@ -47,7 +47,7 @@ Requires Node.js 18 or later. There is nothing to install.
 node --test
 ```
 
-The tests cover the movement rules (`js/rules.js`), round generation (`js/levels.js`), the lesson scripts (`js/lessons.js`) and the voice clip generator (`tools/make-voice.js`): every move is legal, timings fit, every line has English and Telugu text with no line saying left, right or a square name in either language, and the clip-generating tool's SSML, argument parsing and file indexing behave correctly (its Azure network call is never exercised by the tests).
+The tests cover the movement rules (`js/rules.js`), capture round generation (`js/levels.js`), the lesson scripts (`js/lessons.js`) and the voice clip generator (`tools/make-voice.js`): every move is legal, timings fit, every line uses real chess terms and never a robot name, left, right or a square name in either language, and the clip-generating tool's SSML, argument parsing and file indexing behave correctly (its Azure network call is never exercised by the tests).
 
 ## Deploy
 
@@ -57,20 +57,22 @@ See [docs/SETUP.md](docs/SETUP.md).
 
 ```
 index.html        The app. Piece artwork is an inline SVG sprite.
+help.html         A grown-up's guide to the app; linked from the "?" button.
 check.html        Device check page for the tablet.
 css/app.css       App styles and animations.
+css/help.css      Help page styles.
 css/check.css     Device check page styles.
 js/rules.js       Movement rules. No DOM access. Tested.
-js/levels.js      Round generation. No DOM access. Tested.
-js/lessons.js     Lesson scripts and voice line text (English and Telugu). No DOM access. Tested.
+js/levels.js      Capture round generation. No DOM access. Tested.
+js/lessons.js     Lesson scripts, piece names and voice line text (English and Telugu). No DOM access. Tested.
 js/sound.js       Sound effects generated with the Web Audio API.
 js/voice-clips.js Ids of the voice lines that have a recorded clip, per language.
 js/voice.js       Plays voice clips, with per-language speech and silent fallbacks.
 js/board.js       Board view: pieces, footprints, animations, ghost hand.
 js/player.js      Lesson player: runs a lesson's watch and practice parts.
-js/app.js         App flow: language, lessons, star rounds, side bar.
-audio/voice/en/   English lesson voice clips (MP3), once recorded.
-audio/voice/te/   Telugu lesson voice clips (MP3), once recorded.
+js/app.js         Screen flow: home, meet, lesson, mission, round, won; side panel; language and sound.
+audio/voice/en/   English voice clips (MP3).
+audio/voice/te/   Telugu voice clips (MP3).
 js/check.js       Device check page logic, including the speech voice list.
 tools/make-voice.js  Dev tool: generates voice clips with Azure text-to-speech. Not loaded by the site.
 tests/            Node test files.

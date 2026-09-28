@@ -1,5 +1,6 @@
 /*
- * Footprint Chess: star rounds, the rail, and the ready/lesson/round flow.
+ * Footprint Chess: screen flow (home, meet, lesson, mission, round, won),
+ * the side panel, and capture rounds.
  * Depends on FC.rules, FC.levels, FC.lessons, FC.sound, FC.voice, FC.board
  * and FC.player (loaded before this file).
  * DOM is built with createElement/textContent only (see SECURITY.md).
@@ -16,9 +17,7 @@
   var B = FC.board;
   var P = FC.player;
 
-  var THEME = B.THEME;
-  var TYPE_ORDER = B.TYPE_ORDER;
-  var TYPES = B.TYPES;
+  var TYPE_ORDER = LS.TYPE_ORDER;
   var svgUse = B.svgUse;
   var place = B.place;
   var replay = B.replay;
@@ -27,47 +26,67 @@
   var pos = B.pos;
 
   var IDLE_MS = 5000;
-  var NEXT_ROUND_MS = 1500;
-
-  // type -> lesson id. hello and bump are not reached through this map: hello
-  // plays once at the very start, bump plays after a non-pawn star round win.
-  var LESSON_ID = { r: 'rook', b: 'bishop', q: 'queen', k: 'king', n: 'knight', p: 'pawn' };
 
   var dom = {
-    stars: byId('stars'),
-    characters: byId('characters'),
-    sound: byId('sound-toggle'),
+    app: byId('app'),
+    portrait: byId('portrait'),
+    goal: byId('goal'),
+    tiles: byId('tiles'),
+    toolReplay: byId('tool-replay'),
+    toolSkip: byId('tool-skip'),
     lang: byId('lang-toggle'),
     langGlyph: byId('lang-glyph'),
-    lessonReplay: byId('lesson-replay'),
-    lessonSkip: byId('lesson-skip')
+    sound: byId('sound-toggle'),
+    home: byId('home-toggle'),
+    overlay: byId('overlay'),
+    card: byId('card'),
+    homescreen: byId('homescreen'),
+    homeLang: byId('home-lang-toggle'),
+    homeLangGlyph: byId('home-lang-glyph'),
+    homeSound: byId('home-sound-toggle'),
+    homeCards: byId('home-cards')
   };
 
   var state = {
     type: 'r',
     round: null,
-    hero: null,       // hero DOM node
-    foes: {},         // "r,c" -> DOM node
-    items: {},        // "r,c" -> DOM node (stars)
+    hero: null,     // hero DOM node (round)
+    items: {},       // "r,c" -> DOM node, round targets
     moves: [],
     selected: false,
     busy: false,
     collected: 0,
-    idleTimer: null,
-    roundTimer: null
+    idleTimer: null
   };
 
-  // 'ready' (page just loaded, hello has not started), 'lesson' (a lesson is
-  // watching or practicing on the board) or 'round' (a star round is live).
-  var mode = 'ready';
+  // 'home' | 'meet' | 'lesson' | 'mission' | 'round' | 'won'.
+  var mode = 'home';
   var seen = {};          // lesson id -> true, once it has started this page load
-  var activeLesson = null; // the lesson currently playing, while mode === 'lesson'
-  var pendingOnDone = null; // that lesson's onDone, so Replay can restart it exactly
+  var playedTypes = {};    // type -> true, once a round for it has started this page load
+  var pendingType = null;   // the type the current meet/lesson step is ultimately leading to
+  var cardTap = null;        // fn called when the open card is tapped, or null
+  var rerenderCard = null;    // fn that rebuilds the open card's content (language switch)
 
   /* ---------- helpers ---------- */
 
   function byId(id) { return document.getElementById(id); }
   function key(r, c) { return r + ',' + c; }
+  function clear(node) { node.textContent = ''; }
+
+  function el(tag, className) {
+    var node = document.createElement(tag);
+    if (className) node.className = className;
+    return node;
+  }
+
+  function textEl(tag, className, str) {
+    var node = el(tag, className);
+    node.textContent = str;
+    return node;
+  }
+
+  function pieceName(type) { return LS.PIECE_NAMES[V.getLang()][type]; }
+  function pieceNameEn(type) { return LS.PIECE_NAMES.en[type]; }
 
   /* ---------- language ---------- */
 
@@ -88,10 +107,14 @@
     return lang === 'te' ? 'Telugu' : 'English';
   }
 
-  function updateLangButton() {
+  function updateLangButtons() {
     var lang = V.getLang();
-    dom.langGlyph.textContent = langGlyph(lang);
-    dom.lang.setAttribute('aria-label', 'Language: ' + langName(lang));
+    var glyph = langGlyph(lang);
+    var label = 'Language: ' + langName(lang);
+    dom.langGlyph.textContent = glyph;
+    dom.homeLangGlyph.textContent = glyph;
+    dom.lang.setAttribute('aria-label', label);
+    dom.homeLang.setAttribute('aria-label', label);
   }
 
   // Rewrites ?lang= in place, keeping any other query parameters and the
@@ -118,8 +141,11 @@
     S.unlock();
     var next = V.getLang() === 'te' ? 'en' : 'te';
     V.setLang(next);
-    updateLangButton();
+    updateLangButtons();
     setUrlLang(next);
+    renderTiles();
+    if (!dom.homescreen.hidden) renderHomeCards();
+    if (rerenderCard) rerenderCard();
     var lesson = P.active() ? P.lesson() : null;
     if (lesson) {
       V.preload(LS.lineIds(lesson).concat(LS.PRACTICE_LINES), function () {});
@@ -127,198 +153,460 @@
     S.play('select');
   }
 
-  /* ---------- static UI ---------- */
+  /* ---------- sound ---------- */
 
-  function buildRail() {
-    for (var i = 0; i < L.STAR_COUNT; i++) {
-      var slot = document.createElement('span');
-      slot.className = 'slot';
-      slot.appendChild(svgUse(THEME + '-star'));
-      dom.stars.appendChild(slot);
-    }
-    dom.stars.setAttribute('role', 'img');
-
-    TYPE_ORDER.forEach(function (type) {
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'char';
-      btn.setAttribute('aria-label', TYPES[type].name);
-      btn.setAttribute('data-type', type);
-      btn.appendChild(svgUse(THEME + '-' + type));
-      btn.addEventListener('click', function () {
-        S.unlock();
-        onCharacterTap(type);
-      });
-      dom.characters.appendChild(btn);
-    });
-
-    dom.lessonReplay.addEventListener('click', onReplay);
-    dom.lessonSkip.addEventListener('click', onSkip);
-    dom.lang.addEventListener('click', onLangToggle);
-
-    dom.sound.addEventListener('click', function () {
-      S.unlock();
-      var on = !S.isEnabled();
-      S.setEnabled(on);
-      dom.sound.setAttribute('aria-pressed', on ? 'true' : 'false');
-      dom.sound.querySelector('use').setAttribute('href', on ? '#ic-sound-on' : '#ic-sound-off');
-      if (on) S.play('select');
+  function updateSoundButtons() {
+    var on = S.isEnabled();
+    [dom.sound, dom.homeSound].forEach(function (btn) {
+      clear(btn);
+      btn.appendChild(svgUse(on ? 'ic-sound-on' : 'ic-sound-off'));
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
   }
 
-  function renderSlots(popIndex) {
-    var slots = dom.stars.children;
-    for (var i = 0; i < slots.length; i++) {
-      var on = i < state.collected;
-      slots[i].classList.toggle('on', on);
-      if (i === popIndex) replay(slots[i], 'on');
-    }
-    dom.stars.setAttribute('aria-label', state.collected + ' of ' + L.STAR_COUNT + ' stars');
+  function onSoundToggle() {
+    S.unlock();
+    S.setEnabled(!S.isEnabled());
+    updateSoundButtons();
+    if (S.isEnabled()) S.play('select');
   }
 
-  function markActive(type) {
-    var buttons = dom.characters.children;
-    for (var i = 0; i < buttons.length; i++) {
-      var active = buttons[i].getAttribute('data-type') === type;
-      buttons[i].classList.toggle('active', active);
-      buttons[i].setAttribute('aria-pressed', active ? 'true' : 'false');
-    }
+  /* ---------- static tool icons ---------- */
+
+  function buildToolIcons() {
+    dom.toolReplay.appendChild(svgUse('again'));
+    dom.toolSkip.appendChild(svgUse('ic-skip'));
+    dom.home.appendChild(svgUse('house'));
   }
 
-  // Skip is visible only in 'ready' or 'lesson' mode; Replay is always shown.
   function updateToolButtons() {
-    dom.lessonSkip.hidden = mode === 'round';
+    dom.toolSkip.hidden = !(mode === 'meet' || mode === 'lesson');
   }
 
-  /* ---------- lesson <-> round flow ---------- */
+  /* ---------- side panel: mission box ---------- */
 
-  function playLesson(lesson, onDone) {
-    window.clearTimeout(state.roundTimer);
-    clearIdle();
-    state.round = null;
-    state.busy = false;
-    state.selected = false;
-    state.collected = 0;
-    renderSlots(-1);
-    mode = 'lesson';
-    activeLesson = lesson;
-    pendingOnDone = onDone;
-    seen[lesson.id] = true;
-    markActive(lesson.type);
-    updateToolButtons();
-    P.start(lesson, { onDone: onDone });
+  function setPortrait(type) {
+    clear(dom.portrait);
+    dom.portrait.className = 'portrait type-' + type;
+    dom.portrait.appendChild(svgUse('robots-' + type));
   }
 
-  function finishLessonToRound(type) {
-    P.stop();
-    activeLesson = null;
-    pendingOnDone = null;
-    mode = 'round';
-    updateToolButtons();
-    startRound(type);
-  }
-
-  // Plays the type's lesson first if it has not been seen this page load,
-  // otherwise goes straight to its star round.
-  function playOrRound(type) {
-    var id = LESSON_ID[type];
-    if (!seen[id]) {
-      playLesson(LS.get(id), function () { finishLessonToRound(type); });
-    } else {
-      finishLessonToRound(type);
+  function resetSlots() {
+    clear(dom.goal);
+    for (var i = 0; i < L.TARGET_COUNT; i++) {
+      var slot = el('div', 'cap-slot');
+      slot.appendChild(svgUse('robots-p-dark'));
+      dom.goal.appendChild(slot);
     }
   }
 
-  function startHello() {
-    playLesson(LS.get('hello'), function () { playOrRound('r'); });
+  function updateSlots(popIndex) {
+    var slots = dom.goal.children;
+    for (var i = 0; i < slots.length; i++) {
+      if (i === popIndex) {
+        replay(slots[i], 'on');
+      } else {
+        slots[i].classList.toggle('on', i < state.collected);
+      }
+    }
   }
 
-  function onCharacterTap(type) {
+  /* ---------- side panel: piece tiles ---------- */
+
+  function renderTiles() {
+    clear(dom.tiles);
+    TYPE_ORDER.forEach(function (type) {
+      var active = type === state.type;
+      var tile = el('button', 'tile type-' + type + (active ? ' active' : ''));
+      tile.type = 'button';
+      var badge = el('div', 'tile-badge');
+      badge.appendChild(svgUse('cl-' + type));
+      tile.appendChild(badge);
+      var bot = svgUse('robots-' + type);
+      bot.classList.add('bot');
+      tile.appendChild(bot);
+      tile.appendChild(textEl('div', 'tile-name', pieceName(type)));
+      tile.setAttribute('aria-label', pieceNameEn(type));
+      tile.setAttribute('aria-pressed', active ? 'true' : 'false');
+      tile.addEventListener('click', function () { choosePiece(type); });
+      dom.tiles.appendChild(tile);
+    });
+  }
+
+  /* ---------- home screen ---------- */
+
+  function suggestedType() {
+    for (var i = 0; i < TYPE_ORDER.length; i++) {
+      if (!playedTypes[TYPE_ORDER[i]]) return TYPE_ORDER[i];
+    }
+    return TYPE_ORDER[0];
+  }
+
+  function renderHomeCards() {
+    clear(dom.homeCards);
+    var suggested = suggestedType();
+    TYPE_ORDER.forEach(function (type) {
+      var isSuggested = type === suggested;
+      var card = el('button', 'home-card' + (isSuggested ? ' suggested' : ''));
+      card.type = 'button';
+      var cl = el('div', 'home-card-cl');
+      cl.appendChild(svgUse('cl-' + type));
+      card.appendChild(cl);
+      var bot = svgUse('robots-' + type);
+      bot.classList.add('bot');
+      card.appendChild(bot);
+      card.appendChild(el('div', 'base tint-' + type));
+      card.appendChild(textEl('div', 'home-name', pieceName(type)));
+      if (isSuggested) {
+        var badge = el('div', 'home-card-badge');
+        badge.appendChild(svgUse('play-tri'));
+        card.appendChild(badge);
+      }
+      card.setAttribute('aria-label', pieceNameEn(type));
+      card.addEventListener('click', function () {
+        hideHomeScreen();
+        choosePiece(type);
+      });
+      dom.homeCards.appendChild(card);
+    });
+  }
+
+  function showHomeScreen() {
     P.stop();
-    window.clearTimeout(state.roundTimer);
     clearIdle();
-    markActive(type);
+    B.hideHand();
+    hideOverlay();
+    mode = 'home';
+    updateToolButtons();
+    renderHomeCards();
+    dom.homescreen.hidden = false;
+  }
+
+  function hideHomeScreen() {
+    dom.homescreen.hidden = true;
+  }
+
+  /* ---------- overlay: dim + card ---------- */
+
+  // Bumped every time the open card is abandoned (hidden), so a Meet card's
+  // own pending timer or voice callback can never fire after the child has
+  // moved on to something else (Home, a different piece, Skip): each card
+  // captures the token's value when it opens and checks it before acting.
+  var cardToken = 0;
+
+  function showOverlay() {
+    dom.overlay.hidden = false;
+  }
+
+  function hideOverlay() {
+    cardToken += 1;
+    dom.overlay.hidden = true;
+    clear(dom.card);
+    cardTap = null;
+    rerenderCard = null;
+  }
+
+  function onCardActivate() {
+    if (cardTap) cardTap();
+  }
+
+  /* ---------- meet card ---------- */
+
+  function meetContent(type) {
+    var frag = document.createDocumentFragment();
+    var row = el('div', 'card-row');
+    var realBox = el('div', 'meet-real');
+    realBox.appendChild(svgUse('cl-' + type));
+    row.appendChild(realBox);
+    var arrow = svgUse('arrow');
+    arrow.classList.add('meet-arrow');
+    row.appendChild(arrow);
+    var portrait = el('div', 'portrait card-portrait meet type-' + type);
+    portrait.appendChild(svgUse('robots-' + type));
+    row.appendChild(portrait);
+    frag.appendChild(row);
+
+    var name = el('div', 'big-name');
+    name.appendChild(document.createTextNode(pieceName(type)));
+    if (V.getLang() !== LS.DEFAULT_LANG) {
+      name.appendChild(textEl('span', 'sub', pieceNameEn(type)));
+    }
+    frag.appendChild(name);
+    return frag;
+  }
+
+  var MEET_MIN_MS = 2500;
+
+  function showMeet(type, onContinue) {
+    hideOverlay();
+    var myToken = cardToken;
+    B.clearAll();
+    mode = 'meet';
+    pendingType = type;
+    updateToolButtons();
+
+    function build() {
+      clear(dom.card);
+      dom.card.appendChild(meetContent(type));
+    }
+    build();
+    rerenderCard = build;
+
+    var advanced = false;
+    function advance() {
+      if (advanced || myToken !== cardToken) return;
+      advanced = true;
+      hideOverlay();
+      onContinue();
+    }
+    cardTap = advance;
+    showOverlay();
+
+    var lineDone = false;
+    var minWaited = false;
+    function maybeAuto() {
+      if (lineDone && minWaited) advance();
+    }
+    V.say('meet-' + type, function () { lineDone = true; maybeAuto(); });
+    later(function () { minWaited = true; maybeAuto(); }, MEET_MIN_MS);
+  }
+
+  /* ---------- mission card ---------- */
+
+  function missionContent(type) {
+    var frag = document.createDocumentFragment();
+    var row = el('div', 'card-row');
+    var portrait = el('div', 'portrait card-portrait type-' + type);
+    portrait.appendChild(svgUse('robots-' + type));
+    row.appendChild(portrait);
+    row.appendChild(textEl('div', 'plus', '+'));
+    var pawns = el('div', 'pawns3');
+    for (var i = 0; i < L.TARGET_COUNT; i++) pawns.appendChild(svgUse('robots-p-dark'));
+    row.appendChild(pawns);
+    frag.appendChild(row);
+
+    frag.appendChild(textEl('div', 'caption', LS.LINES.mission[V.getLang()]));
+
+    var go = el('button', 'go-btn');
+    go.type = 'button';
+    go.setAttribute('aria-label', LS.LINES.mission.en);
+    go.appendChild(svgUse('play-tri'));
+    frag.appendChild(go);
+    return frag;
+  }
+
+  function showMission(type, onStart) {
+    hideOverlay();
+    B.clearAll();
+    mode = 'mission';
+    pendingType = type;
+    updateToolButtons();
+
+    function build() {
+      clear(dom.card);
+      dom.card.appendChild(missionContent(type));
+    }
+    build();
+    rerenderCard = build;
+
+    var started = false;
+    function start() {
+      if (started) return;
+      started = true;
+      hideOverlay();
+      onStart();
+    }
+    cardTap = start;
+    showOverlay();
+    V.say('mission', function () {});
+  }
+
+  /* ---------- won card ---------- */
+
+  function wonContent(type, nextType) {
+    var frag = document.createDocumentFragment();
+    var trophy = el('div', 'trophy');
+    trophy.appendChild(el('div', 'ray'));
+    trophy.appendChild(svgUse('robots-' + type));
+    frag.appendChild(trophy);
+
+    var pawns = el('div', 'pawns3');
+    for (var i = 0; i < L.TARGET_COUNT; i++) pawns.appendChild(svgUse('robots-p-dark'));
+    frag.appendChild(pawns);
+
+    var row = el('div', 'btn-row');
+    var again = el('button', 'rbtn rbtn-again');
+    again.type = 'button';
+    again.setAttribute('aria-label', 'Play again');
+    again.appendChild(svgUse('again'));
+    row.appendChild(again);
+
+    var next = el('button', 'rbtn rbtn-next type-' + nextType);
+    next.type = 'button';
+    next.setAttribute('aria-label', 'Next piece: ' + pieceNameEn(nextType));
+    next.appendChild(svgUse('robots-' + nextType));
+    row.appendChild(next);
+
+    var home = el('button', 'rbtn rbtn-home');
+    home.type = 'button';
+    home.setAttribute('aria-label', 'Home');
+    home.appendChild(svgUse('house'));
+    row.appendChild(home);
+
+    frag.appendChild(row);
+    return { frag: frag, again: again, next: next, home: home };
+  }
+
+  function showWon(type) {
+    mode = 'won';
+    updateToolButtons();
+    var nextType = TYPE_ORDER[(TYPE_ORDER.indexOf(type) + 1) % TYPE_ORDER.length];
+
+    function build() {
+      clear(dom.card);
+      var parts = wonContent(type, nextType);
+      dom.card.appendChild(parts.frag);
+      parts.again.addEventListener('click', function (e) {
+        e.stopPropagation();
+        onWonAgain(type);
+      });
+      parts.next.addEventListener('click', function (e) {
+        e.stopPropagation();
+        onWonNext(nextType);
+      });
+      parts.home.addEventListener('click', function (e) {
+        e.stopPropagation();
+        onWonHome();
+      });
+    }
+    build();
+    rerenderCard = build;
+    cardTap = null;
+    showOverlay();
+    B.screenConfetti(40);
+    V.say('next', function () {});
+  }
+
+  function onWonAgain(type) {
+    S.unlock();
+    hideOverlay();
     playOrRound(type);
+  }
+
+  function onWonNext(type) {
+    S.unlock();
+    hideOverlay();
+    playOrRound(type);
+  }
+
+  function onWonHome() {
+    S.unlock();
+    hideOverlay();
+    showHomeScreen();
+  }
+
+  /* ---------- piece flow: home/tile tap -> hello -> meet -> lesson -> capture lesson -> mission -> round ---------- */
+
+  function choosePiece(type) {
+    S.unlock();
+    pendingType = type;
+    if (!seen.hello) {
+      playLessonScreen(LS.get('hello'), function () { playOrRound(type); });
+    } else {
+      playOrRound(type);
+    }
+  }
+
+  function playOrRound(type) {
+    pendingType = type;
+    state.type = type;
+    renderTiles();
+    setPortrait(type);
+    resetSlots();
+
+    var lessonId = LS.lessonFor(type);
+    if (!seen[lessonId]) {
+      showMeet(type, function () {
+        playLessonScreen(LS.get(lessonId), function () { afterPieceLesson(type); });
+      });
+    } else {
+      afterPieceLesson(type);
+    }
+  }
+
+  function afterPieceLesson(type) {
+    var capId = LS.captureLessonFor(type);
+    if (!seen[capId]) {
+      playLessonScreen(LS.get(capId), function () { showMissionThenRound(type); });
+    } else {
+      showMissionThenRound(type);
+    }
+  }
+
+  function showMissionThenRound(type) {
+    showMission(type, function () { startRound(type); });
+  }
+
+  function playLessonScreen(lesson, onDone) {
+    mode = 'lesson';
+    updateToolButtons();
+    seen[lesson.id] = true;
+    P.start(lesson, { onDone: onDone });
   }
 
   function onReplay() {
     S.unlock();
-    if (P.active()) {
-      playLesson(activeLesson, pendingOnDone);
-      return;
-    }
     var type = state.type;
-    playLesson(LS.get(LESSON_ID[type]), function () { finishLessonToRound(type); });
-  }
-
-  // Which piece type Skip should jump to: the active lesson's own type,
-  // except bump (always type 'r') resumes the round it interrupted, and
-  // ready mode (no lesson started yet: the hello lesson is implicitly next)
-  // goes to rook, same as hello's own type.
-  function typeForSkip() {
-    if (activeLesson) {
-      return activeLesson.id === 'bump' ? state.type : activeLesson.type;
-    }
-    return mode === 'ready' ? 'r' : state.type;
+    showMeet(type, function () {
+      playLessonScreen(LS.get(LS.lessonFor(type)), function () { afterPieceLesson(type); });
+    });
   }
 
   function onSkip() {
+    if (mode !== 'meet' && mode !== 'lesson') return;
     S.unlock();
-    if (mode === 'round') return;
-    var type = typeForSkip();
-    finishLessonToRound(type);
+    var type = pendingType || state.type;
+    P.stop();
+    hideOverlay();
+    seen[LS.lessonFor(type)] = true;
+    seen[LS.captureLessonFor(type)] = true;
+    if (type !== state.type) {
+      state.type = type;
+      renderTiles();
+      setPortrait(type);
+    }
+    showMissionThenRound(type);
   }
 
-  /* ---------- board taps ---------- */
-
-  function onBoardTap(r, c) {
-    if (mode === 'ready') {
-      startHello();
-      return;
-    }
-    if (mode === 'lesson') {
-      P.handleTap(r, c);
-      return;
-    }
-    onRoundTap(r, c);
-  }
-
-  /* ---------- rounds ---------- */
+  /* ---------- capture rounds ---------- */
 
   function startRound(type) {
-    window.clearTimeout(state.roundTimer);
+    clearIdle();
+    mode = 'round';
+    updateToolButtons();
+    playedTypes[type] = true;
     state.type = type;
-    state.round = L.createStarRound(type);
+    state.round = L.createCaptureRound(type, Math.random);
     state.collected = 0;
     state.selected = false;
     state.moves = [];
     state.busy = false;
-    state.foes = {};
     state.items = {};
     B.clearAll();
-    markActive(type);
-    renderSlots(-1);
+    renderTiles();
+    setPortrait(type);
+    resetSlots();
 
-    var board = state.round.board;
-    for (var r = 0; r < 8; r++) {
-      for (var c = 0; c < 8; c++) {
-        var cell = board[r][c];
-        if (!cell) continue;
-        if (cell.team === 'me') {
-          state.hero = B.addPiece(cell.type, r, c);
-        } else {
-          state.foes[key(r, c)] = B.addPiece(cell.type, r, c);
-        }
-      }
-    }
-    state.round.stars.forEach(function (s) {
-      state.items[key(s[0], s[1])] = B.addItem(s[0], s[1]);
+    var hr = state.round.hero;
+    state.hero = B.addPiece(type, hr[0], hr[1]);
+    state.round.targets.forEach(function (t) {
+      var node = B.addItem(t[0], t[1]);
+      node.classList.add('round-target');
+      state.items[key(t[0], t[1])] = node;
     });
     replay(state.hero, 'enter');
     armIdle();
   }
-
-  /* ---------- selection and moves ---------- */
 
   function select(silent) {
     var h = state.round.hero;
@@ -351,32 +639,22 @@
     });
   }
 
-  function land(from, to, mv) {
+  function land(from, to) {
     var board = state.round.board;
     board[to[0]][to[1]] = board[from[0]][from[1]];
     board[from[0]][from[1]] = null;
     state.round.hero = to;
 
-    if (mv.capture) {
-      var foe = state.foes[key(to[0], to[1])];
-      delete state.foes[key(to[0], to[1])];
-      if (foe) {
-        B.poof(foe);
-      }
-      B.sparkle(to[0], to[1], 0);
-      S.play('capture');
-    }
-
-    var starIndex = -1;
-    state.round.stars.forEach(function (s, i) {
-      if (s[0] === to[0] && s[1] === to[1]) starIndex = i;
+    var idx = -1;
+    state.round.targets.forEach(function (t, i) {
+      if (t[0] === to[0] && t[1] === to[1]) idx = i;
     });
-    if (starIndex >= 0) {
-      state.round.stars.splice(starIndex, 1);
-      collectItem(to[0], to[1]);
+    if (idx >= 0) {
+      state.round.targets.splice(idx, 1);
+      captureAt(to[0], to[1]);
     }
 
-    if (state.round.stars.length === 0) {
+    if (state.round.targets.length === 0) {
       celebrate();
       return;
     }
@@ -391,20 +669,17 @@
     }, changes.length ? 650 : 120);
   }
 
-  function collectItem(r, c) {
+  function captureAt(r, c) {
     var node = state.items[key(r, c)];
     delete state.items[key(r, c)];
-    if (node) {
-      node.classList.add('collect');
-      later(function () { node.remove(); }, 450);
-    }
+    if (node) B.poof(node);
     B.sparkle(r, c, 0);
     state.collected += 1;
-    renderSlots(state.collected - 1);
-    S.play('star');
+    updateSlots(state.collected - 1);
+    S.play('capture');
   }
 
-  // A star that can no longer be reached floats to a square that can.
+  // A target that can no longer be reached floats to a square that can.
   function moveItem(change) {
     var node = state.items[key(change.from[0], change.from[1])];
     delete state.items[key(change.from[0], change.from[1])];
@@ -412,7 +687,7 @@
     if (!change.to) {
       node.remove();
       state.collected += 1;
-      renderSlots(state.collected - 1);
+      updateSlots(state.collected - 1);
       return;
     }
     var f = change.from;
@@ -433,16 +708,10 @@
     S.play('win');
     B.confetti(28);
     var type = state.type;
-    state.roundTimer = later(function () {
-      if (type !== 'p' && !seen.bump) {
-        playLesson(LS.get('bump'), function () { finishLessonToRound(type); });
-      } else {
-        startRound(type);
-      }
-    }, NEXT_ROUND_MS);
+    V.say('won', function () { showWon(type); });
   }
 
-  /* ---------- idle hints (star rounds only; the lesson player has its own) ---------- */
+  /* ---------- round idle hints ---------- */
 
   function clearIdle() {
     window.clearTimeout(state.idleTimer);
@@ -457,13 +726,13 @@
     if (!state.round || state.busy) return;
     if (state.selected) {
       B.pulseFootprints();
+      V.say('hint-pawn', function () {});
     } else {
       replay(state.hero, 'nudge');
+      V.say('tap-piece', function () {});
     }
     armIdle();
   }
-
-  /* ---------- star-round input ---------- */
 
   function onRoundTap(r, c) {
     if (!state.round || state.busy) return;
@@ -489,16 +758,72 @@
     }
   }
 
+  /* ---------- board taps ---------- */
+
+  function onBoardTap(r, c) {
+    if (mode === 'lesson') {
+      P.handleTap(r, c);
+      return;
+    }
+    if (mode === 'round') {
+      onRoundTap(r, c);
+    }
+    // 'home', 'meet', 'mission' and 'won' cover the board with an opaque or
+    // dimmed layer, so board taps are not expected to reach here in those
+    // modes; ignoring them is a safe fallback either way.
+  }
+
+  /* ---------- first tap anywhere: unlock audio, greet once ---------- */
+
+  function armFirstTapListener() {
+    var done = false;
+    function onFirst() {
+      if (done) return;
+      done = true;
+      S.unlock();
+      V.say('pick', function () {});
+      document.removeEventListener('pointerdown', onFirst, true);
+    }
+    document.addEventListener('pointerdown', onFirst, true);
+  }
+
+  /* ---------- wiring ---------- */
+
+  function wireTools() {
+    dom.toolReplay.addEventListener('click', onReplay);
+    dom.toolSkip.addEventListener('click', onSkip);
+    dom.lang.addEventListener('click', onLangToggle);
+    dom.homeLang.addEventListener('click', onLangToggle);
+    dom.sound.addEventListener('click', onSoundToggle);
+    dom.homeSound.addEventListener('click', onSoundToggle);
+    dom.home.addEventListener('click', function () {
+      S.unlock();
+      showHomeScreen();
+    });
+    dom.card.addEventListener('click', onCardActivate);
+    dom.card.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onCardActivate();
+      }
+    });
+  }
+
   /* ---------- start ---------- */
 
   function init() {
     V.setLang(parseLangFromUrl());
     B.init(onBoardTap);
-    buildRail();
-    updateToolButtons();
-    updateLangButton();
+    buildToolIcons();
+    wireTools();
+    updateLangButtons();
+    updateSoundButtons();
+    renderTiles();
+    setPortrait(state.type);
+    resetSlots();
     P.prepare(LS.get('hello'));
-    mode = 'ready';
+    showHomeScreen();
+    armFirstTapListener();
   }
 
   init();

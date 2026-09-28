@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; media-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<meta name="theme-color" content="#1b4f72">
+<meta name="theme-color" content="#bfeee8">
 <title>Footprint Chess</title>
 <link rel="stylesheet" href="css/app.css">
 </head>
@@ -13,7 +13,9 @@
 
 <svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <!-- Robots theme. Silhouettes keep the real chess shapes so they map onto a real set. -->
+    <!-- Robots theme (decoration only; every piece is always shown and
+         spoken of by its real chess name). Silhouettes keep the real chess
+         shapes so children can recognise them on a real board later. -->
     <symbol id="robots-r" viewBox="0 0 100 100">
       <g stroke="#1d2b36" stroke-width="3" stroke-linejoin="round">
         <rect x="16" y="78" width="68" height="13" rx="6.5" fill="#34434f"/>
@@ -91,34 +93,28 @@
       <circle cx="56" cy="34" r="3.5" fill="#8ff3ff"/>
     </symbol>
 
-    <symbol id="robots-x" viewBox="0 0 100 100">
-      <g stroke="#1d2b36" stroke-width="3" stroke-linejoin="round">
-        <rect x="20" y="78" width="60" height="13" rx="6.5" fill="#34434f"/>
-        <path d="M50 27 L50 16 L58 10" fill="none"/>
-        <path d="M24 30 L74 24 L78 78 H22 Z" fill="#7a8088"/>
+    <!-- Opponent pawn: the pawn robot in dark ("the other side") colours. -->
+    <symbol id="robots-p-dark" viewBox="0 0 100 100">
+      <g stroke="#11161f" stroke-width="3" stroke-linejoin="round">
+        <rect x="22" y="78" width="56" height="13" rx="6.5" fill="#222a36"/>
+        <path d="M34 52 H66 L71 78 H29 Z" fill="#4a5466"/>
+        <circle cx="50" cy="7" r="4" fill="#8d99ab"/>
+        <circle cx="50" cy="34" r="17" fill="#4a5466"/>
+        <rect x="37" y="27" width="26" height="14" rx="7" fill="#11161f"/>
       </g>
-      <path d="M56 62 Q64 55 70 63 Q68 71 58 71 Z" fill="#c0692f"/>
-      <circle cx="40" cy="46" r="9" fill="#1d2b36"/>
-      <circle cx="40" cy="46" r="4" fill="#ff8a5b"/>
-      <circle cx="62" cy="43" r="5" fill="#1d2b36"/>
-      <circle cx="62" cy="43" r="2" fill="#ff8a5b"/>
-      <circle cx="30" cy="34" r="2.5" fill="#1d2b36"/>
-      <circle cx="70" cy="30" r="2.5" fill="#1d2b36"/>
+      <circle cx="44" cy="34" r="3.5" fill="#c9d4e3"/>
+      <circle cx="56" cy="34" r="3.5" fill="#c9d4e3"/>
     </symbol>
 
-    <symbol id="robots-star" viewBox="0 0 100 100">
-      <path d="M50 14 L59.4 39.1 L86.1 40.3 L65.2 56.9 L72.3 82.7 L50 68 L27.7 82.7 L34.8 56.9 L13.9 40.3 L40.6 39.1 Z" fill="#ffd23f" stroke="#c98a00" stroke-width="4" stroke-linejoin="round"/>
-    </symbol>
-
-    <symbol id="ic-gear" viewBox="0 0 100 100">
-      <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" stroke-width="16" stroke-dasharray="11 9"/>
-      <circle cx="50" cy="50" r="26" fill="currentColor"/>
-      <circle cx="50" cy="50" r="9" fill="#3d4853"/>
-    </symbol>
-
-    <symbol id="ic-bolt" viewBox="0 0 100 100">
-      <path d="M58 6 L22 56 H46 L38 94 L78 40 H54 Z" fill="currentColor"/>
-    </symbol>
+    <!-- Classic piece silhouettes (original drawings), filled with currentColor:
+         the small badge shown with every robot so its real chess shape is
+         always visible too. -->
+    <symbol id="cl-p" viewBox="0 0 100 100"><path d="M28 90 H72 Q72 82 64 80 L58 58 H65 Q65 52 58 51 A15 15 0 1 0 42 51 Q35 52 35 58 H42 L36 80 Q28 82 28 90 Z" fill="currentColor"/></symbol>
+    <symbol id="cl-r" viewBox="0 0 100 100"><path d="M26 90 H74 V82 H68 L64 44 H70 V18 H61 V27 H55 V18 H45 V27 H39 V18 H30 V44 H36 L32 82 H26 Z" fill="currentColor"/></symbol>
+    <symbol id="cl-b" viewBox="0 0 100 100"><path d="M28 90 H72 V82 H64 L58 64 H64 V58 H60 C70 48 66 30 50 18 C34 30 30 48 40 58 H36 V64 H42 L36 82 H28 Z" fill="currentColor"/><circle cx="50" cy="12" r="6" fill="currentColor"/><path d="M47 42 L57 30" stroke="#fff" stroke-width="4" stroke-linecap="round"/></symbol>
+    <symbol id="cl-q" viewBox="0 0 100 100"><path d="M26 90 H74 V82 H68 L62 50 L76 26 L60 38 L50 18 L40 38 L24 26 L38 50 L32 82 H26 Z" fill="currentColor"/><circle cx="24" cy="24" r="5" fill="currentColor"/><circle cx="50" cy="14" r="5" fill="currentColor"/><circle cx="76" cy="24" r="5" fill="currentColor"/></symbol>
+    <symbol id="cl-k" viewBox="0 0 100 100"><path d="M26 90 H74 V82 H68 L62 52 H68 C72 40 62 32 50 34 C38 32 28 40 32 52 H38 L32 82 H26 Z" fill="currentColor"/><path d="M46 6 H54 V14 H62 V22 H54 V32 H46 V22 H38 V14 H46 Z" fill="currentColor"/></symbol>
+    <symbol id="cl-n" viewBox="0 0 100 100"><path d="M28 90 H72 V82 H67 L65 60 C76 50 77 34 65 22 C59 16 52 14 45 15 L40 7 L35 19 C27 25 23 36 25 47 L34 51 L45 45 C45 53 37 60 35 70 L33 82 H28 Z" fill="currentColor"/><circle cx="46" cy="28" r="3.5" fill="#fff"/></symbol>
 
     <symbol id="ic-sound-on" viewBox="0 0 100 100">
       <path d="M16 38 H34 L56 18 V82 L34 62 H16 Z" fill="currentColor"/>
@@ -140,27 +136,34 @@
       </g>
     </symbol>
 
-    <symbol id="ic-replay" viewBox="0 0 100 100">
-      <path d="M82 52 A32 32 0 1 1 63 22" fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="round"/>
-      <path d="M60 7 L83 22 L59 35 Z" fill="currentColor"/>
-    </symbol>
-
     <symbol id="ic-skip" viewBox="0 0 100 100">
       <path d="M13 20 L50 50 L13 80 Z" fill="currentColor"/>
       <path d="M50 20 L87 50 L50 80 Z" fill="currentColor"/>
     </symbol>
+
+    <!-- Tools: replay ("again"), home, play/go, meet-card arrow. -->
+    <symbol id="again" viewBox="0 0 100 100"><path d="M76 50 A26 26 0 1 1 64 28" stroke="currentColor" stroke-width="12" fill="none" stroke-linecap="round"/><path d="M52 12 L78 22 L62 44 Z" fill="currentColor"/></symbol>
+    <symbol id="house" viewBox="0 0 100 100"><path d="M14 50 L50 16 L86 50 V86 H60 V62 H40 V86 H14 Z" fill="currentColor" stroke="currentColor" stroke-width="6" stroke-linejoin="round"/></symbol>
+    <symbol id="play-tri" viewBox="0 0 100 100"><path d="M24 12 L88 50 L24 88 Z" fill="currentColor" stroke="currentColor" stroke-width="10" stroke-linejoin="round"/></symbol>
+    <symbol id="arrow" viewBox="0 0 100 100"><path d="M14 50 H74 M56 28 L80 50 L56 72" stroke="currentColor" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   </defs>
 </svg>
 
-<main class="app">
-  <section class="stage" aria-label="Board">
+<div class="blob blob-a" aria-hidden="true"></div>
+<div class="blob blob-b" aria-hidden="true"></div>
+<div class="blob blob-c" aria-hidden="true"></div>
+
+<main class="app" id="app">
+  <section class="scene" aria-label="Board">
     <div class="strip strip-far" id="strip-far" aria-hidden="true">
-      <svg class="strip-icon big"><use href="#ic-gear"/></svg>
-      <svg class="strip-icon"><use href="#ic-gear"/></svg>
-      <svg class="strip-icon big"><use href="#ic-gear"/></svg>
-      <svg class="strip-icon"><use href="#ic-gear"/></svg>
-      <svg class="strip-icon big"><use href="#ic-gear"/></svg>
-      <svg class="strip-icon"><use href="#ic-gear"/></svg>
+      <svg class="cl-icon"><use href="#cl-r"/></svg>
+      <svg class="cl-icon"><use href="#cl-n"/></svg>
+      <svg class="cl-icon"><use href="#cl-b"/></svg>
+      <svg class="cl-icon"><use href="#cl-q"/></svg>
+      <svg class="cl-icon"><use href="#cl-k"/></svg>
+      <svg class="cl-icon"><use href="#cl-b"/></svg>
+      <svg class="cl-icon"><use href="#cl-n"/></svg>
+      <svg class="cl-icon"><use href="#cl-r"/></svg>
     </div>
     <div class="board" id="board">
       <div class="squares" id="squares"></div>
@@ -172,32 +175,53 @@
       <div class="layer" id="guide"></div>
     </div>
     <div class="strip strip-home" id="strip-home" aria-hidden="true">
-      <svg class="strip-icon"><use href="#ic-bolt"/></svg>
-      <svg class="strip-icon"><use href="#ic-bolt"/></svg>
-      <svg class="strip-icon"><use href="#ic-bolt"/></svg>
-      <svg class="strip-icon"><use href="#ic-bolt"/></svg>
-      <svg class="strip-icon"><use href="#ic-bolt"/></svg>
-      <svg class="strip-icon"><use href="#ic-bolt"/></svg>
+      <svg class="cl-icon"><use href="#cl-r"/></svg>
+      <svg class="cl-icon"><use href="#cl-n"/></svg>
+      <svg class="cl-icon"><use href="#cl-b"/></svg>
+      <svg class="cl-icon"><use href="#cl-q"/></svg>
+      <svg class="cl-icon"><use href="#cl-k"/></svg>
+      <svg class="cl-icon"><use href="#cl-b"/></svg>
+      <svg class="cl-icon"><use href="#cl-n"/></svg>
+      <svg class="cl-icon"><use href="#cl-r"/></svg>
+    </div>
+    <div class="overlay" id="overlay" hidden>
+      <div class="dim" id="dim"></div>
+      <div class="card" id="card" role="button" tabindex="0"></div>
     </div>
   </section>
 
-  <nav class="rail" aria-label="Characters">
-    <div class="stars" id="stars"></div>
-    <div class="characters" id="characters"></div>
-    <button class="tool" id="lesson-replay" type="button" aria-label="Watch again">
-      <svg aria-hidden="true" focusable="false"><use href="#ic-replay"/></svg>
-    </button>
-    <button class="tool" id="lesson-skip" type="button" aria-label="Skip" hidden>
-      <svg aria-hidden="true" focusable="false"><use href="#ic-skip"/></svg>
-    </button>
-    <button class="tool tool-lang" id="lang-toggle" type="button" aria-label="Language">
-      <span class="lang-glyph" id="lang-glyph"></span>
-    </button>
-    <button class="tool" id="sound-toggle" type="button" aria-pressed="true" aria-label="Sound">
-      <svg aria-hidden="true" focusable="false"><use href="#ic-sound-on"/></svg>
-    </button>
+  <nav class="panel" id="panel" aria-label="Mission and pieces">
+    <div class="mission" id="mission-box">
+      <div class="portrait" id="portrait"></div>
+      <div class="goal" id="goal"></div>
+    </div>
+    <div class="tiles" id="tiles"></div>
+    <div class="tools">
+      <button class="tool" id="tool-replay" type="button" aria-label="Watch again"></button>
+      <button class="tool" id="tool-skip" type="button" aria-label="Skip" hidden></button>
+      <button class="tool tool-lang" id="lang-toggle" type="button" aria-label="Language">
+        <span class="lang-glyph" id="lang-glyph"></span>
+      </button>
+      <button class="tool" id="sound-toggle" type="button" aria-pressed="true" aria-label="Sound"></button>
+      <button class="tool" id="home-toggle" type="button" aria-label="Home"></button>
+    </div>
   </nav>
 </main>
+
+<div class="homescreen" id="homescreen">
+  <div class="corner">
+    <button class="tool tool-lang" id="home-lang-toggle" type="button" aria-label="Language">
+      <span class="lang-glyph" id="home-lang-glyph"></span>
+    </button>
+    <button class="tool" id="home-sound-toggle" type="button" aria-pressed="true" aria-label="Sound"></button>
+    <a class="tool tool-lang" id="help-link" href="help.html" aria-label="Help for grown-ups">?</a>
+  </div>
+  <div class="logo">
+    <div class="feet"><span></span><span></span></div>
+    <h1>Footprint Chess</h1>
+  </div>
+  <div class="home-cards" id="home-cards"></div>
+</div>
 
 <script src="js/rules.js"></script>
 <script src="js/levels.js"></script>
