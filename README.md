@@ -10,6 +10,7 @@ Live site: https://ireps.github.io/footprint-chess/
 - The board never rotates. The child's side is always at the bottom ("your side"); the opponent's side is always at the top ("the other side").
 - Each piece is drawn as a robot character whose movement animation matches its rule, but every piece is always named and shown with its real chess shape; the robot theme is decoration, not vocabulary.
 - Short rounds: capture three opponent pawns. Instant feedback, no fail states, no locked levels.
+- Three short games against a gentle opponent (catch the knight, pawn race, little battle), with two named teams per theme, a "taking turns" lesson, a capture jar that earns stickers, and an optional break reminder. See "Games" in [docs/DESIGN.md](docs/DESIGN.md).
 - No login, no tracking, no data collection.
 
 Details are in [docs/DESIGN.md](docs/DESIGN.md).
@@ -38,7 +39,16 @@ stored on the device.
 
 ## Status
 
-Stages 1, 2 and 4 of 6 are complete: a home screen, board, tap-to-move, footprints for all six pieces, five themes (Robots, Classic, Space, Dinosaurs, Pirate; decoration only, every piece is always named and shown with its real chess shape), capture rounds (capture three opponent pawns), sound effects, a device check page (`check.html`), a lesson player with a "watch, then do" lesson and a capturing lesson for every piece, a grown-ups guide (`help.html`), and lesson text in English and Telugu with a language switch button. Every voice line has a clip in both languages (see [docs/VOICE-SCRIPT.md](docs/VOICE-SCRIPT.md)); if a clip is missing, the app falls back to the device's speech synthesis, or to silence. The roadmap is in [docs/DESIGN.md](docs/DESIGN.md#roadmap).
+Stages 1, 2, 3 and 4 of 6 are complete (stage 3, the games, awaits tablet testing): a home screen, board, tap-to-move, footprints for all six pieces, five themes (Robots, Classic, Space, Dinosaurs, Pirate; decoration only, every piece is always named and shown with its real chess shape), capture rounds (capture three opponent pawns), sound effects, a device check page (`check.html`), a lesson player with a "watch, then do" lesson and a capturing lesson for every piece, three games with teams, turn-taking, a capture jar and stickers, and a break reminder (see below), a grown-ups guide (`help.html`), and lesson text in English and Telugu with a language switch button. Every voice line has a clip in both languages (see [docs/VOICE-SCRIPT.md](docs/VOICE-SCRIPT.md)); if a clip is missing, the app falls back to the device's speech synthesis, or to silence. The roadmap is in [docs/DESIGN.md](docs/DESIGN.md#roadmap).
+
+## Games
+
+The home screen has a second row of three games: catch the knight, pawn race and little battle. Each theme has two teams; the child picks one, and the picked team always plays from the bottom. The first game after a page load starts with a "Taking turns" lesson. Stickers are kept only until the page is reloaded.
+
+Query parameters, all read once at page load and never stored:
+
+- `?break=off` turns off the break reminder (a calm card shown at the next "won" card after about 15 minutes of play). It is documented for grown-ups in `help.html`.
+- `?golden=1` and `?breakmins=<minutes>` are test hooks. `?golden=1` makes one target in every capture round and game a golden pawn, instead of a 1-in-5 chance. `?breakmins=0.1` sets the break threshold to a fraction of a minute instead of 15. Neither changes anything else.
 
 ## Run locally
 
@@ -60,7 +70,7 @@ Requires Node.js 18 or later. There is nothing to install.
 node --test
 ```
 
-The tests cover the movement rules (`js/rules.js`), capture round generation (`js/levels.js`), the lesson scripts (`js/lessons.js`), the theme registry (`js/themes.js`) and the voice clip generator (`tools/make-voice.js`): every move is legal, timings fit, every line uses real chess terms and never a robot name, left, right or a square name in either language, every theme has a sprite symbol for every piece type and a colour rule in `css/app.css`, and the clip-generating tool's SSML, argument parsing and file indexing behave correctly (its Azure network call is never exercised by the tests).
+The tests cover the movement rules (`js/rules.js`), capture round generation (`js/levels.js`), the games and their opponent (`js/games.js`), the lesson scripts (`js/lessons.js`), the theme registry (`js/themes.js`) and the voice clip generator (`tools/make-voice.js`): every move is legal, timings fit, every line uses real chess terms and never a robot name, left, right or a square name in either language, every theme has a sprite symbol for every piece type and a colour rule in `css/app.css`, and the clip-generating tool's SSML, argument parsing and file indexing behave correctly (its Azure network call is never exercised by the tests).
 
 ## Deploy
 
@@ -77,13 +87,15 @@ css/help.css      Help page styles.
 css/check.css     Device check page styles.
 js/rules.js       Movement rules. No DOM access. Tested.
 js/levels.js      Capture round generation. No DOM access. Tested.
+js/games.js       Rules for the three games and the gentle opponent. No DOM access. Tested.
 js/lessons.js     Lesson scripts, piece names and voice line text (English and Telugu). No DOM access. Tested.
-js/themes.js      Theme ids and English names (for aria-labels). No DOM access. Tested.
+js/themes.js      Theme ids, English names (for aria-labels) and team names. No DOM access. Tested.
 js/sound.js       Sound effects generated with the Web Audio API.
 js/voice-clips.js Ids of the voice lines that have a recorded clip, per language.
 js/voice.js       Plays voice clips, with per-language speech and silent fallbacks.
 js/board.js       Board view: pieces, footprints, animations, ghost hand.
 js/player.js      Lesson player: runs a lesson's watch and practice parts.
+js/games-ui.js     Games screens and flow (home games row, team card, games, break card), capture juice, jar and stickers.
 js/app.js         Screen flow: home, meet, lesson, mission, round, won; side panel; language and sound.
 audio/voice/en/   English voice clips (MP3).
 audio/voice/te/   Telugu voice clips (MP3).

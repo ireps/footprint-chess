@@ -11,6 +11,7 @@
   var R = FC.rules;
   var S = FC.sound;
   var T = FC.themes;
+  var V = FC.voice;
 
   // The current theme id (js/themes.js THEMES/DEFAULT_THEME). Changed only
   // by setTheme(), which also updates the body class and every placed
@@ -43,7 +44,9 @@
     fx: byId('fx'),
     guide: byId('guide'),
     stripFar: byId('strip-far'),
-    stripHome: byId('strip-home')
+    stripHome: byId('strip-home'),
+    teamBarFar: byId('team-bar-far'),
+    teamBarHome: byId('team-bar-home')
   };
 
   var onTap = null;
@@ -220,23 +223,30 @@
 
   /* ---------- pieces and items ---------- */
 
-  function addPiece(kind, r, c) {
+  // side defaults to 'me' (every existing caller - the hero in a lesson or
+  // round - is always the child's own piece); games (js/games-ui.js) pass
+  // an explicit side, since a game can place a child-controlled piece that
+  // must render in the "other side" colours (Classic, when the child plays
+  // Black - see js/games-ui.js childPieceSide).
+  function addPiece(kind, r, c, side) {
     var node = document.createElement('div');
     node.className = 'piece';
-    node.appendChild(pieceSvg(kind, 'me'));
+    node.appendChild(pieceSvg(kind, side || 'me'));
     place(node, r, c);
     dom.pieces.appendChild(node);
     return node;
   }
 
-  // An opponent pawn (the only kind of target/foe the app ever places):
-  // always the pawn, real chess name "pawn", drawn in the theme's "other
-  // side" colours (side foe). Used both for capture-round targets
-  // (js/app.js) and lesson foes (js/player.js).
-  function addItem(r, c) {
+  // An opponent piece (a capture-round/lesson target, or a game's foe
+  // piece): type defaults to 'p' (every existing caller places a pawn) and
+  // side defaults to 'foe'; js/games-ui.js passes an explicit type (the
+  // 'catch' game's foe is a knight) and, for Classic when the child plays
+  // Black, side 'me' (ivory), so the swap in js/games-ui.js's
+  // childPieceSide/foePieceSide is honoured for both addPiece and addItem.
+  function addItem(r, c, type, side) {
     var node = document.createElement('div');
     node.className = 'item';
-    node.appendChild(pieceSvg('p', 'foe'));
+    node.appendChild(pieceSvg(type || 'p', side || 'foe'));
     place(node, r, c);
     dom.items.appendChild(node);
     return node;
@@ -462,6 +472,110 @@
     later(function () { layer.remove(); }, 2200);
   }
 
+  // A capture's "juice" burst (js/games-ui.js, and js/app.js's capture
+  // rounds): a handful of confetti bits radiating from one board square,
+  // sized to a cell rather than the whole board (compare boardConfetto,
+  // used for a round/game's full win). transform/opacity only.
+  function burstBit(host) {
+    var node = document.createElement('div');
+    node.className = 'confetti burst-bit';
+    node.style.background = CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)];
+    host.appendChild(node);
+    var angle = Math.random() * Math.PI * 2;
+    var size = dom.board.clientWidth / 8; // one cell, in px
+    var reach = (0.6 + Math.random() * 0.5) * size;
+    var dx = Math.cos(angle) * reach;
+    var dy = Math.sin(angle) * reach;
+    var spin = (Math.random() * 2 - 1) * 480;
+    animate(node, [
+      { transform: 'translate(-50%,-50%) translate(0px,0px) rotate(0deg)', opacity: 1 },
+      { transform: 'translate(-50%,-50%) translate(' + dx + 'px,' + dy + 'px) rotate(' + spin + 'deg)', opacity: 1, offset: 0.7 },
+      { transform: 'translate(-50%,-50%) translate(' + dx + 'px,' + (dy + 24) + 'px) rotate(' + spin + 'deg)', opacity: 0 }
+    ], 650 + Math.random() * 250, 'ease-out', function () { node.remove(); });
+  }
+
+  function captureBurst(r, c, count) {
+    if (reduceMotion) return;
+    var host = document.createElement('div');
+    host.className = 'burst-host';
+    place(host, r, c);
+    dom.fx.appendChild(host);
+    for (var i = 0; i < count; i++) burstBit(host);
+    later(function () { host.remove(); }, 950);
+  }
+
+  // A small board "bump" (translateY and back): part of a capture's juice.
+  // Finite, transform only.
+  function bump() {
+    replay(dom.board, 'bump');
+  }
+
+  /* ---------- team bars (games, and the "turns" lesson) ---------- */
+
+  // FC.themes.TEAMS[themeId][side].<lang>, without the trailing "!" the
+  // spoken team-pick lines use (js/lessons.js LINES['team-<id>-<side>']).
+  // Falls back to a plain placeholder if TEAMS or the theme id is somehow
+  // missing, so a team bar never shows nothing.
+  function teamName(themeId, side) {
+    var teams = T.TEAMS;
+    var entry = teams && teams[themeId] && teams[themeId][side];
+    if (!entry) return side === 'a' ? 'Team A' : 'Team B';
+    var lang = V.getLang();
+    return entry[lang] || entry.en;
+  }
+
+  // The mode badge's text while a team bar's foe side has the turn (see
+  // js/player.js and js/games-ui.js): "<name>'s turn" in English,
+  // "<name> వంతు" in Telugu.
+  function turnBadgeText(name) {
+    return V.getLang() === 'te' ? (name + ' వంతు') : (name + '’s turn');
+  }
+
+  function buildTeamBar(container, name, pawnSide) {
+    clear(container);
+    var pawn = pieceSvg('p', pawnSide);
+    pawn.classList.add('team-bar-pawn');
+    container.appendChild(pawn);
+    var label = document.createElement('span');
+    label.className = 'team-bar-name';
+    label.textContent = name;
+    container.appendChild(label);
+  }
+
+  // opts: { far: { name, pawnSide }, home: { name, pawnSide }, active: 'far' | 'home' }.
+  // Replaces the strip's plain piece-silhouette row with a team bar (pawn +
+  // name); the active side is lit, the other dimmed. Used by games and the
+  // "turns" lesson only (js/player.js, js/games-ui.js); every other lesson
+  // and round leaves the strips in their normal state.
+  function showTeamBars(opts) {
+    if (!dom.teamBarFar || !dom.teamBarHome) return;
+    buildTeamBar(dom.teamBarFar, opts.far.name, opts.far.pawnSide);
+    buildTeamBar(dom.teamBarHome, opts.home.name, opts.home.pawnSide);
+    dom.teamBarFar.hidden = false;
+    dom.teamBarHome.hidden = false;
+    dom.stripFar.classList.add('team-mode');
+    dom.stripHome.classList.add('team-mode');
+    setActiveTeamBar(opts.active);
+  }
+
+  function setActiveTeamBar(active) {
+    if (!dom.teamBarFar || dom.teamBarFar.hidden) return;
+    dom.teamBarFar.classList.toggle('lit', active === 'far');
+    dom.teamBarFar.classList.toggle('dim', active !== 'far');
+    dom.teamBarHome.classList.toggle('lit', active === 'home');
+    dom.teamBarHome.classList.toggle('dim', active !== 'home');
+  }
+
+  function hideTeamBars() {
+    if (!dom.teamBarFar || !dom.teamBarHome) return;
+    dom.teamBarFar.hidden = true;
+    dom.teamBarHome.hidden = true;
+    dom.stripFar.classList.remove('team-mode');
+    dom.stripHome.classList.remove('team-mode');
+    clear(dom.teamBarFar);
+    clear(dom.teamBarHome);
+  }
+
   /* ---------- glow and landmark ---------- */
 
   // Highlight a set of squares (a soft ring/fill in the given colour). An
@@ -654,6 +768,13 @@
     sparkle: sparkle,
     confetti: confettiInBoard,
     screenConfetti: screenConfetti,
+    captureBurst: captureBurst,
+    bump: bump,
+    teamName: teamName,
+    turnBadgeText: turnBadgeText,
+    showTeamBars: showTeamBars,
+    setActiveTeamBar: setActiveTeamBar,
+    hideTeamBars: hideTeamBars,
     glow: glow,
     landmark: landmark,
     hand: hand,

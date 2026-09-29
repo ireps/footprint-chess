@@ -52,13 +52,25 @@
       [523, 659, 784].forEach(function (f, i) { tone(f, f, i * 0.09, 0.14, 'triangle', 0.16); });
     },
     bonk: function () { tone(220, 140, 0, 0.16, 'triangle', 0.22); },
+    // A soft tick for a team-bar switch (games, and the "turns" lesson's
+    // watch script { turn } step): quiet, no pitch sweep, easy to tell apart
+    // from the brighter 'select' tone.
+    tick: function () { tone(480, 480, 0, 0.05, 'sine', 0.06); },
     'move-r': function () { tone(300, 900, 0, 0.28, 'sawtooth', 0.05); },
     'move-b': function () { tone(900, 400, 0, 0.3, 'sine', 0.14); },
     'move-q': function () { tone(700, 1400, 0, 0.22, 'triangle', 0.12); tone(1050, 2100, 0.08, 0.2, 'sine', 0.07); },
     'move-k': function () { tone(180, 160, 0, 0.18, 'triangle', 0.2); tone(160, 180, 0.26, 0.18, 'triangle', 0.2); },
     'move-n': function () { tone(250, 700, 0, 0.16, 'square', 0.06); tone(250, 700, 0.38, 0.16, 'square', 0.06); },
     'move-p': function () { tone(440, 440, 0, 0.06, 'square', 0.05); tone(520, 520, 0.24, 0.06, 'square', 0.05); },
-    capture: function () { tone(900, 120, 0, 0.22, 'sawtooth', 0.07); },
+    // streak: 1 for the first capture in a run, 2 for the next, and so on
+    // (js/games-ui.js resets it on a non-capturing move or a round/game
+    // end); each step raises the pitch by one semitone, capped at 6 steps,
+    // so a run of captures feels increasingly juicy without going shrill.
+    capture: function (streak) {
+      var steps = Math.min(Math.max((streak || 1) - 1, 0), 6);
+      var mul = Math.pow(2, steps / 12);
+      tone(900 * mul, 120 * mul, 0, 0.22, 'sawtooth', 0.07);
+    },
     star: function () {
       tone(880, 880, 0, 0.08, 'sine', 0.16);
       tone(1175, 1175, 0.07, 0.08, 'sine', 0.16);
@@ -69,10 +81,12 @@
     }
   };
 
-  function play(name) {
+  // arg: an optional extra value a sound can use (currently only
+  // 'capture', for its streak - see SOUNDS.capture above).
+  function play(name, arg) {
     if (!enabled || !ctx || !SOUNDS[name]) return;
     try {
-      SOUNDS[name]();
+      SOUNDS[name](arg);
     } catch (e) {
       // Sound is optional; never let it break the game.
     }

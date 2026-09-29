@@ -78,6 +78,24 @@
     restSq = [r, c];
   }
 
+  // Moves an opponent piece (the "turns" lesson's { foeMove } watch step
+  // and a practice task's { reply }): updates the lesson-local board and
+  // foeNodes the same way land() does for the hero, then plays that
+  // piece's own move animation. Never a capture in this lesson (see
+  // js/lessons.js LESSONS['turns']), so no poof/sparkle handling here.
+  function moveFoe(from, to, done) {
+    var fromKey = key(from[0], from[1]);
+    var node = foeNodes[fromKey];
+    if (!node) { if (done) done(); return; }
+    var board = local.board;
+    var piece = board[from[0]][from[1]];
+    delete foeNodes[fromKey];
+    board[to[0]][to[1]] = piece;
+    board[from[0]][from[1]] = null;
+    foeNodes[key(to[0], to[1])] = node;
+    B.moveHero(node, piece ? piece.type : 'p', from, to, done);
+  }
+
   // Update the lesson-local board after a move; poof + sparkle + capture
   // sound if it landed on an opponent pawn.
   function land(from, to) {
@@ -116,6 +134,7 @@
     V.stop();
     B.hideHand();
     B.glow([]);
+    B.hideTeamBars();
   }
 
   // The page-load "ready" state: the hello lesson's start position, hand
@@ -137,6 +156,20 @@
     resetToSetup(lesson, true);
     B.setMode('watch', modeText('watch'));
     S.play('watch');
+
+    // The "turns" lesson (and no other) shows team bars for its whole
+    // watch + practice run, teaching turn-taking before the child meets
+    // any game; see FC.themes.TEAMS (default team 'a' for the child, since
+    // no game/team choice exists yet at this point) and js/board.js
+    // showTeamBars/hideTeamBars (cleared by stop(), above).
+    if (lesson.id === 'turns') {
+      var theme = B.getTheme();
+      B.showTeamBars({
+        home: { name: B.teamName(theme, 'a'), pawnSide: 'me' },
+        far: { name: B.teamName(theme, 'b'), pawnSide: 'foe' },
+        active: 'home'
+      });
+    }
 
     var ids = LS.lineIds(lesson).concat(LS.PRACTICE_LINES);
     var started = false;
@@ -246,6 +279,22 @@
       B.later(next, STEP_MS);
       return;
     }
+    if (step.turn) {
+      // Visuals only (team bars) plus a soft tick: the script's own next
+      // { say } line (turns-2/3/4) does the narration, so this must not
+      // also speak, or the two would collide (see the "turns" lesson).
+      B.setActiveTeamBar(step.turn === 'me' ? 'home' : 'far');
+      S.play('tick');
+      next();
+      return;
+    }
+    if (step.foeMove) {
+      moveFoe(step.foeMove[0], step.foeMove[1], function () {
+        if (myToken !== token) return;
+        next();
+      });
+      return;
+    }
     // Unknown step shape: skip it rather than stall the lesson.
     next();
   }
@@ -305,20 +354,63 @@
     selected = false;
     busy = true;
     hintSq = null;
+    var task = current.practice[taskIndex];
     var from = local.hero.slice();
     var to = [mv.r, mv.c];
     B.moveHero(heroNode, current.type, from, to, function () {
       if (myToken !== token) return;
       land(from, to);
-      busy = false;
       taskIndex += 1;
-      if (taskIndex < current.practice.length) {
-        rest(local.hero[0], local.hero[1]);
-        armIdle(myToken);
+      if (task.reply) {
+        playReply(task.reply, myToken);
       } else {
-        finishPractice(myToken);
+        afterTask(myToken);
       }
     });
+  }
+
+  // busy stays true (taps ignored) until this runs, whether a task
+  // completed on its own or after a practice reply.
+  function afterTask(myToken) {
+    if (myToken !== token) return;
+    busy = false;
+    if (taskIndex < current.practice.length) {
+      rest(local.hero[0], local.hero[1]);
+      armIdle(myToken);
+    } else {
+      finishPractice(myToken);
+    }
+  }
+
+  // A practice task's { reply }: after the child's own move lands, the
+  // foe replies before control comes back. Mirrors the { turn: 'foe' }
+  // then { turn: 'me' } pair a watch script would use, but since no script
+  // step drives it here, this says turn-foe/turn-me itself.
+  function playReply(reply, myToken) {
+    var theme = B.getTheme();
+    var foeName = B.teamName(theme, 'b');
+    B.setMode('watch', B.turnBadgeText(foeName));
+    B.setActiveTeamBar('far');
+    var proceeded = false;
+    function proceed() {
+      if (proceeded || myToken !== token) return;
+      proceeded = true;
+      B.later(function () {
+        if (myToken !== token) return;
+        moveFoe(reply[0], reply[1], function () {
+          if (myToken !== token) return;
+          B.setActiveTeamBar('home');
+          B.setMode('play', modeText('play'));
+          S.play('your-turn');
+          V.say('turn-me', function () {});
+          afterTask(myToken);
+        });
+      }, 600 + Math.floor(Math.random() * 300)); // 600-900ms "thinking" pause
+    }
+    // Proceed once the line finishes, or after about 700ms, whichever
+    // comes first - a slow device should never stall the reply on voice.
+    V.say('turn-foe', proceed);
+    B.later(proceed, 700);
   }
 
   function finishPractice(myToken) {

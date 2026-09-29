@@ -60,6 +60,7 @@
     selected: false,
     busy: false,
     collected: 0,
+    goldenKey: null,
     idleTimer: null
   };
 
@@ -155,6 +156,7 @@
     renderTiles();
     if (!dom.homescreen.hidden) renderHomeCards();
     if (rerenderCard) rerenderCard();
+    if (FC.gamesUI && FC.gamesUI.onLangChange) FC.gamesUI.onLangChange();
     // Load the current lesson's lines first, then everything else.
     var lesson = P.active() ? P.lesson() : null;
     if (lesson) {
@@ -232,6 +234,7 @@
     setUrlTheme(B.getTheme());
     dom.themeRow.hidden = true;
     S.play('select');
+    if (FC.gamesUI && FC.gamesUI.onThemeChange) FC.gamesUI.onThemeChange();
   }
 
   /* ---------- sound ---------- */
@@ -354,6 +357,7 @@
   }
 
   function showHomeScreen() {
+    if (FC.gamesUI && FC.gamesUI.stop) FC.gamesUI.stop();
     B.setMode('none');
     P.stop();
     clearIdle();
@@ -363,11 +367,36 @@
     updateToolButtons();
     renderHomeCards();
     dom.homescreen.hidden = false;
+    if (FC.gamesUI && FC.gamesUI.onEnterHome) FC.gamesUI.onEnterHome();
   }
 
   function hideHomeScreen() {
     dom.homescreen.hidden = true;
     dom.themeRow.hidden = true;
+    if (FC.gamesUI && FC.gamesUI.onLeaveHome) FC.gamesUI.onLeaveHome();
+  }
+
+  // A minimal custom card, reusing the same #overlay/#card machinery as the
+  // Meet/Mission/Won cards above, so js/games-ui.js's Team/Mission/Won/Break
+  // cards stay tappable (the card's one click/keydown listener, wired once
+  // in wireTools, always calls whatever onCardActivate finds in cardTap)
+  // without games-ui.js needing to know anything about that machinery.
+  // build() returns a fresh DocumentFragment/Node each time it is called
+  // (also used to rebuild the card on a language switch, see rerenderCard).
+  function showCustomCard(build, onTap) {
+    hideOverlay();
+    function rebuild() {
+      clear(dom.card);
+      dom.card.appendChild(build());
+    }
+    rebuild();
+    rerenderCard = rebuild;
+    // Matches every other card above (showMeet's advance, showMission's
+    // start): the tap that activates the card hides it first, then runs
+    // the callback, so games-ui.js's callbacks don't each have to remember
+    // to hide the overlay themselves.
+    cardTap = onTap ? function () { hideOverlay(); onTap(); } : null;
+    showOverlay();
   }
 
   /* ---------- overlay: dim + card ---------- */
@@ -544,6 +573,14 @@
   }
 
   function showWon(type) {
+    // Break reminder (js/games-ui.js): shared by piece rounds and games -
+    // at the next Won card after about 15 minutes of active play, a calm
+    // Break card shows instead; "keep playing" resets the timer and shows
+    // this same Won card.
+    if (FC.gamesUI && FC.gamesUI.dueForBreak && FC.gamesUI.dueForBreak()) {
+      FC.gamesUI.showBreakCard(function () { showWon(type); });
+      return;
+    }
     B.setMode('none');
     mode = 'won';
     updateToolButtons();
@@ -596,6 +633,7 @@
 
   function choosePiece(type) {
     S.unlock();
+    if (FC.gamesUI && FC.gamesUI.stop) FC.gamesUI.stop();
     pendingType = type;
     if (!seen.hello) {
       playLessonScreen(LS.get('hello'), function () { playOrRound(type); });
@@ -643,6 +681,10 @@
 
   function onReplay() {
     S.unlock();
+    if (FC.gamesUI && FC.gamesUI.active()) {
+      if (FC.gamesUI.onReplay) FC.gamesUI.onReplay();
+      return;
+    }
     var type = state.type;
     showMeet(type, function () {
       playLessonScreen(LS.get(LS.lessonFor(type)), function () { afterPieceLesson(type); });
@@ -650,6 +692,11 @@
   }
 
   function onSkip() {
+    if (FC.gamesUI && FC.gamesUI.active()) {
+      S.unlock();
+      if (FC.gamesUI.onSkip) FC.gamesUI.onSkip();
+      return;
+    }
     if (mode !== 'meet' && mode !== 'lesson') return;
     S.unlock();
     var type = pendingType || state.type;
@@ -689,9 +736,19 @@
 
     var hr = state.round.hero;
     state.hero = B.addPiece(type, hr[0], hr[1]);
-    state.round.targets.forEach(function (t) {
+    // Golden pawn (games and capture rounds alike; js/games-ui.js): about
+    // 1 in 5 rounds, one target is golden - captured, it is worth an
+    // instant sticker instead of only filling the jar. state.goldenKey
+    // records which target square it is, checked by captureAt below.
+    var goldenIdx = (FC.gamesUI && FC.gamesUI.maybeGoldenIndex) ? FC.gamesUI.maybeGoldenIndex(state.round.targets.length, Math.random) : -1;
+    state.goldenKey = null;
+    state.round.targets.forEach(function (t, i) {
       var node = B.addItem(t[0], t[1]);
       node.classList.add('round-target');
+      if (i === goldenIdx) {
+        if (FC.gamesUI && FC.gamesUI.markGolden) FC.gamesUI.markGolden(node);
+        state.goldenKey = key(t[0], t[1]);
+      }
       state.items[key(t[0], t[1])] = node;
     });
     replay(state.hero, 'enter');
@@ -742,6 +799,8 @@
     if (idx >= 0) {
       state.round.targets.splice(idx, 1);
       captureAt(to[0], to[1]);
+    } else if (FC.gamesUI && FC.gamesUI.resetStreak) {
+      FC.gamesUI.resetStreak();
     }
 
     if (state.round.targets.length === 0) {
@@ -761,12 +820,17 @@
 
   function captureAt(r, c) {
     var node = state.items[key(r, c)];
+    var wasGolden = state.goldenKey === key(r, c);
     delete state.items[key(r, c)];
     if (node) B.poof(node);
-    B.sparkle(r, c, 0);
     state.collected += 1;
     updateSlots(state.collected - 1);
-    S.play('capture');
+    if (FC.gamesUI && FC.gamesUI.captureJuice) {
+      FC.gamesUI.captureJuice(r, c, { isPawn: true, golden: wasGolden, node: state.hero });
+    } else {
+      B.sparkle(r, c, 0);
+      S.play('capture');
+    }
   }
 
   // A target that can no longer be reached floats to a square that can.
@@ -794,6 +858,7 @@
 
   function celebrate() {
     clearIdle();
+    if (FC.gamesUI && FC.gamesUI.resetStreak) FC.gamesUI.resetStreak();
     replay(state.hero, 'cheer');
     S.play('win');
     B.confetti(28);
@@ -851,6 +916,10 @@
   /* ---------- board taps ---------- */
 
   function onBoardTap(r, c) {
+    if (FC.gamesUI && FC.gamesUI.active()) {
+      if (FC.gamesUI.handleTap) FC.gamesUI.handleTap(r, c);
+      return;
+    }
     if (mode === 'lesson') {
       P.handleTap(r, c);
       return;
@@ -901,6 +970,30 @@
     });
   }
 
+  /* ---------- exposed for js/games-ui.js ---------- */
+
+  // The last piece type chosen on Home, excluding the pawn (default rook):
+  // js/games-ui.js's 'catch' game gives the child this piece to chase the
+  // knight with.
+  function lastNonPawnType() {
+    return state.type === 'p' ? 'r' : state.type;
+  }
+
+  // Non-pawn, non-rook types whose own lesson has been seen this page
+  // load, in TYPE_ORDER: js/games-ui.js's 'battle' game adds up to two of
+  // these to the rook, which is always included.
+  function seenNonPawnTypes() {
+    return TYPE_ORDER.filter(function (t) { return t !== 'p' && t !== 'r' && seen[LS.lessonFor(t)]; });
+  }
+
+  FC.app = {
+    goHome: showHomeScreen,
+    showCustomCard: showCustomCard,
+    hideCard: hideOverlay,
+    lastNonPawnType: lastNonPawnType,
+    seenNonPawnTypes: seenNonPawnTypes
+  };
+
   /* ---------- start ---------- */
 
   function init() {
@@ -915,6 +1008,7 @@
     setPortrait(state.type);
     resetSlots();
     P.prepare(LS.get('hello'));
+    if (FC.gamesUI && FC.gamesUI.init) FC.gamesUI.init();
     showHomeScreen();
     armFirstTapListener();
   }

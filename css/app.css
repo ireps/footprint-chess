@@ -198,6 +198,63 @@ body {
 .theme-pirate .strip .cl-icon { visibility: hidden; }
 .theme-pirate .hull { display: block; }
 
+/* ---------- team bars (games, and the "turns" lesson) ---------- */
+
+/* Filled in by js/board.js showTeamBars: a team's pawn + name, replacing
+   the strip's plain piece-silhouette row while a game or the "turns"
+   lesson is showing (see .strip.team-mode below). Positioned over the
+   strip's normal content rather than replacing it in the DOM, so
+   hideTeamBars can restore the plain row instantly. */
+.team-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  /* Left-aligned so the centred mode badge (top strip) never covers it. */
+  padding: 0 calc(var(--cell) * 0.3);
+  opacity: 1;
+  transition: opacity calc(220ms * var(--dur)) ease-out;
+}
+
+.team-bar[hidden] { display: none; }
+
+.team-bar.dim { opacity: 0.45; }
+.team-bar.lit {
+  opacity: 1;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.55);
+}
+
+/* A light disc behind the pawn keeps a dark pawn visible on the dark strip. */
+.team-bar-pawn {
+  width: calc(var(--cell) * 0.5);
+  height: calc(var(--cell) * 0.5);
+  padding: 2px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.team-bar-name {
+  font-size: 20px;
+  font-weight: bold;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+/* The far strip is dark, the home strip light, in every theme. */
+.strip-far .team-bar-name { color: #fff; }
+
+/* Hide the plain silhouette row while a team bar is showing (both are
+   absolutely stacked in the same strip); Pirate keeps its hull but hides
+   the team bar's pawn icon, so the name sits directly on the hull. */
+.strip.team-mode .cl-icon { visibility: hidden; }
+.theme-pirate .team-bar-pawn { display: none; }
+
 /* Landmark pulse (js/board.js landmark()): finite, transform only. */
 .strip.lit .cl-icon {
   animation: landmark-pulse calc(400ms * var(--dur)) ease-in-out 2;
@@ -213,6 +270,15 @@ body {
   width: calc(var(--cell) * 8);
   height: calc(var(--cell) * 8);
   touch-action: none;
+}
+
+/* A capture's small board "bump" (js/board.js bump(), games and capture
+   rounds alike): transform only. */
+.board.bump { animation: board-bump calc(220ms * var(--dur)) ease-out; }
+
+@keyframes board-bump {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(3px); }
 }
 
 .squares {
@@ -419,6 +485,37 @@ body {
   border: 2px solid var(--ink);
 }
 
+/* Anchors a capture's "juice" burst (js/board.js captureBurst) to one
+   board square, sized like .piece/.item so place() positions it correctly;
+   the confetti bits inside are centred on it via .confetti's own
+   top:50%/left:50%. */
+.burst-host {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 12.5%;
+  height: 12.5%;
+  pointer-events: none;
+}
+
+/* A golden target (js/games-ui.js): a soft static glow ring, no animation
+   (nothing loops while the child is thinking). */
+.item.golden {
+  --pc: #f5c518;
+}
+
+.item.golden::after {
+  content: "";
+  position: absolute;
+  top: -6%;
+  left: -6%;
+  width: 112%;
+  height: 112%;
+  border-radius: 50%;
+  box-shadow: 0 0 14px 5px rgba(245, 197, 24, 0.65);
+  pointer-events: none;
+}
+
 /* Full-screen confetti burst for the Won card. */
 .confetti-burst {
   position: fixed;
@@ -479,7 +576,15 @@ body {
   visibility: hidden;
 }
 
-/* Fingertip (top centre of the drawing) at the centre of the cell. */
+/* Fingertip (top centre of the drawing) at the centre of the cell. The
+   glove pointer is drawn tilted and can overflow its own viewBox slightly
+   on the right (see index.html's ic-hand symbol); overflow: visible keeps
+   that part from being clipped, here and on the mode badge's icon, which
+   reuses the same symbol. */
+.hand > svg, .mode-icon {
+  overflow: visible;
+}
+
 .hand > svg {
   position: absolute;
   display: block;
@@ -522,6 +627,7 @@ body {
 }
 
 .mission {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -588,6 +694,99 @@ body {
 .tint-k { background: var(--k-tint); }
 .tint-n { background: var(--n-tint); }
 .tint-p { background: var(--p-tint); }
+
+/* Capture jar (games and capture rounds; js/games-ui.js). A plain glass
+   jar; jar-fill's height is fixed at 100% and shown/hidden with a
+   transform (scaleY from the bottom), so filling it only ever animates
+   transform, never height (see CLAUDE.md). */
+.jar {
+  position: relative;
+  width: 50px;
+  height: 58px;
+  border-radius: 6px 6px 16px 16px;
+  border: 4px solid var(--ink);
+  background: #eef1fa;
+  overflow: hidden;
+  flex: none;
+}
+
+.jar::before {
+  content: "";
+  position: absolute;
+  top: -7px;
+  left: 7px;
+  right: 7px;
+  height: 7px;
+  border-radius: 3px;
+  background: var(--ink);
+}
+
+.jar-fill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 100%;
+  background: var(--gold);
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform calc(300ms * var(--dur)) ease-out;
+}
+
+/* A sticker earned (jar full, or a golden capture): a round gold-rimmed
+   badge that pops in near the mission box, then fades. Appended and
+   removed by js/games-ui.js; transform/opacity only. */
+.sticker-pop {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  background: #fff6d6;
+  border: 4px solid var(--gold);
+  box-shadow: 0 0 0 3px #fff, 0 6px 14px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: sticker-pop calc(1400ms * var(--dur)) ease-in-out forwards;
+  z-index: 8;
+}
+
+.sticker-pop > svg { width: 70%; height: 70%; }
+
+@keyframes sticker-pop {
+  0% { transform: scale(0.3); opacity: 0; }
+  18% { transform: scale(1.12); opacity: 1; }
+  30% { transform: scale(1); opacity: 1; }
+  82% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.7); opacity: 0; }
+}
+
+/* Session-only stickers earned this page load (js/games-ui.js), shown
+   under the home games row once there are any; not saved anywhere. */
+.sticker-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 90vw;
+}
+
+.sticker-row[hidden] { display: none; }
+
+.sticker-chip {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #fff6d6;
+  border: 3px solid var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sticker-chip > svg { width: 68%; height: 68%; }
 
 .tiles {
   display: grid;
@@ -762,6 +961,44 @@ body {
 .big-name { font-size: 42px; font-weight: bold; color: var(--ink); text-align: center; }
 .big-name .sub { font-size: 30px; color: #6b7499; margin-left: 14px; }
 
+/* Team card (games; js/games-ui.js): both teams, each a tappable option
+   with its pawn (side me for team a, side foe for team b - always the
+   "light"/"dark" pairing, whichever team the child ends up picking) and
+   name. */
+.team-row { gap: 34px; }
+
+.team-option {
+  background: none;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.team-option:active { transform: translateY(2px); }
+.team-option:focus-visible { outline: 4px solid var(--ink); outline-offset: 2px; }
+.team-option .big-name { font-size: 28px; }
+
+/* Break card (games; js/games-ui.js): a calm moon pictogram, no confetti. */
+.break-icon {
+  width: 170px;
+  height: 170px;
+  border-radius: 50%;
+  background: #dfe4ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #5b6bb0;
+}
+
+.break-icon > svg { width: 62%; height: 62%; }
+
 /* Won card */
 .trophy {
   position: relative;
@@ -933,6 +1170,91 @@ body {
 .home-card-cl > svg { width: 28px; height: 28px; }
 
 .home-card:focus-visible { outline: 4px solid var(--ink); outline-offset: 4px; }
+
+/* Games row (stage 3; js/games-ui.js): a second row of three big cards
+   below the piece cards. Shares .home-card's shape; .game-card only adds
+   what differs (no suggested-badge state, a pictogram instead of one
+   piece + a base ellipse). */
+.game-card {
+  width: 150px;
+  height: 210px;
+  border-radius: 30px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px;
+  box-shadow: 0 8px 0 #9fd8d0;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.game-card:active { transform: translateY(2px); }
+.game-card:focus-visible { outline: 4px solid var(--ink); outline-offset: 4px; }
+
+.game-pic {
+  position: relative;
+  width: 130px;
+  height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.game-pic svg.pc { width: 64px; height: 64px; }
+.game-pic .ic-hand-static { width: 48px; height: 48px; color: var(--ink); }
+
+.game-pic-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Pawn race: a checkered finish strip above the two racing pawns. */
+.finish-flag {
+  width: 72px;
+  height: 14px;
+  border-radius: 4px;
+  background-image: repeating-linear-gradient(45deg, #1d2b36 0 8px, #fff 8px 16px);
+  border: 2px solid #1d2b36;
+}
+
+.game-pic-row { display: flex; gap: 6px; align-items: flex-end; }
+
+.game-pic svg { overflow: visible; }
+
+/* Little battle: three pieces side by side, so smaller than the others. */
+.game-pic-3 { gap: 0; }
+.game-pic-3 svg.pc { width: 44px; height: 44px; }
+.game-pic-mini.game-pic-3 svg.pc { width: 34px; height: 34px; }
+.rbtn .game-pic-mini.game-pic-3 svg.pc { width: 24px; height: 24px; }
+
+/* Compact pictogram: the Won card's "next game" button and the panel's
+   mission box. */
+.game-pic-mini { width: auto; height: 72px; gap: 4px; }
+.game-pic-mini svg.pc { width: 46px; height: 46px; }
+.game-pic-mini .ic-hand-static { width: 32px; height: 32px; }
+.game-pic-mini .finish-flag { width: 56px; height: 10px; border-width: 2px; }
+.game-pic-mini .game-pic-stack { gap: 4px; }
+
+.rbtn .game-pic-mini { width: 76px; height: 54px; }
+.rbtn .game-pic-mini svg.pc { width: 32px; height: 32px; }
+.rbtn .game-pic-mini .ic-hand-static { width: 26px; height: 26px; }
+.rbtn .game-pic-mini .finish-flag { width: 42px; }
+
+/* While a game (or the "turns" lesson) shows, the mission box swaps the
+   capture round's portrait and pawn slots for that game's own goal
+   pictogram (js/games-ui.js setPanel). */
+.mission.game-mode #portrait, .mission.game-mode .goal { display: none; }
+.mission-pic { margin: 6px 0; }
+
+.game-name { font-size: 18px; font-weight: bold; color: var(--ink); text-align: center; }
 
 /* ---------- theme picker (home screen) ---------- */
 
@@ -1139,6 +1461,16 @@ body.theme-pirate {
   .goal { gap: 4px; }
   .cap-slot { width: 34px; height: 34px; border-width: 3px; border-radius: 10px; }
   .cap-slot > svg { width: 26px; height: 26px; }
+  .jar { width: 36px; height: 42px; border-width: 3px; }
+  .mission-pic { margin: 0; }
+  .game-pic-mini { width: auto; height: 46px; }
+  .game-pic-mini svg.pc { width: 28px; height: 28px; }
+  .game-pic-mini .ic-hand-static { width: 24px; height: 24px; }
+  .game-pic-mini.game-pic-3 svg.pc { width: 26px; height: 26px; }
+  .game-pic-mini .finish-flag { width: 34px; height: 8px; }
+  .team-bar-name { font-size: 14px; }
+  .team-bar-pawn { width: calc(var(--cell) * 0.4); height: calc(var(--cell) * 0.4); }
+  .game-card { width: 150px; }
   /* flex-wrap, not a fixed-column grid: Skip only shows during a lesson,
      so the tools row has 4 or 5 buttons depending on mode. */
   .tools { grid-area: tools; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
@@ -1165,6 +1497,7 @@ body.theme-pirate {
   #portrait { width: 76px; height: 76px; }
   .cap-slot { width: 46px; height: 46px; }
   .cap-slot > svg { width: 36px; height: 36px; }
+  .jar { width: 42px; height: 48px; }
   .tool { width: 54px; height: 54px; }
   .tool > svg { width: 30px; height: 30px; }
   .tool-lang { font-size: 28px; }

@@ -40,6 +40,7 @@ Every activity states its goal before it starts, in voice and in a picture, and 
 - **Mission.** Before every round, a card states the goal out loud and in pictures ("Capture all three pawns!") with three pawn pictures and a play button. Shown every time, even on a repeat round.
 - **Round.** The child captures three opponent pawns with the chosen piece. A captured pawn fills a slot in the side panel's goal.
 - **Won.** A short cheer and confetti, then a card: play the same piece again, try the next piece, or go home.
+- **Games.** A second row of three game cards on Home (see "Games" below).
 
 ## Lessons
 
@@ -71,6 +72,22 @@ For the current language, a line plays from a recorded clip if one exists, other
 
 Voice clips are generated with Azure's neural text-to-speech using [tools/make-voice.js](../tools/make-voice.js); see VOICE-SCRIPT.md for how to run it and for the recording spec that also applies to a parent's own recordings.
 
+## Games
+
+Three short games, each against a gentle opponent (`js/games.js`, tested for "the child always finishes"): **Catch the knight** (the last piece chosen on Home, not the pawn, chases a knight that hops away after every move and tires after six of the child's moves), **Pawn race** (three pawns each; the first to reach the other side wins; the opponent stays at least one row short of the child's side and never leaves the child with fewer than two pawns) and **Little battle** (the rook plus up to two other pieces whose lessons were seen this page load clear four opponent pawns; a captured piece returns on the child's back row). None has a score, lives or a timer. Every game states its goal on a Mission card, in voice and in a picture, and ends on a Won card (again, the next game, home).
+
+Flow: game card, the "Taking turns" lesson (the first game after a page load only; Skip is available), the Team card (once per page load), the Mission card, the game, the Won card. The game's starting position is set up behind the Mission card, and the side panel shows the game's own goal picture instead of the capture round's three pawn slots.
+
+**Turn-taking.** The "Taking turns" lesson uses two extra script steps: `{ turn }` lights one team bar and plays a soft tick (no voice; the next spoken line narrates, and the badge stays "Watch"), and `{ foeMove }` moves the opponent's pawn. Its first practice task has a `reply`: after the child's move the player shows the opponent's turn (badge "<team>'s turn", top bar lit, "Their turn."), waits, moves the opponent, then hands control back (chime, green ring, bottom bar lit, "Your turn!"). In games the opponent's turn follows the same pattern, with a 0.6 to 0.9 second pause before it moves; "Their turn." is spoken on every other opponent turn only, "Your turn!" every time.
+
+**Teams.** Each theme has two teams (`js/themes.js` TEAMS): Humanoids and Androids, White and Black, Astronauts and Cosmonauts, Theropods and Sauropods, Buccaneers and Corsairs. Team a is the "White" side and moves first. The child picks either team; the chosen team always plays from the bottom (the board never rotates), so picking team b means the opponent moves first. The edge strips show a team bar (a pawn and the name), top for the other team and bottom for the child's, the active one lit and the other dimmed to 45% opacity, during games and the "Taking turns" lesson only. In Classic, playing Black swaps the two colour sets (the child's pieces black, the opponent's ivory); every other theme keeps the child's per-type colours whichever team is picked.
+
+**Juice.** Every capture, in games and capture rounds, gives a burst of 8 to 12 particles at the square, a small board bump, a hop of the capturing piece, and a chime one semitone higher for each capture in a row (at most six steps; the run resets on a move that captures nothing and when a round or game ends).
+
+**Jar and stickers.** Each captured pawn (not the knight) fills a jar in the panel's mission box, a picture with no numbers. A full jar (10) empties into a sticker: a spoken "You got a sticker!" and a round gold-rimmed badge. About one round or game in five has one golden pawn; capturing it is an instant sticker. Stickers earned show as a small row on Home. They live in memory only, until the page is reloaded; saving them is part of stage 5.
+
+**Break reminder.** Active play time (lessons, rounds and games; not time on Home) is counted. After about 15 minutes, the next Won card is replaced by a calm Break card (a moon, "Great playing! Time for a little break?", keep playing or home). Keep playing resets the timer, as does Home. `?break=off` disables it. Test hooks: `?breakmins=<minutes>` changes the threshold and `?golden=1` forces a golden pawn; both are described in README.md and change nothing else.
+
 ## Themes
 
 Five themes: Robots (the default), Classic, Space, Dinosaurs and Pirate (`js/themes.js`). Every theme keeps the same real-piece silhouettes, real chess names and badges (principle 3, above); only the piece artwork and the board/panel colours change. Chosen with `?theme=<id>` in the address bar, exactly like `?lang=`, or with a palette button on the home screen; an unrecognised id falls back to Robots, and nothing is stored on the device.
@@ -83,7 +100,7 @@ The theme picker itself never shows a theme's name or any other text, only each 
 
 1. **Foundation (done).** Board, footprints, move animations, the Robots theme, capture rounds, device check page.
 2. **Lesson player (done).** A home screen; Meet, Mission and Won cards; short scripted animations played on the real board ("watch, then do") for every piece and for capturing with it; a ghost hand that shows where to tap; replay and skip; lesson text in English and Telugu with a language switch; a grown-ups guide (`help.html`); and voice clips.
-3. **Games.** Catch the mouse, pawn race, and small games against a simple bot using only the pieces met so far.
+3. **Games (done).** Catch the knight, pawn race and little battle against a gentle opponent, teams, a "Taking turns" lesson, juice, a capture jar with stickers and a break reminder; see "Games" above.
 4. **Themes (done).** Classic, Space, Dinosaurs and Pirate alongside Robots, chosen with `?theme=` or a home-screen palette button that can be used at any time; see "Themes" above.
 5. **Profiles.** Picture profiles, a sticker book, and a parent corner with calm mode and a backup code. Progress is stored on the device only.
 6. **Advanced.** Check and checkmate, Mirror Pond (the opponent's view), hand-print levels that introduce left and right, and offline mode with a service worker.

@@ -155,18 +155,15 @@
       <path d="M68 38 L88 62 M88 38 L68 62" stroke="currentColor" stroke-width="7" stroke-linecap="round" fill="none"/>
     </symbol>
 
-    <!-- Ghost hand: a pointing hand, the index finger rising from the side
-         of the fist, fingertip at the top centre of the viewBox so
-         js/board.js can land it exactly on a square centre. -->
-    <symbol id="ic-hand" viewBox="0 0 100 100">
-      <g stroke="#1d2b36" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" fill="#ffffff">
-        <rect x="42" y="4" width="16" height="52" rx="8"/>
-        <path d="M42 46 H82 C88 46 91 51 91 57 V72 C91 86 80 95 66 95 H54 C45 95 39 90 37 83 L35 60 C35 52 38 46 42 46 Z"/>
-        <rect x="57" y="40" width="13" height="20" rx="6.5"/>
-        <rect x="69" y="42" width="12" height="19" rx="6"/>
-        <rect x="80" y="46" width="10" height="16" rx="5"/>
-        <path d="M50 70 C44 64 30 62 26 69 C23 75 28 80 35 79 L52 77 C58 76 58 71 50 70 Z"/>
-      </g>
+    <!-- Cartoon glove pointer; its fingertip is at the top centre of the
+         viewBox so js/board.js lands it on a square centre. -->
+    <symbol id="ic-hand" viewBox="0 0 100 100" overflow="visible"><g transform="translate(50 3) rotate(-22) scale(0.8) translate(-50 -3)" stroke="#1d2b36" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round" fill="#ffffff"><path d="M50 3 C55 3 58 7 57 12 L54 38 C60 35 68 36 71 41 C76 39 83 41 85 47 C90 46 96 50 95 57 L93 74 C91 87 80 95 67 95 H58 C49 95 43 91 39 84 L28 66 C25 61 27 55 32 54 C36 53 40 56 42 60 L44 63 L43 12 C43 7 46 3 50 3 Z"/><path d="M54 38 L55 56 M71 41 L70 58 M85 47 L84 60" fill="none"/><rect x="52" y="90" width="34" height="10" rx="4" fill="#ffc93c"/></g></symbol>
+
+    <!-- Break card pictogram: a crescent moon with two small stars. -->
+    <symbol id="ic-moon" viewBox="0 0 100 100">
+      <path d="M62 12 C40 12 24 30 24 52 C24 74 42 90 64 90 C74 90 83 86 90 79 C82 83 72 84 63 80 C43 71 34 48 44 28 C48 20 55 15 62 12 Z" fill="currentColor"/>
+      <circle cx="78" cy="30" r="4" fill="currentColor" opacity="0.6"/>
+      <circle cx="86" cy="44" r="2.5" fill="currentColor" opacity="0.5"/>
     </symbol>
 
     <!-- Eye for the "Watch" badge: white eye, pupil in currentColor. -->
@@ -215,6 +212,9 @@
       <!-- Pirate theme only (see css/app.css): two ship hulls stand in for
            the edge strips, the other side's dark hull above the board. -->
       <svg class="hull hull-far" viewBox="0 0 280 26" preserveAspectRatio="none" aria-hidden="true" focusable="false"><rect width="280" height="26" fill="#3a2618"/><path d="M0 9 H280 M0 18 H280" stroke="#2a1b10" stroke-width="1.5"/><rect x="12" y="10" width="16" height="11" rx="2" fill="#120c08"/><rect x="17" y="2" width="6" height="9" rx="2" fill="#1d1a18"/><rect x="52" y="10" width="16" height="11" rx="2" fill="#120c08"/><rect x="57" y="2" width="6" height="9" rx="2" fill="#1d1a18"/><rect x="92" y="10" width="16" height="11" rx="2" fill="#120c08"/><rect x="97" y="2" width="6" height="9" rx="2" fill="#1d1a18"/><rect x="132" y="10" width="16" height="11" rx="2" fill="#120c08"/><rect x="137" y="2" width="6" height="9" rx="2" fill="#1d1a18"/><rect x="172" y="10" width="16" height="11" rx="2" fill="#120c08"/><rect x="177" y="2" width="6" height="9" rx="2" fill="#1d1a18"/><rect x="212" y="10" width="16" height="11" rx="2" fill="#120c08"/><rect x="217" y="2" width="6" height="9" rx="2" fill="#1d1a18"/><rect x="252" y="10" width="16" height="11" rx="2" fill="#120c08"/><rect x="257" y="2" width="6" height="9" rx="2" fill="#1d1a18"/></svg>
+      <!-- Games (stage 3): a team bar, filled in by js/board.js
+           (showTeamBars), shown only during a game or the "turns" lesson. -->
+      <div class="team-bar" id="team-bar-far" hidden></div>
     </div>
     <div class="board" id="board">
       <div class="squares" id="squares"></div>
@@ -236,6 +236,7 @@
       <svg class="cl-icon"><use href="#cl-r"/></svg>
       <!-- Pirate theme only: your side's light hull, below the board. -->
       <svg class="hull hull-home" viewBox="0 0 280 26" preserveAspectRatio="none" aria-hidden="true" focusable="false"><rect width="280" height="26" fill="#c9965c"/><path d="M0 9 H280 M0 18 H280" stroke="#a87843" stroke-width="1.5"/><rect x="12" y="4" width="16" height="11" rx="2" fill="#5b3a1e"/><rect x="17" y="14" width="6" height="9" rx="2" fill="#1d1a18"/><rect x="52" y="4" width="16" height="11" rx="2" fill="#5b3a1e"/><rect x="57" y="14" width="6" height="9" rx="2" fill="#1d1a18"/><rect x="92" y="4" width="16" height="11" rx="2" fill="#5b3a1e"/><rect x="97" y="14" width="6" height="9" rx="2" fill="#1d1a18"/><rect x="132" y="4" width="16" height="11" rx="2" fill="#5b3a1e"/><rect x="137" y="14" width="6" height="9" rx="2" fill="#1d1a18"/><rect x="172" y="4" width="16" height="11" rx="2" fill="#5b3a1e"/><rect x="177" y="14" width="6" height="9" rx="2" fill="#1d1a18"/><rect x="212" y="4" width="16" height="11" rx="2" fill="#5b3a1e"/><rect x="217" y="14" width="6" height="9" rx="2" fill="#1d1a18"/><rect x="252" y="4" width="16" height="11" rx="2" fill="#5b3a1e"/><rect x="257" y="14" width="6" height="9" rx="2" fill="#1d1a18"/></svg>
+      <div class="team-bar" id="team-bar-home" hidden></div>
     </div>
     <div class="overlay" id="overlay" hidden>
       <div class="dim" id="dim"></div>
@@ -247,6 +248,12 @@
     <div class="mission" id="mission-box">
       <div class="portrait" id="portrait"></div>
       <div class="goal" id="goal"></div>
+      <!-- Games (stage 3): the capture jar (js/games-ui.js), fills 0-10 as
+           pawns are captured across games and capture rounds alike; purely
+           visual (no numbers), empties into a sticker when full. -->
+      <div class="jar" id="game-jar" aria-hidden="true">
+        <div class="jar-fill" id="game-jar-fill"></div>
+      </div>
     </div>
     <div class="tiles" id="tiles"></div>
     <div class="tools">
@@ -279,10 +286,16 @@
     <h1>Footprint Chess</h1>
   </div>
   <div class="home-cards" id="home-cards"></div>
+  <!-- Games (stage 3): a second row of three big game cards, filled in by
+       js/games-ui.js. Session-only stickers earned this page load show
+       underneath once there are any. -->
+  <div class="home-cards home-games" id="home-games"></div>
+  <div class="sticker-row" id="sticker-row" hidden></div>
 </div>
 
 <script src="js/rules.js"></script>
 <script src="js/levels.js"></script>
+<script src="js/games.js"></script>
 <script src="js/lessons.js"></script>
 <script src="js/themes.js"></script>
 <script src="js/sound.js"></script>
@@ -290,6 +303,7 @@
 <script src="js/voice.js"></script>
 <script src="js/board.js"></script>
 <script src="js/player.js"></script>
+<script src="js/games-ui.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
