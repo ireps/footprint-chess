@@ -66,7 +66,7 @@ naming a direction.
 | pawn-1 | Our pawn marches like a brave soldier toward the other side. | మన భటుడు ఒక సైనికుడిలా అవతలి వైపుకి ముందుకు నడుస్తాడు. | Steady, marching rhythm. |
 | pawn-2 | Its very first step can be two full steps! | తన మొదటి అడుగులో మాత్రం రెండు గడులు హుషారుగా వెళ్లగలడు! | Slight emphasis on "first" and "two". |
 | pawn-3 | After that, always one small step at a time. | ఆ తర్వాత మాత్రం, ఎప్పుడూ ఒక్కోసారి ఒక్క అడుగే వేస్తాడు. | Calmer, settling into the regular pace. |
-| capture-1 | Oh look, there is a pawn from the other side! | అయ్యో చూడు, అక్కడ అవతలి వైపు భటుడు ఉన్నాడు! | A little surprised, pointing the child's attention at the new piece. |
+| capture-1 | Oh look, there is a pawn from the other side! | అయ్యో చూడు, అక్కడ శత్రువు భటుడు ఉన్నాడు! | A little surprised, pointing the child's attention at the new piece. |
 | capture-2 | Move onto its space and capture it! | ఇప్పుడు నువ్వు దాని గడిలోకి వెళ్లి, దాన్ని పట్టుకో! | Plain instruction, the core of the lesson. |
 | capture-3 | Successfully captured! Now it's off the board. | భలే పట్టేసుకుంది! ఇక ఆ పావు ఆటలో లేదు. | Bright, a small celebration; no fail state, so this is purely a "well done". |
 | pawncap-1 | Our pawn captures on the slant, one step ahead! | మన భటుడు ముందు వాలుగా ఉన్న గడిలో శత్రువుని పట్టేసుకుంటాడు! | Plain, this is the special rule the lesson exists to teach. |
@@ -91,14 +91,14 @@ naming a direction.
 | team-pirate-b | Corsairs! | తిమింగలాలు! | Bright and proud, said the moment the child picks this team. |
 | pick-team | Pick your team! | నీ జట్టుని ఎంచుకో! | Warm and inviting, said once, on the Team card before a game. |
 | turn-me | Your turn! | నీ వంతు! | Short and bright, said whenever control passes back to the child in a game or the turns lesson. |
-| turn-foe | Their turn. | వాళ్ళ వంతు. | Calm and matter-of-fact, said whenever the other team's turn begins. |
+| turn-foe | Their turn. | శత్రువు వంతు. | Calm and matter-of-fact, said whenever the other team's turn begins. |
 | turns-1 | In chess, we take turns. | చదరంగంలో వంతుల వారీగా ఆడతాం. | Plain, introducing the idea; the first line of the turns lesson. |
 | turns-2 | First your team moves. | ముందు నీ జట్టు కదులుతుంది. | Clear and simple, narrating the hero's move that follows. |
-| turns-3 | Then their team moves. | తర్వాత వాళ్ళ జట్టు కదులుతుంది. | Clear and simple, narrating the opponent's move that follows. |
+| turns-3 | Then their team moves. | తర్వాత శత్రువు జట్టు కదులుతుంది. | Clear and simple, narrating the opponent's move that follows. |
 | turns-4 | Then it is your turn again! | మళ్ళీ నీ వంతు! | Bright, closing the idea on an upbeat note. |
 | game-catch | Catch the knight! It hops away after every move. | గుర్రాన్ని పట్టుకో! ప్రతి సారీ అది దూకి పారిపోతుంది. | Playful and energetic; states the goal on the Mission card. |
 | game-race | Pawn race! Get one pawn to the other side first. | భటుల పందెం! ముందుగా ఒక భటుడిని అవతలి వైపుకి చేర్చు. | Playful and energetic; states the goal on the Mission card. |
-| game-battle | Capture all their pawns! | వాళ్ళ భటులందరినీ పట్టుకో! | Playful and energetic; states the goal on the Mission card. |
+| game-battle | Capture all their pawns! | శత్రువు భటులందరినీ పట్టుకో! | Playful and energetic; states the goal on the Mission card. |
 | knight-tired | The knight is getting tired! | గుర్రం అలసిపోతోంది! | Playful, signalling the knight will now try to be caught. |
 | caught | You caught the knight! | గుర్రాన్ని పట్టేశావు! | Big and celebratory; the Catch game's win line. |
 | race-won | Your pawn reached the other side! | నీ భటుడు అవతలి వైపుకి చేరాడు! | Big and celebratory; the Race game's win line. |

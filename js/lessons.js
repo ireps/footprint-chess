@@ -95,7 +95,7 @@
     'pawn-3': { en: 'After that, always one small step at a time.', te: 'ఆ తర్వాత మాత్రం, ఎప్పుడూ ఒక్కోసారి ఒక్క అడుగే వేస్తాడు.' },
 
     /* capturing, shared by every capture-<type> lesson */
-    'capture-1': { en: 'Oh look, there is a pawn from the other side!', te: 'అయ్యో చూడు, అక్కడ అవతలి వైపు భటుడు ఉన్నాడు!' },
+    'capture-1': { en: 'Oh look, there is a pawn from the other side!', te: 'అయ్యో చూడు, అక్కడ శత్రువు భటుడు ఉన్నాడు!' },
     'capture-2': { en: 'Move onto its space and capture it!', te: 'ఇప్పుడు నువ్వు దాని గడిలోకి వెళ్లి, దాన్ని పట్టుకో!' },
     'capture-3': { en: "Successfully captured! Now it's off the board.", te: 'భలే పట్టేసుకుంది! ఇక ఆ పావు ఆటలో లేదు.' },
 
@@ -139,16 +139,16 @@
      * watch script narration (see LESSONS below).
      */
     'turn-me': { en: 'Your turn!', te: 'నీ వంతు!' },
-    'turn-foe': { en: 'Their turn.', te: 'వాళ్ళ వంతు.' },
+    'turn-foe': { en: 'Their turn.', te: 'శత్రువు వంతు.' },
     'turns-1': { en: 'In chess, we take turns.', te: 'చదరంగంలో వంతుల వారీగా ఆడతాం.' },
     'turns-2': { en: 'First your team moves.', te: 'ముందు నీ జట్టు కదులుతుంది.' },
-    'turns-3': { en: 'Then their team moves.', te: 'తర్వాత వాళ్ళ జట్టు కదులుతుంది.' },
+    'turns-3': { en: 'Then their team moves.', te: 'తర్వాత శత్రువు జట్టు కదులుతుంది.' },
     'turns-4': { en: 'Then it is your turn again!', te: 'మళ్ళీ నీ వంతు!' },
 
     /* the three games' mission lines, said on each game's Mission card */
     'game-catch': { en: 'Catch the knight! It hops away after every move.', te: 'గుర్రాన్ని పట్టుకో! ప్రతి సారీ అది దూకి పారిపోతుంది.' },
     'game-race': { en: 'Pawn race! Get one pawn to the other side first.', te: 'భటుల పందెం! ముందుగా ఒక భటుడిని అవతలి వైపుకి చేర్చు.' },
-    'game-battle': { en: 'Capture all their pawns!', te: 'వాళ్ళ భటులందరినీ పట్టుకో!' },
+    'game-battle': { en: 'Capture all their pawns!', te: 'శత్రువు భటులందరినీ పట్టుకో!' },
 
     /* game event lines */
     'knight-tired': { en: 'The knight is getting tired!', te: 'గుర్రం అలసిపోతోంది!' },
