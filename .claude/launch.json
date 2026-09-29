@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "static",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:/Users/405x/AppData/Local/Temp/claude/D--GitHub-footprint-chess/285ff698-c1a8-4d70-b371-bbc1e3bc6d85/scratchpad/serve.js", "D:/GitHub/footprint-chess", "8123"],
+      "port": 8123
+    }
+  ]
+}
