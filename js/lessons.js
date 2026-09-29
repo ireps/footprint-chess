@@ -51,69 +51,69 @@
    */
   var RAW_LINES = {
     /* used outside lessons, by js/app.js (see APP_LINES below) */
-    'pick': { en: 'Pick a chess piece to play with!', te: 'ఆడుకోవడానికి ఒక పావుని ఎంచుకో!' },
-    'meet-r': { en: 'This is the rook.', te: 'ఇది ఏనుగు.' },
-    'meet-b': { en: 'This is the bishop.', te: 'ఇది ఒంటె.' },
-    'meet-q': { en: 'This is the queen.', te: 'ఇది మంత్రి.' },
-    'meet-k': { en: 'This is the king.', te: 'ఇది రాజు.' },
-    'meet-n': { en: 'This is the knight.', te: 'ఇది గుర్రం.' },
-    'meet-p': { en: 'This is the pawn.', te: 'ఇది భటుడు.' },
+    'pick': { en: 'Pick a fun chess piece to play with!', te: 'ఆడుకోవడానికి నీకు నచ్చిన పావుని ఎంచుకో!' },
+    'meet-r': { en: 'Here is our rook!', te: 'ఇదిగో, మన ఏనుగు!' },
+    'meet-b': { en: 'Here is our bishop!', te: 'ఇదిగో, మన ఒంటె!' },
+    'meet-q': { en: 'Here is our queen!', te: 'ఇదిగో, మన మంత్రి!' },
+    'meet-k': { en: 'Here is our king!', te: 'ఇదిగో, మన రాజుగారు!' },
+    'meet-n': { en: 'Here is our playful knight!', te: 'ఇదిగో, మన అల్లరి గుర్రం!' },
+    'meet-p': { en: 'Here is our little pawn!', te: 'ఇదిగో, మన చిన్న భటుడు!' },
 
     /* hello */
-    'hello-1': { en: "Hello! Let's learn chess.", te: 'హలో! చదరంగం నేర్చుకుందాం.' },
-    'hello-2': { en: 'Tap your piece to see its footprints.', te: 'నీ పావుని నొక్కు, దాని అడుగుల గుర్తులు కనిపిస్తాయి.' },
-    'hello-3': { en: 'Tap a footprint, and off it goes!', te: 'ఒక అడుగు గుర్తుని నొక్కు, అది అక్కడికి వెళ్తుంది!' },
+    'hello-1': { en: "Hello! Let's have fun and learn chess together.", te: 'హలో! సరదాగా చదరంగం నేర్చుకుందాం.' },
+    'hello-2': { en: 'Tap your piece once to see where it can walk with its little footprints!', te: 'నీ పావుని ఒక్కసారి నొక్కు, అది ఎక్కడెక్కడ నడవగలదో అడుగుల గుర్తులు చూపిస్తుంది!' },
+    'hello-3': { en: 'Tap a footprint, and off it goes with a skip!', te: 'ఆ అడుగు గుర్తు మీద నొక్కు చాలు, అది హుషారుగా అక్కడికి వెళ్తుంది!' },
 
     /* rook */
-    'rook-1': { en: 'The rook moves in straight lines.', te: 'ఏనుగు తిన్నగా మాత్రమే వెళ్తుంది.' },
-    'rook-2': { en: 'It can go all the way toward the other side.', te: 'అది అవతలి వైపు దాకా వెళ్లగలదు.' },
-    'rook-3': { en: 'Or straight across, just as far.', te: 'లేదా అడ్డంగా కూడా అంతే దూరం వెళ్లగలదు.' },
+    'rook-1': { en: 'Our rook always moves in straight lines.', te: 'మన ఏనుగు ఎప్పుడూ తిన్నగానే అడుగు వేస్తుంది.' },
+    'rook-2': { en: 'It can slide all the way across toward the other side!', te: 'అవతలి వైపు దాకా చక్కగా దూసుకుపోగలదు!' },
+    'rook-3': { en: 'Or straight across, just as far.', te: 'లేదా అడ్డంగా కూడా అంతే దూరం సరదాగా వెళ్తుంది.' },
 
     /* bishop */
-    'bishop-1': { en: 'The bishop moves on slanty lines.', te: 'ఒంటె వాలుగా మాత్రమే వెళ్తుంది.' },
-    'bishop-2': { en: 'It always stays on its own colour.', te: 'అది ఎప్పుడూ తన రంగు గడుల మీదే ఉంటుంది.' },
-    'bishop-3': { en: 'Watch it slide the other way.', te: 'చూడు, ఇప్పుడు ఇంకో వైపు జారుతుంది!' },
+    'bishop-1': { en: 'Our bishop always moves on slanty lines.', te: 'మన ఒంటె ఎప్పుడూ వాలుగానే నడుస్తుంది.' },
+    'bishop-2': { en: 'It always stays on its own colour, look at that!', te: 'అది ఎప్పుడూ తన సొంత రంగు గడుల మీదే ఉంటుంది, చూశావా!' },
+    'bishop-3': { en: 'Watch it slide smoothly the other way!', te: 'చూడు, ఇప్పుడు చక్కగా ఇంకో వైపు జారుతుంది!' },
 
     /* queen */
-    'queen-1': { en: 'The queen moves like the rook and the bishop together.', te: 'మంత్రి ఏనుగు లాగా, ఒంటె లాగా కూడా వెళ్తుంది.' },
-    'queen-2': { en: 'Straight lines, like the rook.', te: 'ఏనుగు లాగా తిన్నగా.' },
-    'queen-3': { en: 'And slanty lines, like the bishop.', te: 'ఒంటె లాగా వాలుగా కూడా.' },
+    'queen-1': { en: 'Our queen is amazing! She moves like both the rook and the bishop together.', te: 'మన మంత్రి చాలా గొప్పది! ఏనుగు లాగా, ఒంటె లాగా రెండింటిలానూ వెళ్లగలదు.' },
+    'queen-2': { en: 'Straight lines, just like the rook.', te: 'ఏనుగు లాగా తిన్నగా వెళ్తుంది.' },
+    'queen-3': { en: 'And slanty lines, just like the bishop too!', te: 'అలాగే ఒంటె లాగా వాలుగా కూడా వెళ్తుంది!' },
 
     /* king */
-    'king-1': { en: 'The king takes just one step.', te: 'రాజు ఒక్క అడుగు మాత్రమే వేస్తాడు.' },
-    'king-2': { en: 'But it can step any way it likes.', te: 'కానీ ఏ వైపుకైనా వేయగలడు.' },
-    'king-3': { en: 'Slow and careful, like a real king.', te: 'నెమ్మదిగా, జాగ్రత్తగా, నిజమైన రాజు లాగా.' },
+    'king-1': { en: 'Our king takes just one calm step at a time.', te: 'మన రాజుగారు చాలా ప్రశాంతంగా ఒక్క అడుగు మాత్రమే వేస్తారు.' },
+    'king-2': { en: 'But he can step any way he likes with courage!', te: 'కానీ ఏ వైపుకైనా సరే ధైర్యంగా అడుగు వేయగలడు!' },
+    'king-3': { en: 'Slow and careful, just like a real king.', te: 'నెమ్మదిగా, చాలా జాగ్రత్తగా, నిజమైన రాజు లాగా!' },
 
     /* knight */
-    'knight-1': { en: 'The knight moves in a special way.', te: 'గుర్రం ప్రత్యేకంగా కదులుతుంది.' },
-    'knight-2': { en: 'Two squares, then one to the side.', te: 'రెండు గడులు, తర్వాత పక్కకి ఒకటి.' },
-    'knight-3': { en: 'It can even jump over other pieces!', te: 'అది వేరే పావుల మీదుగా కూడా దూకగలదు!' },
+    'knight-1': { en: 'Our knight moves in a special, bouncy way!', te: 'మన గుర్రం చాలా ప్రత్యేకంగా, చురుగ్గా కదులుతుంది!' },
+    'knight-2': { en: 'Two steps, then one to the side.', te: 'రెండు గడులు ముందుకు వేసి, తర్వాత పక్కకి ఒకటి దూకుతుంది.' },
+    'knight-3': { en: 'Oh, it can even jump over other pieces!', te: 'అరె! అది వేరే పావుల మీదుగా కూడా సరదాగా దూకగలదు!' },
 
     /* pawn */
-    'pawn-1': { en: 'The pawn marches toward the other side.', te: 'భటుడు అవతలి వైపుకి ముందుకు నడుస్తాడు.' },
-    'pawn-2': { en: 'Its very first step can be two squares.', te: 'మొదటి అడుగులో రెండు గడులు వెళ్లగలడు.' },
-    'pawn-3': { en: 'After that, one small step at a time.', te: 'ఆ తర్వాత, ఒక్కోసారి ఒక్క అడుగే.' },
+    'pawn-1': { en: 'Our pawn marches like a brave soldier toward the other side.', te: 'మన భటుడు ఒక సైనికుడిలా అవతలి వైపుకి ముందుకు నడుస్తాడు.' },
+    'pawn-2': { en: 'Its very first step can be two full steps!', te: 'తన మొదటి అడుగులో మాత్రం రెండు గడులు హుషారుగా వెళ్లగలడు!' },
+    'pawn-3': { en: 'After that, always one small step at a time.', te: 'ఆ తర్వాత మాత్రం, ఎప్పుడూ ఒక్కోసారి ఒక్క అడుగే వేస్తాడు.' },
 
     /* capturing, shared by every capture-<type> lesson */
-    'capture-1': { en: 'Look, a pawn from the other side!', te: 'చూడు, అవతలి వైపు భటుడు!' },
-    'capture-2': { en: 'Move onto its square to capture it.', te: 'దాని గడిలోకి వెళ్ళి, దాన్ని పట్టుకో.' },
-    'capture-3': { en: 'Captured! Now it is off the board.', te: 'పట్టేసింది! ఇప్పుడు అది బోర్డు మీద లేదు.' },
+    'capture-1': { en: 'Oh look, there is a pawn from the other side!', te: 'అయ్యో చూడు, అక్కడ అవతలి వైపు భటుడు ఉన్నాడు!' },
+    'capture-2': { en: 'Move onto its space and capture it!', te: 'ఇప్పుడు నువ్వు దాని గడిలోకి వెళ్లి, దాన్ని పట్టుకో!' },
+    'capture-3': { en: "Successfully captured! Now it's off the board.", te: 'భలే పట్టేసుకుంది! ఇక ఆ పావు ఆటలో లేదు.' },
 
     /* pawn capturing, its own special case */
-    'pawncap-1': { en: 'A pawn captures on the slant, one step ahead.', te: 'భటుడు ముందు వాలుగా ఉన్న గడిలో పట్టుకుంటాడు.' },
-    'pawncap-2': { en: 'It cannot capture straight ahead.', te: 'తిన్నగా ఎదురుగా ఉన్నదాన్ని పట్టుకోలేడు.' },
+    'pawncap-1': { en: 'Our pawn captures on the slant, one step ahead!', te: 'మన భటుడు ముందు వాలుగా ఉన్న గడిలో శత్రువుని పట్టేసుకుంటాడు!' },
+    'pawncap-2': { en: 'But it cannot capture straight ahead, remember!', te: 'అంతే కానీ, తిన్నగా ఎదురుగా ఉన్నదాన్ని మాత్రం పట్టుకోలేడు సుమా!' },
 
     /* generic practice-flow lines, reused by every lesson, and by the app outside lessons */
-    'your-turn': { en: 'Now you try!', te: 'ఇప్పుడు నువ్వు చెయ్యి!' },
-    'tap-piece': { en: 'Tap your piece.', te: 'నీ పావుని నొక్కు.' },
-    'tap-footprint': { en: 'Tap a footprint.', te: 'ఒక అడుగు గుర్తుని నొక్కు.' },
-    'great': { en: 'Great job!', te: 'భలే! చాలా బాగుంది!' },
+    'your-turn': { en: "Now it's your turn to try!", te: 'ఇప్పుడు నీ వంతు, నువ్వు చేసి చూపించు!' },
+    'tap-piece': { en: 'Tap your piece.', te: 'నీ పావుని ఒక్కసారి నొక్కు.' },
+    'tap-footprint': { en: 'Tap a footprint.', te: 'ఇప్పుడు ఆ అడుగు గుర్తుని నొక్కు.' },
+    'great': { en: 'Great job! That was wonderful!', te: 'భలే చేశావు! చాలా చాలా బాగుంది!' },
 
     /* used outside lessons, by js/app.js */
-    'mission': { en: 'Capture all three pawns!', te: 'మూడు భటులనీ పట్టుకో!' },
-    'hint-pawn': { en: 'Follow the footprints to a pawn.', te: 'అడుగుల గుర్తుల దారిలో భటుడి దగ్గరికి వెళ్ళు.' },
-    'won': { en: 'You captured them all!', te: 'అందరినీ పట్టేశావు!' },
-    'next': { en: 'Play again, or pick the next piece.', te: 'మళ్ళీ ఆడు, లేదా తర్వాతి పావుని ఎంచుకో.' },
+    'mission': { en: "Let's capture all three pawns!", te: 'సరే, ఇప్పుడు మనం ఈ మూడు భటులనీ పట్టుకోవాలి!' },
+    'hint-pawn': { en: 'Follow the footprints all the way to the pawn.', te: 'అడుగుల గుర్తులు చూపించే దారిలోనే భటుడి దగ్గరికి వెళ్ళు.' },
+    'won': { en: 'You captured them all!', te: 'అబ్బో, అందరినీ చక్కగా పట్టేసుకున్నావు!' },
+    'next': { en: 'Play again, or pick the next piece to explore.', te: 'మళ్ళీ ఆడు, లేదా వేరే కొత్త పావుని ఎంచుకో.' },
 
     /*
      * Games (stage 3). Team names, said when the child picks a team (see
@@ -225,12 +225,12 @@
         { wait: 600 },
         { say: 'hello-1' },
         { waitVoice: true },
-        { wait: 500 },
+        { wait: 300 },
         { say: 'hello-2' },
         { hand: [7, 4] },
         { select: true },
         { waitVoice: true },
-        { wait: 800 },
+        { wait: 400 },
         { say: 'hello-3' },
         { hand: [5, 4] },
         { move: [5, 4] },

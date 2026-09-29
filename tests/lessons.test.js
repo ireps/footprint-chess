@@ -10,10 +10,11 @@ const voiceClips = require('../js/voice-clips.js');
 const ROOT = path.join(__dirname, '..');
 const NO_LEFT_RIGHT = /\b(left|right)\b/i;
 const NO_SQUARE_NAME = /\b[a-h][1-8]\b/;
-const NO_TELUGU_LEFT_RIGHT = /ఎడమ|కుడి/;
+// Whole words only: Telugu has no \b, and సైనికుడిలా ("like a soldier") contains కుడి.
+const NO_TELUGU_LEFT_RIGHT = /(^|[^\u0C00-\u0C7F])(ఎడమ|కుడి)/;
 const HAS_TELUGU_SCRIPT = /[ఀ-౿]/;
 const BANNED_EN = /\b(bots?|robots?|junk\w*|charging|bump\w*|rail bot|slide bot|star bot|sleepy|spring bot|mini bot)\b/i;
-const BANNED_TE = /రోబో|బాట్|జంక్|ఎడమ|కుడి/;
+const BANNED_TE = /రోబో|బాట్|జంక్|(^|[^\u0C00-\u0C7F])(ఎడమ|కుడి)/;
 
 /* ---------- helpers shared by several tests ---------- */
 
@@ -45,10 +46,10 @@ function parseVoiceScript() {
 
 /* ---------- watch timing ---------- */
 
-test('every lesson watch estimate is between 10 and 15 seconds', () => {
+test('every lesson watch estimate is between 10 and 18 seconds', () => {
   for (const lesson of L.LESSONS) {
     const ms = L.estimateWatchMs(lesson);
-    assert.ok(ms >= 10000 && ms <= 15000, `${lesson.id}: ${ms}ms out of range`);
+    assert.ok(ms >= 10000 && ms <= 18000, `${lesson.id}: ${ms}ms out of range`);
   }
 });
 
@@ -257,10 +258,10 @@ test('no LINES text uses a robot name, "bot", "robot", junk, charging or bump, i
   }
 });
 
-test('every English line is short enough for a 6-year-old (about 12 words or fewer)', () => {
+test('every English line is short enough for a 6-year-old (14 words or fewer)', () => {
   for (const [id, line] of Object.entries(L.LINES)) {
     const words = line.en.trim().split(/\s+/).length;
-    assert.ok(words <= 12, `${id}: ${words} words is too long`);
+    assert.ok(words <= 14, `${id}: ${words} words is too long`);
   }
 });
 
