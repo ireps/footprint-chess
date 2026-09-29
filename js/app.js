@@ -231,6 +231,7 @@
   function onThemeChoose(id) {
     S.unlock();
     B.setTheme(id);
+    S.setTheme(B.getTheme());
     setUrlTheme(B.getTheme());
     dom.themeRow.hidden = true;
     S.play('select');
@@ -633,6 +634,8 @@
 
   function choosePiece(type) {
     S.unlock();
+    // The child tapped a piece card or tile: that theme's sound for the piece.
+    S.play('pick', type);
     if (FC.gamesUI && FC.gamesUI.stop) FC.gamesUI.stop();
     pendingType = type;
     if (!seen.hello) {
@@ -762,7 +765,7 @@
     state.hero.classList.add('selected');
     replay(state.hero, 'bounce');
     B.showFootprints(state.type, h, state.moves, state.items);
-    if (!silent) S.play('select');
+    if (!silent) S.play('pick', state.type);
   }
 
   function findMove(r, c) {
@@ -999,6 +1002,7 @@
   function init() {
     V.setLang(parseLangFromUrl());
     B.setTheme(parseThemeFromUrl() || TH.DEFAULT_THEME);
+    S.setTheme(B.getTheme());
     B.init(onBoardTap);
     buildToolIcons();
     wireTools();

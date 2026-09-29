@@ -332,7 +332,7 @@
     heroNode.classList.add('selected');
     B.replay(heroNode, 'bounce');
     B.showFootprints(current.type, hero, moves, foeNodes);
-    S.play('select');
+    S.play('pick', current.type);
     var task = current.practice[taskIndex];
     hintSq = hintFor(task, hero, moves);
     rest(hintSq[0], hintSq[1]);

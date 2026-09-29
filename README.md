@@ -39,7 +39,7 @@ stored on the device.
 
 ## Status
 
-Stages 1, 2, 3 and 4 of 6 are complete (stage 3, the games, awaits tablet testing): a home screen, board, tap-to-move, footprints for all six pieces, five themes (Robots, Classic, Space, Dinosaurs, Pirate; decoration only, every piece is always named and shown with its real chess shape), capture rounds (capture three opponent pawns), sound effects, a device check page (`check.html`), a lesson player with a "watch, then do" lesson and a capturing lesson for every piece, three games with teams, turn-taking, a capture jar and stickers, and a break reminder (see below), a grown-ups guide (`help.html`), and lesson text in English and Telugu with a language switch button. Every voice line has a clip in both languages (see [docs/VOICE-SCRIPT.md](docs/VOICE-SCRIPT.md)); if a clip is missing, the app falls back to the device's speech synthesis, or to silence. The roadmap is in [docs/DESIGN.md](docs/DESIGN.md#roadmap).
+Stages 1, 2, 3 and 4 of 6 are complete (stage 3, the games, awaits tablet testing): a home screen, board, tap-to-move, footprints for all six pieces, five themes (Robots, Classic, Space, Dinosaurs, Pirate; decoration only, every piece is always named and shown with its real chess shape), capture rounds (capture three opponent pawns), sound effects (with per-theme sounds for tapping a piece, a capture and a win), a device check page (`check.html`), a lesson player with a "watch, then do" lesson and a capturing lesson for every piece, three games with teams, turn-taking, a capture jar and stickers, and a break reminder (see below), a grown-ups guide (`help.html`), and lesson text in English and Telugu with a language switch button. Every voice line has a clip in both languages (see [docs/VOICE-SCRIPT.md](docs/VOICE-SCRIPT.md)); if a clip is missing, the app falls back to the device's speech synthesis, or to silence. The roadmap is in [docs/DESIGN.md](docs/DESIGN.md#roadmap).
 
 ## Games
 
@@ -90,7 +90,7 @@ js/levels.js      Capture round generation. No DOM access. Tested.
 js/games.js       Rules for the three games and the gentle opponent. No DOM access. Tested.
 js/lessons.js     Lesson scripts, piece names and voice line text (English and Telugu). No DOM access. Tested.
 js/themes.js      Theme ids, English names (for aria-labels) and team names. No DOM access. Tested.
-js/sound.js       Sound effects generated with the Web Audio API.
+js/sound.js       Sound effects generated with the Web Audio API, including per-theme sounds.
 js/voice-clips.js Ids of the voice lines that have a recorded clip, per language.
 js/voice.js       Plays voice clips, with per-language speech and silent fallbacks.
 js/board.js       Board view: pieces, footprints, animations, ghost hand.

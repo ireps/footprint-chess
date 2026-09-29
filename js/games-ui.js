@@ -454,7 +454,7 @@
     node.classList.add('selected');
     B.replay(node, 'bounce');
     B.showFootprints(gstate.board[r][c].type, [r, c], moves, pieceNodes);
-    S.play('select');
+    S.play('pick', gstate.board[r][c].type);
   }
 
   function handleTap(r, c) {

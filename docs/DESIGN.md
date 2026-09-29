@@ -96,6 +96,10 @@ The world (board, frame, edge strips, background) and the other side's pieces ge
 
 The theme picker itself never shows a theme's name or any other text, only each theme's own knight on its own background (a theme's English name exists only as an aria-label, for accessibility and the grown-ups' guide) - the same "no robot word to the child" rule the Robots theme already followed extends to every theme.
 
+**Theme sounds.** Each theme also has its own sound cues (`js/sound.js`, `THEME_SOUNDS`), all synthesized with Web Audio, with no audio files. There is one cue for tapping each piece type (rook, bishop, queen, king, knight, pawn), one for a capture and one for a win. The capture cue rises by one semitone per capture in a row, up to six. Robots: beeps, servo whirrs and a spring boing; Classic: wooden clicks and the plain fanfare; Space: blips, lasers, a thruster whoosh and radar pings; Dinosaurs: roars, stomps, a honk and a chirp; Pirate: coins, a ship's bell, a cannon, a parrot, a whistle and a cutlass. The child's own taps play the piece cue (Home cards, side-panel tiles, and tapping one of their pieces on the board in lessons, capture rounds and games); the app's own demonstrations do not. Every cue is a one-shot under 1.5 seconds and nothing loops.
+
+The turn signals are not themed. The Watch and Your turn sounds, and the smaller sounds (tick, nudge, wrong-tap bonk and the move sounds), are the same in every theme, so the child learns them once (principle on who is in control). A gentle limiter after the master volume keeps overlapping theme sounds from clipping.
+
 ## Roadmap
 
 1. **Foundation (done).** Board, footprints, move animations, the Robots theme, capture rounds, device check page.
