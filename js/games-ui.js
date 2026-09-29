@@ -51,7 +51,12 @@
    */
   function parseParam(name) {
     var m = new RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search || '');
-    return m ? decodeURIComponent(m[1]) : null;
+    if (!m) return null;
+    try {
+      return decodeURIComponent(m[1]);
+    } catch (e) {
+      return null; // malformed escape such as "%E0": treat as absent
+    }
   }
   var FORCE_GOLDEN = parseParam('golden') === '1';
   var BREAK_OFF = parseParam('break') === 'off';
@@ -89,6 +94,11 @@
   var botTimer = null;
   var botTurnCount = 0;      // for "say turn-foe at most every other bot turn"
   var goldenKey = null;      // "r,c" of the golden target this round/game, or null
+  // Bumped by stop() and prepareGame(). Every callback a game schedules (a
+  // move landing, the bot's pause and move, the win line) captures it when
+  // scheduled and does nothing if it has changed, so a move started in one
+  // game is never applied to a later one, and nothing runs after Home.
+  var gameToken = 0;
 
   var streak = 0;            // consecutive captures (js/app.js shares this via captureJuice)
   var jarCount = 0;          // 0..JAR_MAX, session-only
@@ -96,6 +106,7 @@
 
   var accumMs = 0;           // active play time before the current stretch
   var activeSince = null;    // timestamp the current away-from-Home stretch began, or null
+  var pausedByHide = false;  // the running stretch was paused because the page was hidden
 
   var GAMES = [
     { id: 'catch', line: 'game-catch' },
@@ -220,7 +231,8 @@
 
   function onGameCardTap(id) {
     S.unlock();
-    if (FC.app && FC.app.showCustomCard) { /* used later in the flow */ }
+    // A capture round may still be running behind the home screen.
+    if (FC.app && FC.app.stopRound) FC.app.stopRound();
     byId('homescreen').hidden = true;
     byId('theme-row').hidden = true;
     onLeaveHome();
@@ -292,7 +304,9 @@
     S.unlock();
     childSide = side;
     var lineId = 'team-' + B.getTheme() + '-' + side;
-    V.say(lineId, function () {});
+    // Interrupts the "pick a team" prompt; the mission line then queues
+    // behind this one (showMissionCard uses sayAfter).
+    V.say(lineId);
     showMissionCard();
   }
 
@@ -318,7 +332,7 @@
       return frag;
     }
     FC.app.showCustomCard(build, startGame);
-    V.say(lineId, function () {});
+    V.sayAfter(lineId);
   }
 
   /* =====================================================================
@@ -383,6 +397,9 @@
   var prepared = false;   // a starting position is already on the board (Mission card)
 
   function prepareGame() {
+    gameToken += 1;
+    window.clearTimeout(botTimer);
+    botTimer = null;
     streak = 0;
     busy = false;
     selected = null;
@@ -414,7 +431,13 @@
       armIdle();
     } else {
       B.setMode('watch', modeTextWatch());
-      botTimer = B.later(botTurn, 500);
+      // Pacing: a short beat before the other team moves, which reduced
+      // motion must not shorten.
+      var myToken = gameToken;
+      botTimer = B.wait(function () {
+        if (myToken !== gameToken) return;
+        botTurn();
+      }, 500);
     }
   }
 
@@ -491,7 +514,9 @@
     selected = null;
     var to = [mv.r, mv.c];
     var type = gstate.board[from[0]][from[1]].type;
+    var myToken = gameToken;
     B.moveHero(node, type, from, to, function () {
+      if (myToken !== gameToken || !gstate) return;
       var res = G.applyMove(gstate, from, to);
       commitMove(node, from, to, res, true);
     });
@@ -516,9 +541,9 @@
   function handleEvents(events) {
     (events || []).forEach(function (ev) {
       if (ev === 'knight-tired') {
-        V.say('knight-tired', function () {});
+        V.sayAfter('knight-tired');
       } else if (ev === 'piece-back') {
-        V.say('piece-back', function () {});
+        V.sayAfter('piece-back');
         syncNewPieces();
       }
     });
@@ -557,7 +582,7 @@
       B.setActiveTeamBar('home');
       B.setMode('play', modeTextPlay());
       S.play('your-turn');
-      V.say('turn-me', function () {});
+      V.sayAfter('turn-me');
       armIdle();
     }
   }
@@ -573,15 +598,19 @@
     var foeName = B.teamName(theme, otherSide);
     B.setActiveTeamBar('far');
     B.setMode('watch', announce ? B.turnBadgeText(foeName) : modeTextWatch());
-    if (announce) V.say('turn-foe', function () {});
-    botTimer = B.later(function () {
+    if (announce) V.sayAfter('turn-foe');
+    var myToken = gameToken;
+    // Pacing: the other team's "thinking" pause, which reduced motion must
+    // not shorten.
+    botTimer = B.wait(function () {
+      if (myToken !== gameToken || !gstate) return;
       var mv = G.botMove(gstate, Math.random);
       if (!mv) {
         gstate.turn = 'me';
         B.setActiveTeamBar('home');
         B.setMode('play', modeTextPlay());
         S.play('your-turn');
-        V.say('turn-me', function () {});
+        V.sayAfter('turn-me');
         armIdle();
         return;
       }
@@ -589,6 +618,7 @@
       if (!node) return; // defensive: should never happen
       var type = gstate.board[mv.to[0]][mv.to[1]].type;
       B.moveHero(node, type, mv.from, mv.to, function () {
+        if (myToken !== gameToken || !gstate) return;
         commitMove(node, mv.from, mv.to, { captured: mv.captured, events: mv.events }, false);
       });
     }, 600 + Math.floor(Math.random() * 300));
@@ -604,7 +634,12 @@
     S.play('win');
     B.confetti(28);
     var lineId = gstate.id === 'catch' ? 'caught' : gstate.id === 'race' ? 'race-won' : 'won';
-    V.say(lineId, function () { showGameWonOrBreak(); });
+    var myToken = gameToken;
+    // Queued behind any sticker/golden line that is still playing.
+    V.sayAfter(lineId, function () {
+      if (myToken !== gameToken) return;
+      showGameWonOrBreak();
+    });
   }
 
   function showGameWonOrBreak() {
@@ -677,6 +712,7 @@
     if (activeSince === null) activeSince = Date.now();
   }
   function onEnterHome() {
+    pausedByHide = false;
     if (activeSince !== null) {
       accumMs += Date.now() - activeSince;
       activeSince = null;
@@ -688,6 +724,22 @@
   function resetPlayTimer() {
     accumMs = 0;
     if (activeSince !== null) activeSince = Date.now();
+  }
+
+  // A sleeping tablet is not play time: while the page is hidden the running
+  // stretch is folded into accumMs and paused, and resumed on return, but
+  // only if a stretch was running (never on the home screen).
+  function onVisibilityChange() {
+    if (document.hidden) {
+      if (activeSince !== null) {
+        accumMs += Date.now() - activeSince;
+        activeSince = null;
+        pausedByHide = true;
+      }
+    } else if (pausedByHide) {
+      pausedByHide = false;
+      if (activeSince === null) activeSince = Date.now();
+    }
   }
   function dueForBreak() {
     return !BREAK_OFF && elapsedMs() >= BREAK_MS;
@@ -752,7 +804,7 @@
     S.play('capture', streak);
     if (opts.node) B.replay(opts.node, 'cheer');
     if (opts.golden) {
-      V.say('golden', function () {});
+      V.sayAfter('golden');
       awardSticker();
     } else if (opts.isPawn) {
       growJar();
@@ -807,7 +859,7 @@
 
   function awardSticker() {
     stickers.push({ type: stickerPieceType() });
-    V.say('sticker', function () {});
+    V.sayAfter('sticker');
     showStickerPop();
     renderStickerRow();
   }
@@ -815,6 +867,7 @@
   /* ---------- stop / lifecycle ---------- */
 
   function stop() {
+    gameToken += 1;
     window.clearTimeout(botTimer);
     botTimer = null;
     clearIdle();
@@ -855,6 +908,7 @@
   }
 
   function init() {
+    document.addEventListener('visibilitychange', onVisibilityChange);
     renderHomeGames();
     updateJarDom();
     renderStickerRow();

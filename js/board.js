@@ -56,6 +56,7 @@
   // creates a fresh node instead of touching a detached one.
   var handNode = null;
   var handAt = null; // [r, c] the hand currently rests on/near, or null before its first show
+  var handHideTimer = null; // pending "away" after hideHand(); cancelled if the hand shows again
 
   /* ---------- helpers ---------- */
 
@@ -158,8 +159,17 @@
     node.textContent = '';
   }
 
+  // Waits for an animation or visual effect to end: under reduced motion
+  // there is no motion to wait for, so the delay is capped. Use wait() for
+  // anything that sets the pace of a lesson, a turn or a card.
   function later(fn, ms) {
     return window.setTimeout(fn, reduceMotion ? Math.min(ms, 60) : ms);
+  }
+
+  // A plain timer that reduced motion never shortens: lesson pauses, the
+  // Meet card's minimum time, the bot's thinking pause and similar pacing.
+  function wait(fn, ms) {
+    return window.setTimeout(fn, ms);
   }
 
   // Run an animation, then call done exactly once (with a timer as a fallback).
@@ -254,6 +264,7 @@
 
   function clearAll() {
     [dom.footprints, dom.items, dom.pieces, dom.fx, dom.marks, dom.guide].forEach(clear);
+    cancelHandHide();
     handNode = null;
     handAt = null;
   }
@@ -611,7 +622,15 @@
 
   /* ---------- ghost hand ---------- */
 
+  function cancelHandHide() {
+    if (handHideTimer !== null) {
+      window.clearTimeout(handHideTimer);
+      handHideTimer = null;
+    }
+  }
+
   function ensureHand() {
+    cancelHandHide();
     if (!handNode) {
       handNode = document.createElement('div');
       handNode.className = 'hand';
@@ -664,7 +683,9 @@
 
     if (reduceMotion || typeof node.animate !== 'function') {
       node.style.transform = handTransform(r, c, 1);
-      later(function () { if (done) done(); }, 300);
+      // No travel animation to wait for, but the pause still shows the child
+      // where the hand is before the lesson goes on: pacing, not motion.
+      wait(function () { if (done) done(); }, 300);
       return;
     }
 
@@ -689,7 +710,11 @@
     var node = handNode;
     handAt = null;
     node.style.opacity = '0';
-    later(function () { node.classList.add('away'); }, 220);
+    cancelHandHide();
+    handHideTimer = later(function () {
+      handHideTimer = null;
+      node.classList.add('away');
+    }, 220);
   }
 
   /* ---------- input ---------- */
@@ -770,6 +795,7 @@
     place: place,
     replay: replay,
     later: later,
+    wait: wait,
     animate: animate,
     showFootprints: showFootprints,
     hideFootprints: hideFootprints,

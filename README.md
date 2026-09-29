@@ -115,6 +115,8 @@ The target engine is Chromium 108 (Silk 108 on Fire OS 5). Silk builds as old as
 - Do not put inline scripts, inline event handlers or `style` attributes in HTML. The Content Security Policy blocks them. Setting `element.style` from JavaScript is allowed.
 - Build DOM with `createElement` and `textContent`. Do not use `innerHTML` or similar APIs.
 - Animate only `transform` and `opacity`.
+- Chromium before 84 ignores `gap` on flex containers, so items would touch. `js/app.js` checks once at startup and, if `gap` is not supported, adds the class `no-flexgap` to `<html>`. `css/app.css` then gives every flex container that uses `gap` the equivalent margins. When you add `gap` to a flex container, add its fallback rule at the end of `css/app.css` (grid `gap` needs none).
+- Use `FC.board.later(fn, ms)` only to wait for an animation or visual effect to end (it is shortened under reduced motion). Use `FC.board.wait(fn, ms)`, a plain timer, for anything that sets the pace of a lesson, a turn or a card.
 
 ## Security and privacy
 

@@ -51,6 +51,13 @@
     themeRow: byId('theme-row')
   };
 
+  // Bumped by stopRound(): every callback a round schedules (a move's
+  // landing, the pause before the next turn, the win line) captures the
+  // value when it is scheduled and does nothing if it has changed, so
+  // leaving a round (Home, another piece, Replay, Skip, a game) can never be
+  // followed by a stray move, hint or Won card.
+  var roundToken = 0;
+
   var state = {
     type: 'r',
     round: null,
@@ -76,6 +83,16 @@
 
   function byId(id) { return document.getElementById(id); }
   function key(r, c) { return r + ',' + c; }
+
+  // decodeURIComponent throws on malformed input such as "%E0" or "%"; a
+  // bad address must never stop the app starting, so it reads as "absent".
+  function safeDecode(str) {
+    try {
+      return decodeURIComponent(str);
+    } catch (e) {
+      return null;
+    }
+  }
   function clear(node) { node.textContent = ''; }
 
   function el(tag, className) {
@@ -104,7 +121,7 @@
   // Telugu. FC.voice.setLang falls back to the default for anything else.
   function parseLangFromUrl() {
     var m = /[?&]lang=([^&]*)/.exec(window.location.search || '');
-    return m ? decodeURIComponent(m[1]) : null;
+    return m ? safeDecode(m[1]) : null;
   }
 
   // Shows the OTHER language's glyph: tapping switches to it.
@@ -174,7 +191,7 @@
   // theme (B.setTheme already does this); nothing is ever stored.
   function parseThemeFromUrl() {
     var m = /[?&]theme=([^&]*)/.exec(window.location.search || '');
-    return m ? decodeURIComponent(m[1]) : null;
+    return m ? safeDecode(m[1]) : null;
   }
 
   function setUrlTheme(id) {
@@ -361,7 +378,7 @@
     if (FC.gamesUI && FC.gamesUI.stop) FC.gamesUI.stop();
     B.setMode('none');
     P.stop();
-    clearIdle();
+    stopRound();
     B.hideHand();
     hideOverlay();
     mode = 'home';
@@ -483,7 +500,9 @@
       if (lineDone && minWaited) advance();
     }
     V.say('meet-' + type, function () { lineDone = true; maybeAuto(); });
-    later(function () { minWaited = true; maybeAuto(); }, MEET_MIN_MS);
+    // Pacing (the card stays up long enough to read), so reduced motion
+    // must not shorten it.
+    B.wait(function () { minWaited = true; maybeAuto(); }, MEET_MIN_MS);
   }
 
   /* ---------- mission card ---------- */
@@ -637,6 +656,7 @@
     // The child tapped a piece card or tile: that theme's sound for the piece.
     S.play('pick', type);
     if (FC.gamesUI && FC.gamesUI.stop) FC.gamesUI.stop();
+    stopRound();
     pendingType = type;
     if (!seen.hello) {
       playLessonScreen(LS.get('hello'), function () { playOrRound(type); });
@@ -688,6 +708,10 @@
       if (FC.gamesUI.onReplay) FC.gamesUI.onReplay();
       return;
     }
+    stopRound();
+    // A lesson may be running (Replay is offered during one): stop it, or it
+    // would keep speaking and moving behind the Meet card.
+    P.stop();
     var type = state.type;
     showMeet(type, function () {
       playLessonScreen(LS.get(LS.lessonFor(type)), function () { afterPieceLesson(type); });
@@ -702,6 +726,7 @@
     }
     if (mode !== 'meet' && mode !== 'lesson') return;
     S.unlock();
+    stopRound();
     var type = pendingType || state.type;
     P.stop();
     hideOverlay();
@@ -717,8 +742,21 @@
 
   /* ---------- capture rounds ---------- */
 
-  function startRound(type) {
+  // Ends the current round and cancels everything it scheduled: the idle
+  // hint timer, and (through roundToken) any move, pause or voice callback
+  // still waiting to run. Safe to call at any time, also with no round.
+  function stopRound() {
+    roundToken += 1;
     clearIdle();
+    state.round = null;
+    state.busy = false;
+    state.selected = false;
+    state.moves = [];
+    state.goldenKey = null;
+  }
+
+  function startRound(type) {
+    stopRound();
     mode = 'round';
     updateToolButtons();
     playedTypes[type] = true;
@@ -784,7 +822,9 @@
     var from = state.round.hero;
     var to = [mv.r, mv.c];
 
+    var myToken = roundToken;
     B.moveHero(state.hero, state.type, from, to, function () {
+      if (myToken !== roundToken) return;
       land(from, to, mv);
     });
   }
@@ -814,7 +854,11 @@
     var changes = L.relocateStranded(state.round);
     changes.forEach(moveItem);
 
+    // Waits for the relocation animation to end (nothing to wait for under
+    // reduced motion), so this is animation clean-up, not pacing.
+    var myToken = roundToken;
     later(function () {
+      if (myToken !== roundToken) return;
       state.busy = false;
       select(true);
       armIdle();
@@ -866,7 +910,12 @@
     S.play('win');
     B.confetti(28);
     var type = state.type;
-    V.say('won', function () { showWon(type); });
+    var myToken = roundToken;
+    // Queued behind any sticker/golden line that is still playing.
+    V.sayAfter('won', function () {
+      if (myToken !== roundToken) return;
+      showWon(type);
+    });
   }
 
   /* ---------- round idle hints ---------- */
@@ -991,6 +1040,7 @@
 
   FC.app = {
     goHome: showHomeScreen,
+    stopRound: stopRound,
     showCustomCard: showCustomCard,
     hideCard: hideOverlay,
     lastNonPawnType: lastNonPawnType,
@@ -999,7 +1049,30 @@
 
   /* ---------- start ---------- */
 
+  // Chromium before 84 ignores "gap" on flex containers, so items touch.
+  // Detected once, at startup, and css/app.css then adds margins under
+  // html.no-flexgap for every flex container that uses gap.
+  function detectFlexGap() {
+    try {
+      var probe = document.createElement('div');
+      probe.style.display = 'flex';
+      probe.style.flexDirection = 'column';
+      probe.style.rowGap = '1px';
+      probe.style.position = 'absolute';
+      probe.style.visibility = 'hidden';
+      probe.appendChild(document.createElement('div'));
+      probe.appendChild(document.createElement('div'));
+      document.body.appendChild(probe);
+      var supported = probe.scrollHeight === 1;
+      document.body.removeChild(probe);
+      if (!supported) document.documentElement.classList.add('no-flexgap');
+    } catch (e) {
+      // Cosmetic only; leave spacing as it is.
+    }
+  }
+
   function init() {
+    detectFlexGap();
     V.setLang(parseLangFromUrl());
     B.setTheme(parseThemeFromUrl() || TH.DEFAULT_THEME);
     S.setTheme(B.getTheme());

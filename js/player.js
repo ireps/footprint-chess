@@ -219,7 +219,7 @@
       return;
     }
     if (typeof step.wait === 'number') {
-      B.later(next, step.wait);
+      B.wait(next, step.wait);
       return;
     }
     if (step.select) {
@@ -229,13 +229,13 @@
       B.replay(heroNode, 'bounce');
       B.showFootprints(lesson.type, hero, wmoves, foeNodes);
       S.play('select');
-      B.later(next, STEP_MS);
+      B.wait(next, STEP_MS);
       return;
     }
     if (step.unselect) {
       B.hideFootprints(foeNodes);
       heroNode.classList.remove('selected');
-      B.later(next, STEP_MS);
+      B.wait(next, STEP_MS);
       return;
     }
     if (step.hand) {
@@ -276,7 +276,7 @@
     }
     if (step.reset) {
       resetToSetup(lesson, true);
-      B.later(next, STEP_MS);
+      B.wait(next, STEP_MS);
       return;
     }
     if (step.turn) {
@@ -395,14 +395,15 @@
     function proceed() {
       if (proceeded || myToken !== token) return;
       proceeded = true;
-      B.later(function () {
+      B.wait(function () {
         if (myToken !== token) return;
         moveFoe(reply[0], reply[1], function () {
           if (myToken !== token) return;
           B.setActiveTeamBar('home');
           B.setMode('play', modeText('play'));
           S.play('your-turn');
-          V.say('turn-me', function () {});
+          // Queued, so a "Their turn." still playing is not cut off.
+          V.sayAfter('turn-me');
           afterTask(myToken);
         });
       }, 600 + Math.floor(Math.random() * 300)); // 600-900ms "thinking" pause
@@ -410,7 +411,7 @@
     // Proceed once the line finishes, or after about 700ms, whichever
     // comes first - a slow device should never stall the reply on voice.
     V.say('turn-foe', proceed);
-    B.later(proceed, 700);
+    B.wait(proceed, 700);
   }
 
   function finishPractice(myToken) {

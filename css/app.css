@@ -1506,3 +1506,87 @@ body.theme-pirate {
 @media (prefers-reduced-motion: reduce) {
   :root { --dur: 0.01; }
 }
+
+/* ---------- flex "gap" fallback (Chromium before 84) ----------
+ * Those browsers ignore gap on flex containers, so items would touch.
+ * js/app.js detectFlexGap() adds html.no-flexgap when gap is not supported,
+ * and each flex container that uses gap gets the equivalent margin on its
+ * items here. Grid containers (.tiles, the portrait .panel) keep their gap.
+ * Keep this section in step with every "gap" above; each rule copies the
+ * gap and the flex-direction the container has in that same context.
+ */
+
+/* .app: side by side in landscape, stacked in portrait (12px). */
+.no-flexgap .app > * + * { margin-left: 24px; }
+
+.no-flexgap .team-bar > * + * { margin-left: 10px; }
+
+/* .panel is a flex column only in landscape (portrait makes it a grid). */
+@media (orientation: landscape) {
+  .no-flexgap .panel > * + * { margin-top: 16px; }
+}
+
+/* .mission: a column in landscape (12px), a row in portrait (8px). While a
+   game shows, #portrait and .goal are display: none, so the game picture
+   (which has its own margin) is the first visible item. */
+.no-flexgap .mission > * + * { margin-top: 12px; }
+.no-flexgap .mission.game-mode > .mission-pic { margin-top: 6px; }
+
+.no-flexgap .goal > * + * { margin-left: 10px; }
+
+.no-flexgap .sticker-row { margin: -4px; }
+.no-flexgap .sticker-row > * { margin: 4px; }
+
+.no-flexgap .card > * + * { margin-top: 20px; }
+.no-flexgap .card-row > * + * { margin-left: 18px; }
+.no-flexgap .pawns3 > * + * { margin-left: 8px; }
+.no-flexgap .meet-row > * + * { margin-left: 26px; }
+.no-flexgap .team-row > * + * { margin-left: 34px; }
+.no-flexgap .team-option > * + * { margin-top: 12px; }
+.no-flexgap .btn-row > * + * { margin-left: 26px; }
+
+/* The home screen's corner and theme row are absolutely positioned, so only
+   the items after the logo take the column's 34px gap. */
+.no-flexgap .homescreen > .logo ~ * { margin-top: 34px; }
+/* The wrapping rows below carry their own margins (see .home-cards and
+   .sticker-row), so their top margin is 34px less those. */
+.no-flexgap .homescreen > .logo ~ .home-cards { margin-top: 23px; }
+.no-flexgap .homescreen > .logo ~ .sticker-row { margin-top: 30px; }
+.no-flexgap .corner > * + * { margin-left: 14px; }
+.no-flexgap .logo > * + * { margin-left: 16px; }
+.no-flexgap .feet > * + * { margin-left: 6px; }
+.no-flexgap .theme-row > * + * { margin-left: 12px; }
+
+/* .home-cards wraps, so every card carries the 22px gap as a margin and the
+   container's negative margin takes the outer half back. */
+.no-flexgap .home-cards { margin: -11px; max-width: calc(96vw + 22px); }
+.no-flexgap .home-cards > * { margin: 11px; }
+
+.no-flexgap .game-card > * + * { margin-top: 12px; }
+
+.no-flexgap .game-pic > * + * { margin-left: 8px; }
+.no-flexgap .game-pic-stack > * + * { margin-top: 8px; }
+.no-flexgap .game-pic-row > * + * { margin-left: 6px; }
+/* Little battle: no gap between its three pieces, except in the compact size
+   (.game-pic-mini sets its own 4px, later than .game-pic-3 in the rules above). */
+.no-flexgap .game-pic-3 > * + * { margin-left: 0; }
+.no-flexgap .game-pic-mini > * + * { margin-left: 4px; }
+.no-flexgap .game-pic-mini .game-pic-stack > * + * { margin-top: 4px; }
+
+@media (orientation: portrait) {
+  .no-flexgap .app > * + * { margin-left: 0; margin-top: 12px; }
+  /* Three cards a row: 3 x (150px + 22px of margin). */
+  .no-flexgap .home-cards { max-width: 522px; }
+  .no-flexgap .mission > * + * { margin-top: 0; margin-left: 8px; }
+  .no-flexgap .mission.game-mode > .mission-pic { margin: 0; }
+  .no-flexgap .goal > * + * { margin-left: 4px; }
+  /* .tools wraps (4 or 5 buttons), so 6px between items as 3px per side. */
+  .no-flexgap .tools { margin: -3px; }
+  .no-flexgap .tools > * { margin: 3px; }
+  .no-flexgap .card-row > * + * { margin-left: 16px; }
+  .no-flexgap .team-row > * + * { margin-left: 16px; }
+}
+
+@media (max-height: 820px) and (orientation: landscape) {
+  .no-flexgap .panel > * + * { margin-top: 10px; }
+}

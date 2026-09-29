@@ -16,7 +16,18 @@
  *      lesson keeps its pacing.
  * English never falls back to Telugu. Voice is always optional: nothing in
  * here may throw, and a caller's done callback is always called exactly
- * once, even if playback fails.
+ * once, even if playback fails (unless a later say()/stop() cancels the
+ * line first, which drops its callback).
+ *
+ * Two ways to speak:
+ *   say(id, done)       narration: interrupts whatever is playing (and
+ *                       clears the queue below); the interrupted line's
+ *                       done is never called.
+ *   sayAfter(id, done)  announcement: plays at once when nothing is
+ *                       playing, otherwise waits its turn in a short queue
+ *                       and plays when the current line has settled. A
+ *                       later say() or stop() cancels the queue without
+ *                       calling the queued callbacks.
  *
  * Depends on FC.sound (context/output/isEnabled) and FC.lessons (LANGS,
  * DEFAULT_LANG, LINES), loaded before this file. Browser only script:
@@ -63,6 +74,9 @@
   var activeTimer = null;
   var activeSource = null;
   var activeUtterance = null;
+var playing = false;     // a line is sounding or waiting for its clip to load
+var queue = [];          // sayAfter items waiting: { id, done, real }
+var QUEUE_MAX = 4;
 
   var currentLang = (FC.lessons && FC.lessons.DEFAULT_LANG) || 'en';
   var cachedVoices = null; // null until first read; speechSynthesis.getVoices()
@@ -76,9 +90,10 @@
     if (next !== currentLang) {
       // Only the current language's clips are kept decoded, to save memory
       // on a 2 GB tablet (about 25 MB of decoded audio per language).
+      // English clips that Telugu needs as a fallback are loaded on demand
+      // (see say()), not kept.
       var keep = {};
       keep[next] = buffers[next] || {};
-      if (next === 'te' && buffers.en) keep.en = buffers.en;
       buffers = keep;
     }
     currentLang = next;
@@ -202,10 +217,18 @@
     }
   }
 
-  // Stop the current line without calling its done.
-  function stop() {
+  // Cancel the current line without calling its done. Leaves the queue
+  // alone (say() clears it; the queue drain must not).
+  function cancelCurrent() {
     token += 1;
+    playing = false;
     clearActive();
+  }
+
+  // Stop the current line and drop the queue, calling no callbacks.
+  function stop() {
+    queue = [];
+    cancelCurrent();
   }
 
   function hasClip(lang, id) {
@@ -344,10 +367,12 @@
     return false;
   }
 
-  function say(id, done) {
-    done = done || function () {};
-    stop();
+  // Plays one line (cancelling any current line, but not the queue).
+  function play(id, done) {
+    done = typeof done === 'function' ? done : function () {};
+    cancelCurrent();
     var myToken = token;
+    playing = true;
     var line = FC.lessons && FC.lessons.LINES ? FC.lessons.LINES[id] : null;
     var ms = line ? line.ms : 1500;
     var settled = false;
@@ -356,47 +381,107 @@
       if (settled || myToken !== token) return;
       settled = true;
       clearActive();
-      done();
+      playing = false;
+      try {
+        done();
+      } finally {
+        drain();
+      }
+    }
+
+    // Silence, timed by the line's estimated length so pacing holds.
+    function silence() {
+      if (myToken !== token) return;
+      activeTimer = root.setTimeout(finish, ms);
     }
 
     if (!S || !S.isEnabled || !S.isEnabled()) {
-      activeTimer = root.setTimeout(finish, ms);
+      silence();
       return;
+    }
+
+    // Recorded clip in lang; if it exists but is not decoded yet, wait for
+    // it (up to LOAD_WAIT_MS) rather than switching voice. next() runs if
+    // there is no such clip or it failed to load.
+    function tryClip(lang, next) {
+      if (myToken !== token) return;
+      if (!hasClip(lang, id)) { next(); return; }
+      if (playClip(lang, id, ms, finish)) return;
+      var waited = false;
+      var giveUp = root.setTimeout(function () {
+        if (waited || myToken !== token) return;
+        waited = true;
+        next();
+      }, LOAD_WAIT_MS);
+      load(lang, id, function (ok) {
+        if (waited || myToken !== token) return;
+        waited = true;
+        root.clearTimeout(giveUp);
+        if (ok && playClip(lang, id, ms, finish)) return;
+        next();
+      });
+    }
+
+    function trySpeech(lang, next) {
+      if (myToken !== token) return;
+      if (line && playSpeech(lang, line[lang], ms, finish)) return;
+      next();
     }
 
     var lang = currentLang;
-
-    function fallBack() {
-      if (myToken !== token) return;
-      if (line && playSpeech(lang, line[lang], ms, finish)) return;
-      if (lang === 'te') {
-        if (playClip('en', id, ms, finish)) return;
-        if (line && playSpeech('en', line.en, ms, finish)) return;
-      }
-      activeTimer = root.setTimeout(finish, ms);
+    if (lang === 'te') {
+      // Telugu clip, Telugu speech, English clip, English speech, silence.
+      tryClip('te', function () {
+        trySpeech('te', function () {
+          tryClip('en', function () {
+            trySpeech('en', silence);
+          });
+        });
+      });
+    } else {
+      tryClip(lang, function () { trySpeech(lang, silence); });
     }
+  }
 
-    if (!hasClip(lang, id)) {
-      fallBack();
+  // Interrupts the current line and drops the queue. done is called when
+  // the line ends, unless a later say()/stop() cancels it first.
+  function say(id, done) {
+    queue = [];
+    play(id, done);
+  }
+
+  // Plays after the current line (and anything already queued) instead of
+  // interrupting it. With nothing playing and nothing waiting it is exactly
+  // say(). The queue holds at most QUEUE_MAX items: when full, the oldest
+  // item with no callback is dropped to make room; an item whose done drives
+  // a flow is never dropped (so the queue can exceed the cap only with such
+  // items), and a new callback-less item is dropped when nothing can be.
+  function sayAfter(id, done) {
+    var real = typeof done === 'function';
+    if (!playing && !queue.length) {
+      say(id, done);
       return;
     }
-    if (playClip(lang, id, ms, finish)) return;
+    if (queue.length >= QUEUE_MAX) {
+      var drop = -1;
+      for (var i = 0; i < queue.length; i++) {
+        if (!queue[i].real) { drop = i; break; }
+      }
+      if (drop !== -1) {
+        queue.splice(drop, 1);
+      } else if (!real) {
+        return;
+      }
+    }
+    queue.push({ id: id, done: done, real: real });
+  }
 
-    // The clip exists but is not decoded yet: wait for it rather than
-    // switching to a different voice.
-    var waited = false;
-    var giveUp = root.setTimeout(function () {
-      if (waited) return;
-      waited = true;
-      fallBack();
-    }, LOAD_WAIT_MS);
-    load(lang, id, function (ok) {
-      if (waited || myToken !== token) return;
-      waited = true;
-      root.clearTimeout(giveUp);
-      if (ok && playClip(lang, id, ms, finish)) return;
-      fallBack();
-    });
+  // Called when a line has settled and its done has run: plays the next
+  // queued item, if any, without clearing the rest of the queue.
+  function drain() {
+    if (playing || !queue.length) return;
+    var item = queue.shift();
+    play(item.id, item.done);
   }
 
   function release() {
@@ -410,6 +495,7 @@
     preload: preload,
     preloadAll: preloadAll,
     say: say,
+    sayAfter: sayAfter,
     stop: stop,
     release: release
   };
