@@ -12,6 +12,7 @@
   var R = FC.rules;
   var L = FC.levels;
   var LS = FC.lessons;
+  var TH = FC.themes;
   var S = FC.sound;
   var V = FC.voice;
   var B = FC.board;
@@ -19,6 +20,7 @@
 
   var TYPE_ORDER = LS.TYPE_ORDER;
   var svgUse = B.svgUse;
+  var pieceSvg = B.pieceSvg;
   var place = B.place;
   var replay = B.replay;
   var later = B.later;
@@ -44,7 +46,9 @@
     homeLang: byId('home-lang-toggle'),
     homeLangGlyph: byId('home-lang-glyph'),
     homeSound: byId('home-sound-toggle'),
-    homeCards: byId('home-cards')
+    homeCards: byId('home-cards'),
+    themeToggle: byId('theme-toggle'),
+    themeRow: byId('theme-row')
   };
 
   var state = {
@@ -160,6 +164,76 @@
     S.play('select');
   }
 
+  /* ---------- theme ---------- */
+
+  // Same approach as parseLangFromUrl/setUrlLang: ?theme=<id> is read once
+  // at startup and rewritten in place when it changes, keeping any other
+  // query parameters. An unknown or missing id falls back to the default
+  // theme (B.setTheme already does this); nothing is ever stored.
+  function parseThemeFromUrl() {
+    var m = /[?&]theme=([^&]*)/.exec(window.location.search || '');
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+
+  function setUrlTheme(id) {
+    if (!window.history || typeof window.history.replaceState !== 'function') return;
+    try {
+      var raw = window.location.search ? window.location.search.slice(1) : '';
+      var kept = raw.split('&').filter(function (p) {
+        return p && p.split('=')[0] !== 'theme';
+      });
+      if (id !== TH.DEFAULT_THEME) {
+        kept.push('theme=' + encodeURIComponent(id));
+      }
+      var search = kept.length ? '?' + kept.join('&') : '';
+      window.history.replaceState(null, '', window.location.pathname + search + window.location.hash);
+    } catch (e) {
+      // Bookmarkable URL is a nicety, not required; ignore failures.
+    }
+  }
+
+  // The theme row: one round swatch per theme, each showing that theme's
+  // knight (side me) on that theme's own background. No text anywhere (a
+  // theme's English name is an aria-label only, never shown), so the row
+  // can be built once and just re-marked for the selected ring afterwards.
+  function buildThemeRow() {
+    clear(dom.themeRow);
+    TH.THEMES.forEach(function (theme) {
+      var sw = el('button', 'theme-swatch theme-' + theme.id);
+      sw.type = 'button';
+      sw.setAttribute('aria-label', theme.name);
+      var knight = B.themedPieceSvg(theme.id, 'n', 'me');
+      sw.appendChild(knight);
+      sw.addEventListener('click', function () { onThemeChoose(theme.id); });
+      dom.themeRow.appendChild(sw);
+    });
+    markThemeRow();
+  }
+
+  function markThemeRow() {
+    var current = B.getTheme();
+    var kids = dom.themeRow.children;
+    for (var i = 0; i < kids.length; i++) {
+      kids[i].classList.toggle('selected', kids[i].classList.contains('theme-' + current));
+    }
+  }
+
+  function onThemeToggle() {
+    S.unlock();
+    var hidden = dom.themeRow.hidden;
+    if (hidden && !dom.themeRow.children.length) buildThemeRow();
+    dom.themeRow.hidden = !hidden;
+    if (!dom.themeRow.hidden) markThemeRow();
+  }
+
+  function onThemeChoose(id) {
+    S.unlock();
+    B.setTheme(id);
+    setUrlTheme(B.getTheme());
+    dom.themeRow.hidden = true;
+    S.play('select');
+  }
+
   /* ---------- sound ---------- */
 
   function updateSoundButtons() {
@@ -184,6 +258,7 @@
     dom.toolReplay.appendChild(svgUse('again'));
     dom.toolSkip.appendChild(svgUse('ic-skip'));
     dom.home.appendChild(svgUse('house'));
+    dom.themeToggle.appendChild(svgUse('ic-palette'));
   }
 
   function updateToolButtons() {
@@ -195,14 +270,14 @@
   function setPortrait(type) {
     clear(dom.portrait);
     dom.portrait.className = 'portrait type-' + type;
-    dom.portrait.appendChild(svgUse('robots-' + type));
+    dom.portrait.appendChild(pieceSvg(type, 'me'));
   }
 
   function resetSlots() {
     clear(dom.goal);
     for (var i = 0; i < L.TARGET_COUNT; i++) {
       var slot = el('div', 'cap-slot');
-      slot.appendChild(svgUse('robots-p-dark'));
+      slot.appendChild(pieceSvg('p', 'foe'));
       dom.goal.appendChild(slot);
     }
   }
@@ -229,7 +304,7 @@
       var badge = el('div', 'tile-badge');
       badge.appendChild(svgUse('cl-' + type));
       tile.appendChild(badge);
-      var bot = svgUse('robots-' + type);
+      var bot = pieceSvg(type, 'me');
       bot.classList.add('bot');
       tile.appendChild(bot);
       tile.appendChild(textEl('div', 'tile-name', pieceName(type)));
@@ -259,7 +334,7 @@
       var cl = el('div', 'home-card-cl');
       cl.appendChild(svgUse('cl-' + type));
       card.appendChild(cl);
-      var bot = svgUse('robots-' + type);
+      var bot = pieceSvg(type, 'me');
       bot.classList.add('bot');
       card.appendChild(bot);
       card.appendChild(el('div', 'base tint-' + type));
@@ -292,6 +367,7 @@
 
   function hideHomeScreen() {
     dom.homescreen.hidden = true;
+    dom.themeRow.hidden = true;
   }
 
   /* ---------- overlay: dim + card ---------- */
@@ -330,7 +406,7 @@
     arrow.classList.add('meet-arrow');
     row.appendChild(arrow);
     var portrait = el('div', 'portrait card-portrait meet type-' + type);
-    portrait.appendChild(svgUse('robots-' + type));
+    portrait.appendChild(pieceSvg(type, 'me'));
     row.appendChild(portrait);
     frag.appendChild(row);
 
@@ -386,11 +462,11 @@
     var frag = document.createDocumentFragment();
     var row = el('div', 'card-row');
     var portrait = el('div', 'portrait card-portrait type-' + type);
-    portrait.appendChild(svgUse('robots-' + type));
+    portrait.appendChild(pieceSvg(type, 'me'));
     row.appendChild(portrait);
     row.appendChild(textEl('div', 'plus', '+'));
     var pawns = el('div', 'pawns3');
-    for (var i = 0; i < L.TARGET_COUNT; i++) pawns.appendChild(svgUse('robots-p-dark'));
+    for (var i = 0; i < L.TARGET_COUNT; i++) pawns.appendChild(pieceSvg('p', 'foe'));
     row.appendChild(pawns);
     frag.appendChild(row);
 
@@ -437,11 +513,11 @@
     var frag = document.createDocumentFragment();
     var trophy = el('div', 'trophy');
     trophy.appendChild(el('div', 'ray'));
-    trophy.appendChild(svgUse('robots-' + type));
+    trophy.appendChild(pieceSvg(type, 'me'));
     frag.appendChild(trophy);
 
     var pawns = el('div', 'pawns3');
-    for (var i = 0; i < L.TARGET_COUNT; i++) pawns.appendChild(svgUse('robots-p-dark'));
+    for (var i = 0; i < L.TARGET_COUNT; i++) pawns.appendChild(pieceSvg('p', 'foe'));
     frag.appendChild(pawns);
 
     var row = el('div', 'btn-row');
@@ -454,7 +530,7 @@
     var next = el('button', 'rbtn rbtn-next type-' + nextType);
     next.type = 'button';
     next.setAttribute('aria-label', 'Next piece: ' + pieceNameEn(nextType));
-    next.appendChild(svgUse('robots-' + nextType));
+    next.appendChild(pieceSvg(nextType, 'me'));
     row.appendChild(next);
 
     var home = el('button', 'rbtn rbtn-home');
@@ -815,6 +891,7 @@
       S.unlock();
       showHomeScreen();
     });
+    dom.themeToggle.addEventListener('click', onThemeToggle);
     dom.card.addEventListener('click', onCardActivate);
     dom.card.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' || e.key === ' ') {
@@ -828,6 +905,7 @@
 
   function init() {
     V.setLang(parseLangFromUrl());
+    B.setTheme(parseThemeFromUrl() || TH.DEFAULT_THEME);
     B.init(onBoardTap);
     buildToolIcons();
     wireTools();

@@ -10,8 +10,13 @@
   var FC = window.FC = window.FC || {};
   var R = FC.rules;
   var S = FC.sound;
+  var T = FC.themes;
 
-  var THEME = 'robots';
+  // The current theme id (js/themes.js THEMES/DEFAULT_THEME). Changed only
+  // by setTheme(), which also updates the body class and every placed
+  // piece's <use> href; the artwork and colours live in index.html's
+  // sprite and css/app.css (see THEMES-SPEC in the repo history).
+  var THEME = T.DEFAULT_THEME;
   // Real chess names are looked up from FC.lessons.PIECE_NAMES by callers
   // (app.js, player.js); this table only carries the look, not the words.
   var TYPE_ORDER = FC.lessons.TYPE_ORDER;
@@ -64,6 +69,65 @@
     svg.appendChild(use);
     return svg;
   }
+
+  // A themed piece image: every piece drawing in the app (board pieces and
+  // items, portrait, tiles, home cards, meet/mission/won cards, capture
+  // slots) goes through this so a theme change only has to rewrite hrefs
+  // and flip a body class (see setTheme). side is 'me' (the child's piece,
+  // any type) or 'foe' (an opponent pawn; the app only ever places foe
+  // pawns). data-pt records the type so setTheme can find and rewrite this
+  // <use> later; the class records the side so css/app.css can colour it
+  // per theme with --pc/--acc/etc.
+  function pieceSvg(type, side) {
+    var svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 100 100');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+    svg.setAttribute('class', 'pc side-' + side);
+    var use = document.createElementNS(SVG_NS, 'use');
+    use.setAttribute('data-pt', type);
+    use.setAttribute('href', '#' + THEME + '-' + type);
+    svg.appendChild(use);
+    return svg;
+  }
+
+  // A piece image fixed to themeId (not necessarily the current theme):
+  // used for the home screen's theme swatches, which must keep showing
+  // their own theme's art (and, for Space/Dinosaurs/Pirate, their own
+  // theme's per-type --pc; see css/app.css) no matter which theme is
+  // currently applied. data-pt is still set, so the same CSS colour rules
+  // apply; data-fixed-theme marks it so setTheme()'s href rewrite skips it.
+  function themedPieceSvg(themeId, type, side) {
+    var svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 100 100');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+    svg.setAttribute('class', 'pc side-' + side);
+    var use = document.createElementNS(SVG_NS, 'use');
+    use.setAttribute('data-pt', type);
+    use.setAttribute('data-fixed-theme', themeId);
+    use.setAttribute('href', '#' + themeId + '-' + type);
+    svg.appendChild(use);
+    return svg;
+  }
+
+  // Applies id (falling back to the default theme for an unknown id): a
+  // body class other CSS rules key off (css/app.css), and every placed
+  // piece image's href, so pieces already on screen change look at once.
+  // Skips any [data-fixed-theme] (theme-swatch previews; see
+  // themedPieceSvg), which must never track the currently applied theme.
+  function setTheme(id) {
+    THEME = T.isTheme(id) ? id : T.DEFAULT_THEME;
+    var body = document.body;
+    T.THEMES.forEach(function (theme) { body.classList.remove('theme-' + theme.id); });
+    body.classList.add('theme-' + THEME);
+    var uses = document.querySelectorAll('[data-pt]:not([data-fixed-theme])');
+    for (var i = 0; i < uses.length; i++) {
+      uses[i].setAttribute('href', '#' + THEME + '-' + uses[i].getAttribute('data-pt'));
+    }
+  }
+
+  function getTheme() { return THEME; }
 
   function pos(r, c) {
     return 'translate(' + (c * 100) + '%,' + (r * 100) + '%)';
@@ -159,19 +223,20 @@
   function addPiece(kind, r, c) {
     var node = document.createElement('div');
     node.className = 'piece';
-    node.appendChild(svgUse(THEME + '-' + kind));
+    node.appendChild(pieceSvg(kind, 'me'));
     place(node, r, c);
     dom.pieces.appendChild(node);
     return node;
   }
 
   // An opponent pawn (the only kind of target/foe the app ever places):
-  // always the dark-coloured robot pawn, real chess name "pawn". Used both
-  // for capture-round targets (js/app.js) and lesson foes (js/player.js).
+  // always the pawn, real chess name "pawn", drawn in the theme's "other
+  // side" colours (side foe). Used both for capture-round targets
+  // (js/app.js) and lesson foes (js/player.js).
   function addItem(r, c) {
     var node = document.createElement('div');
     node.className = 'item';
-    node.appendChild(svgUse(THEME + '-p-dark'));
+    node.appendChild(pieceSvg('p', 'foe'));
     place(node, r, c);
     dom.items.appendChild(node);
     return node;
@@ -187,7 +252,11 @@
 
   function showFootprints(type, hero, moves, itemsByKey) {
     hideFootprints(itemsByKey);
-    var color = TYPES[type].color;
+    // Every theme but Classic keeps today's per-type footprint colours,
+    // matching the child's per-type piece colours (css/app.css); Classic
+    // uses its own single footprint colour (--fp) instead, the same token
+    // its panel portraits/tiles/home cards use.
+    var color = THEME === 'classic' ? 'var(--fp)' : TYPES[type].color;
     moves.forEach(function (m) {
       var dist = Math.max(Math.abs(m.r - hero[0]), Math.abs(m.c - hero[1]));
       var delay = (reduceMotion ? 0 : Math.min(dist * 55, 330)) + 'ms';
@@ -565,7 +634,8 @@
     nudgeMode: nudgeMode,
     TYPES: TYPES,
     TYPE_ORDER: TYPE_ORDER,
-    THEME: THEME,
+    setTheme: setTheme,
+    getTheme: getTheme,
     reduceMotion: reduceMotion,
     init: init,
     layout: layout,
@@ -589,10 +659,13 @@
     hand: hand,
     handRest: handRest,
     hideHand: hideHand,
-    // Not pure board rendering, but app.js's home/panel screens (svgUse) and
-    // target-relocation animation (pos) need the same primitives board.js
-    // already builds, so they are exposed here rather than duplicated.
+    // Not pure board rendering, but app.js's home/panel screens (svgUse,
+    // pieceSvg) and target-relocation animation (pos) need the same
+    // primitives board.js already builds, so they are exposed here rather
+    // than duplicated.
     svgUse: svgUse,
+    pieceSvg: pieceSvg,
+    themedPieceSvg: themedPieceSvg,
     pos: pos
   };
 })();

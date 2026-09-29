@@ -23,9 +23,22 @@ bar switches at any time: it shows the *other* language's glyph ('అ' in
 English, 'A' in Telugu) and updates the address bar to match. Lines already
 playing when you switch are not interrupted.
 
+## Themes
+
+Five themes: Robots (the default), Classic, Space, Dinosaurs and Pirate. Every
+theme keeps the same real chess silhouettes, names and badges; only the piece
+artwork and colours change. The board, frame and the other side's pieces get
+natural colours for each theme; the child's own pieces keep the same
+per-type colours as Robots in every theme except Classic, which uses a
+single ivory-and-black pair for both. Choose a theme with `?theme=<id>` (for example
+`https://ireps.github.io/footprint-chess/?theme=pirate`), the same way as
+`?lang=`, or with the palette button on the home screen, which shows each
+theme only as its own knight on its own colours, with no text. Nothing is
+stored on the device.
+
 ## Status
 
-Stages 1 and 2 of 6 are complete: a home screen, board, tap-to-move, footprints for all six pieces, the Robots theme (decoration only; every piece is always named and shown with its real chess shape), capture rounds (capture three opponent pawns), sound effects, a device check page (`check.html`), a lesson player with a "watch, then do" lesson and a capturing lesson for every piece, a grown-ups guide (`help.html`), and lesson text in English and Telugu with a language switch button. Every voice line has a clip in both languages (see [docs/VOICE-SCRIPT.md](docs/VOICE-SCRIPT.md)); if a clip is missing, the app falls back to the device's speech synthesis, or to silence. The roadmap is in [docs/DESIGN.md](docs/DESIGN.md#roadmap).
+Stages 1, 2 and 4 of 6 are complete: a home screen, board, tap-to-move, footprints for all six pieces, five themes (Robots, Classic, Space, Dinosaurs, Pirate; decoration only, every piece is always named and shown with its real chess shape), capture rounds (capture three opponent pawns), sound effects, a device check page (`check.html`), a lesson player with a "watch, then do" lesson and a capturing lesson for every piece, a grown-ups guide (`help.html`), and lesson text in English and Telugu with a language switch button. Every voice line has a clip in both languages (see [docs/VOICE-SCRIPT.md](docs/VOICE-SCRIPT.md)); if a clip is missing, the app falls back to the device's speech synthesis, or to silence. The roadmap is in [docs/DESIGN.md](docs/DESIGN.md#roadmap).
 
 ## Run locally
 
@@ -47,7 +60,7 @@ Requires Node.js 18 or later. There is nothing to install.
 node --test
 ```
 
-The tests cover the movement rules (`js/rules.js`), capture round generation (`js/levels.js`), the lesson scripts (`js/lessons.js`) and the voice clip generator (`tools/make-voice.js`): every move is legal, timings fit, every line uses real chess terms and never a robot name, left, right or a square name in either language, and the clip-generating tool's SSML, argument parsing and file indexing behave correctly (its Azure network call is never exercised by the tests).
+The tests cover the movement rules (`js/rules.js`), capture round generation (`js/levels.js`), the lesson scripts (`js/lessons.js`), the theme registry (`js/themes.js`) and the voice clip generator (`tools/make-voice.js`): every move is legal, timings fit, every line uses real chess terms and never a robot name, left, right or a square name in either language, every theme has a sprite symbol for every piece type and a colour rule in `css/app.css`, and the clip-generating tool's SSML, argument parsing and file indexing behave correctly (its Azure network call is never exercised by the tests).
 
 ## Deploy
 
@@ -65,6 +78,7 @@ css/check.css     Device check page styles.
 js/rules.js       Movement rules. No DOM access. Tested.
 js/levels.js      Capture round generation. No DOM access. Tested.
 js/lessons.js     Lesson scripts, piece names and voice line text (English and Telugu). No DOM access. Tested.
+js/themes.js      Theme ids and English names (for aria-labels). No DOM access. Tested.
 js/sound.js       Sound effects generated with the Web Audio API.
 js/voice-clips.js Ids of the voice lines that have a recorded clip, per language.
 js/voice.js       Plays voice clips, with per-language speech and silent fallbacks.

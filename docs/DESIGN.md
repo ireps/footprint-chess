@@ -71,12 +71,20 @@ For the current language, a line plays from a recorded clip if one exists, other
 
 Voice clips are generated with Azure's neural text-to-speech using [tools/make-voice.js](../tools/make-voice.js); see VOICE-SCRIPT.md for how to run it and for the recording spec that also applies to a parent's own recordings.
 
+## Themes
+
+Five themes: Robots (the default), Classic, Space, Dinosaurs and Pirate (`js/themes.js`). Every theme keeps the same real-piece silhouettes, real chess names and badges (principle 3, above); only the piece artwork and the board/panel colours change. Chosen with `?theme=<id>` in the address bar, exactly like `?lang=`, or with a palette button on the home screen; an unrecognised id falls back to Robots, and nothing is stored on the device.
+
+The world (board, frame, edge strips, background) and the other side's pieces get natural colours for each theme: one dark "other side" piece colour, and, apart from Classic, one accent colour for costume details (Pirate: also a gold, a stripe and a trouser colour, for its crew's shirts, sashes and trousers). The child's own pieces keep the same per-type colours as Robots in every theme except Classic (rook orange, bishop pink, queen purple, king yellow, knight teal, pawn green): distinct colours help a child tell their pieces apart, so only the costume (a sailor's stripes, a dinosaur's spikes, a space suit's ring) changes, not the body colour. Classic is the one exception throughout, a single natural pair (ivory for the child, black for the other side), matching real chess sets. Footprints follow the same rule: per-type in every theme but Classic, which uses its own single colour. Space adds a static star field and Pirate static wave marks to the background (CSS gradients only, no animation, matching principle 8). Pirate replaces the two edge strips entirely: instead of the eight real-piece silhouettes, each strip is a ship's hull with plank lines and cannon ports, the other side's dark hull above the board and the child's light hull below, so the two sides read as two ships facing off.
+
+The theme picker itself never shows a theme's name or any other text, only each theme's own knight on its own background (a theme's English name exists only as an aria-label, for accessibility and the grown-ups' guide) - the same "no robot word to the child" rule the Robots theme already followed extends to every theme.
+
 ## Roadmap
 
 1. **Foundation (done).** Board, footprints, move animations, the Robots theme, capture rounds, device check page.
 2. **Lesson player (done).** A home screen; Meet, Mission and Won cards; short scripted animations played on the real board ("watch, then do") for every piece and for capturing with it; a ghost hand that shows where to tap; replay and skip; lesson text in English and Telugu with a language switch; a grown-ups guide (`help.html`); and voice clips.
 3. **Games.** Catch the mouse, pawn race, and small games against a simple bot using only the pieces met so far.
-4. **Themes.** Space, Dinosaurs and Adventure, with a theme switcher that can be used at any time.
+4. **Themes (done).** Classic, Space, Dinosaurs and Pirate alongside Robots, chosen with `?theme=` or a home-screen palette button that can be used at any time; see "Themes" above.
 5. **Profiles.** Picture profiles, a sticker book, and a parent corner with calm mode and a backup code. Progress is stored on the device only.
 6. **Advanced.** Check and checkmate, Mirror Pond (the opponent's view), hand-print levels that introduce left and right, and offline mode with a service worker.
 

@@ -43,6 +43,12 @@
   --home-bg: #ffe7a8;
   --home-fg: #f3c969;
 
+  /* The home screen title sits directly on --bg, which some themes make
+     very dark; --title-ink lets a theme give it its own readable colour
+     without touching --ink (used everywhere else, always on a light card
+     or panel background regardless of theme). */
+  --title-ink: var(--ink);
+
   --panel-w: 300px;
   --dur: 1;
 }
@@ -161,11 +167,13 @@ body {
 }
 
 .strip {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-around;
   width: calc(var(--cell) * 8);
   height: calc(var(--cell) * 0.85);
+  overflow: hidden;
 }
 
 .strip-far { background: var(--far-bg); color: var(--far-fg); border-radius: 20px 20px 0 0; }
@@ -175,6 +183,20 @@ body {
   width: calc(var(--cell) * 0.4);
   height: calc(var(--cell) * 0.56);
 }
+
+/* Pirate only (see the "Themes" section below): two ship hulls replace the
+   edge strips entirely, so the real-piece silhouettes are hidden there. */
+.hull {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.theme-pirate .strip .cl-icon { visibility: hidden; }
+.theme-pirate .hull { display: block; }
 
 /* Landmark pulse (js/board.js landmark()): finite, transform only. */
 .strip.lit .cl-icon {
@@ -826,7 +848,7 @@ body {
   margin: 0;
   font-size: 56px;
   letter-spacing: 1px;
-  color: var(--ink);
+  color: var(--title-ink);
   text-shadow: 0 5px 0 #fff;
 }
 
@@ -911,6 +933,184 @@ body {
 .home-card-cl > svg { width: 28px; height: 28px; }
 
 .home-card:focus-visible { outline: 4px solid var(--ink); outline-offset: 4px; }
+
+/* ---------- theme picker (home screen) ---------- */
+
+/* No visible text, ever: each swatch is only its own theme's knight on its
+   own background (js/app.js buildThemeRow); the theme name exists only as
+   an aria-label. */
+.theme-row {
+  position: absolute;
+  top: 92px;
+  right: 24px;
+  z-index: 30;
+  display: flex;
+  gap: 12px;
+}
+
+.theme-row[hidden] { display: none; }
+
+/* Each swatch is painted in its own theme's background colour (the
+   theme-<id> class on the button sets --bg), with that theme's knight. */
+.theme-swatch {
+  background: var(--bg);
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  border: 4px solid transparent;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.18);
+}
+
+.theme-swatch > svg { width: 88%; height: 88%; }
+
+.theme-swatch.selected {
+  border-color: var(--ink);
+  box-shadow: 0 5px 0 var(--ink), 0 0 0 4px #fff inset;
+}
+
+.theme-swatch:focus-visible { outline: 4px solid var(--ink); outline-offset: 3px; }
+
+/* ---------- themes (stage 4) ----------
+ * Every theme keeps the real chess silhouettes, names and badges (see
+ * CLAUDE.md, "Design decisions"); only colours and the piece artwork
+ * change. Piece colour is carried by --pc/--acc (and, for a couple of
+ * themes, --spot/--band/--slit), set per side by .side-me/.side-foe
+ * (js/board.js pieceSvg) so the child's pieces are always light and the
+ * other side's are always dark. --fp and --tile-tint are each theme's one
+ * footprint/panel colour; the existing --r../--p and --r-tint../--p-tint
+ * tokens (used throughout the panel: portraits, tiles, home cards, the
+ * Won card's next-piece button) are pointed at them so the whole panel
+ * reads as one theme, with no per-selector changes needed there.
+ *
+ * These rules use a plain .theme-<id> class, not "body.theme-<id>",
+ * because the home screen's theme-picker swatches (above) also carry a
+ * theme class, to preview each theme's own colours regardless of which
+ * theme is currently applied to the page.
+ */
+
+.theme-robots { --bg: #bfeee8; }
+.theme-robots .side-foe { --pc: #4a5466; }
+
+.theme-classic {
+  --bg: #e9e4da; --bg2: #f3efe7;
+  --frame: #5a3a22; --frame-shadow: #3d2716;
+  --sq-light: #f0d9b5; --sq-dark: #b58863;
+  --far-bg: #3b2a1c; --far-fg: #6b5140;
+  --home-bg: #f4e6cc; --home-fg: #d9bf94;
+  --title-ink: #26315a;
+  --fp: #7a5230;
+  --tile-tint: #f4ead8;
+  --r: var(--fp); --b: var(--fp); --q: var(--fp); --k: var(--fp); --n: var(--fp); --p: var(--fp);
+  --r-tint: var(--tile-tint); --b-tint: var(--tile-tint); --q-tint: var(--tile-tint);
+  --k-tint: var(--tile-tint); --n-tint: var(--tile-tint); --p-tint: var(--tile-tint);
+}
+.theme-classic .side-me { --pc: #f6f1e6; --acc: #f6f1e6; --slit: #1d2b36; }
+.theme-classic .side-foe { --pc: #2c2a30; --acc: #2c2a30; --slit: #6b6873; }
+
+/* Space, Dinosaurs and Pirate: the child's pieces (side-me) keep the same
+   per-type body colours as Robots (see the combined --pc rules below the
+   theme blocks) - distinct colours help a child tell the pieces apart, so
+   only Classic (ivory vs black) and the "other side" in every theme stay a
+   single colour. --fp/--tile-tint are therefore not needed here: the panel
+   keeps its ordinary per-type --r../--p and --r-tint../--p-tint tokens
+   from :root, unchanged by the theme. */
+
+.theme-space {
+  --bg: #1b1f4a; --bg2: #262b63;
+  --frame: #0d1030; --frame-shadow: #05071a;
+  --sq-light: #eceef4; --sq-dark: #b4bccd;
+  --far-bg: #241d4f; --far-fg: #4b4585;
+  --home-bg: #d9dde8; --home-fg: #a9b1c5;
+  --title-ink: #ffffff;
+}
+/* --acc (the visor-line, orbit-ring and sparkle colour) is one value for
+   every type, tuned to stay legible over all six saturated body colours as
+   well as the light board squares: a clear space blue, distinct from every
+   piece colour (including the queen's purple and the knight's teal). */
+.theme-space .side-me { --acc: #4d5fe0; }
+.theme-space .side-foe { --pc: #3a3f55; --acc: #6e7591; }
+
+.theme-dinos {
+  --bg: #cfe6a8; --bg2: #dcefbf;
+  --frame: #5b4a2e; --frame-shadow: #3e321e;
+  --sq-light: #f4e6c4; --sq-dark: #a9cc84;
+  --far-bg: #4a3b24; --far-fg: #6f5d3d;
+  --home-bg: #efdcae; --home-fg: #cfb77c;
+  --title-ink: #26315a;
+}
+/* --acc (the back spikes) darkened from the original single-body-colour
+   design so they keep a clear black-outlined edge against every piece
+   colour, including the green pawn and teal knight bodies. */
+.theme-dinos .side-me { --acc: #3f7a22; --spot: rgba(255, 255, 255, 0.5); }
+.theme-dinos .side-foe { --pc: #5a4a33; --acc: #3a2f20; --spot: rgba(255, 255, 255, 0.18); }
+
+.theme-pirate {
+  --bg: #8fcfe3; --bg2: #a9dcec;
+  --frame: #4a2f1b; --frame-shadow: #2e1d10;
+  --sq-light: #ecd3a4; --sq-dark: #b98a55;
+  --title-ink: #26315a;
+}
+/* Pirate pieces are a crew in shirts (--pc, per type), trousers, belts,
+   necklaces and gold crowns (css/app.css's pirate-* sprite symbols); --acc
+   is not used by this theme. */
+.theme-pirate .side-me { --stripe: rgba(255, 255, 255, 0.45); --trouser: #2f3552; --gold: #f2c14e; --band: #c8372d; }
+.theme-pirate .side-foe { --pc: #2f2a26; --stripe: rgba(255, 255, 255, 0.14); --trouser: #15151d; --gold: #b8913a; --band: #6b2a24; }
+
+/* The child's pieces' per-type body colour for the Space, Dinosaurs and
+   Pirate costumes (Robots gets the same colours from each robots-<type>
+   symbol's own var(--pc, <hex>) fallback; Classic stays ivory via
+   .theme-classic .side-me). Keyed to the costume being drawn (the <use>
+   href), not to the page's theme, so the theme picker's swatches show
+   their own colours whatever theme is active. Literal colours, because
+   Classic remaps --r..--p for its panel. side-foe stays one dark tone. */
+.side-me use[data-pt="r"][href^="#space-"],
+.side-me use[data-pt="r"][href^="#dinos-"],
+.side-me use[data-pt="r"][href^="#pirate-"] { --pc: #f59e2e; }
+.side-me use[data-pt="b"][href^="#space-"],
+.side-me use[data-pt="b"][href^="#dinos-"],
+.side-me use[data-pt="b"][href^="#pirate-"] { --pc: #ec5f99; }
+.side-me use[data-pt="q"][href^="#space-"],
+.side-me use[data-pt="q"][href^="#dinos-"],
+.side-me use[data-pt="q"][href^="#pirate-"] { --pc: #9a6ce0; }
+.side-me use[data-pt="k"][href^="#space-"],
+.side-me use[data-pt="k"][href^="#dinos-"],
+.side-me use[data-pt="k"][href^="#pirate-"] { --pc: #f5d23b; }
+.side-me use[data-pt="n"][href^="#space-"],
+.side-me use[data-pt="n"][href^="#dinos-"],
+.side-me use[data-pt="n"][href^="#pirate-"] { --pc: #36c2ce; }
+.side-me use[data-pt="p"][href^="#space-"],
+.side-me use[data-pt="p"][href^="#dinos-"],
+.side-me use[data-pt="p"][href^="#pirate-"] { --pc: #6ccb5f; }
+
+/* Static decoration, CSS gradients only (no animation): a star field for
+   Space and wave marks for Pirate, layered under the theme's own --bg.
+   Scoped to the actual page background (body), not the generic .theme-<id>
+   class, so the small picker swatches above stay a plain flat colour. */
+body.theme-space {
+  background-image:
+    radial-gradient(1.6px 1.6px at 8% 18%, #fff 60%, transparent 61%),
+    radial-gradient(1.2px 1.2px at 22% 42%, #fff 60%, transparent 61%),
+    radial-gradient(1.6px 1.6px at 38% 12%, #fff 60%, transparent 61%),
+    radial-gradient(1.2px 1.2px at 52% 34%, #fff 60%, transparent 61%),
+    radial-gradient(1.6px 1.6px at 68% 58%, #fff 60%, transparent 61%),
+    radial-gradient(1.2px 1.2px at 81% 22%, #fff 60%, transparent 61%),
+    radial-gradient(1.6px 1.6px at 92% 68%, #fff 60%, transparent 61%),
+    radial-gradient(1.2px 1.2px at 14% 78%, #fff 60%, transparent 61%),
+    radial-gradient(1.6px 1.6px at 46% 86%, #fff 60%, transparent 61%),
+    radial-gradient(1.2px 1.2px at 74% 90%, #fff 60%, transparent 61%);
+  background-repeat: no-repeat;
+  background-color: var(--bg);
+}
+
+body.theme-pirate {
+  background-image: repeating-radial-gradient(ellipse at 50% -10%, rgba(255, 255, 255, 0.3) 0 2px, transparent 2px 42px);
+  background-color: var(--bg);
+}
 
 /* ---------- responsive ---------- */
 
