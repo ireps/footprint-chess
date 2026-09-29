@@ -1,8 +1,11 @@
 /*
- * Footprint Chess: spoken lesson lines, in English (default) or Telugu.
+ * Footprint Chess: spoken lesson lines, in any language of the registry in
+ * js/langs.js (English by default).
  *
- * For the current language (see setLang/getLang), say(id, done) tries, in
- * order:
+ * For the current language (see setLang/getLang), say(id, done) walks that
+ * language's fallback chain (FC.langs.fallbackChain: the language itself,
+ * then its fallback, ending at the default language) and, for each language
+ * in it, tries in order:
  *   1. a recorded clip in that language (audio/voice/<lang>/<id>.mp3,
  *      decoded through the shared AudioContext from js/sound.js). If the
  *      clip exists but is not decoded yet, say() waits for it (up to
@@ -10,14 +13,14 @@
  *      the recorded voice with a device voice;
  *   2. the device's speechSynthesis, speaking that language's text with a
  *      voice picked for that language;
- *   3. when the language is Telugu only, step 1 again in English;
- *   4. when the language is Telugu only, step 2 again in English;
- *   5. otherwise, silence, timed by the line's estimated length so the
- *      lesson keeps its pacing.
- * English never falls back to Telugu. Voice is always optional: nothing in
- * here may throw, and a caller's done callback is always called exactly
- * once, even if playback fails (unless a later say()/stop() cancels the
- * line first, which drops its callback).
+ * and, once every language in the chain has been tried, silence, timed by
+ * the line's estimated length so the lesson keeps its pacing. Today that
+ * gives, for Telugu: Telugu clip, Telugu speech, English clip, English
+ * speech, silence; for English: English clip, English speech, silence. The
+ * default language never falls back to another language. Voice is always
+ * optional: nothing in here may throw, and a caller's done callback is
+ * always called exactly once, even if playback fails (unless a later
+ * say()/stop() cancels the line first, which drops its callback).
  *
  * Two ways to speak:
  *   say(id, done)       narration: interrupts whatever is playing (and
@@ -29,37 +32,21 @@
  *                       later say() or stop() cancels the queue without
  *                       calling the queued callbacks.
  *
- * Depends on FC.sound (context/output/isEnabled) and FC.lessons (LANGS,
- * DEFAULT_LANG, LINES), loaded before this file. Browser only script:
- * exposes window.FC.voice.
+ * Depends on FC.sound (context/output/isEnabled), FC.langs (the language
+ * registry) and FC.lessons (LINES), loaded before this file. Browser only
+ * script: exposes window.FC.voice.
  */
 (function (root) {
   'use strict';
 
   var FC = root.FC = root.FC || {};
   var S = FC.sound;
+  var Ls = FC.langs;
 
   // Device speech is deliberately slower and a touch higher than the
   // browser default: it reads calmer and less flat to a young child.
   var SPEECH_RATE = 0.85;
   var SPEECH_PITCH = 1.1;
-
-  // Ordered by preference: the first English voice whose name matches an
-  // earlier entry wins. Chosen for a warm, clearly-spoken tone rather than
-  // a flat default voice.
-  var EN_PREFERRED_NAMES = [
-    /Google UK English Female/,
-    /Google US English/,
-    /Heera/,
-    /Neerja/,
-    /Zira/,
-    /Samantha/,
-    /Karen/,
-    /Moira/,
-    /Tessa/,
-    /Salli|Joanna|Kendra|Kimberly|Ivy|Amy|Emma|Raveena|Aditi/
-  ];
-  var EN_MALE_NAMES = /David|Mark|Ravi|Male|Guy|Brian|Joey|Justin|Matthew|Russell/;
 
   // How long say() waits for a clip that is still loading before it gives
   // up and falls back. Long enough for a slow tablet on Wi-Fi.
@@ -78,20 +65,18 @@ var playing = false;     // a line is sounding or waiting for its clip to load
 var queue = [];          // sayAfter items waiting: { id, done, real }
 var QUEUE_MAX = 4;
 
-  var currentLang = (FC.lessons && FC.lessons.DEFAULT_LANG) || 'en';
+  var currentLang = Ls.DEFAULT_LANG;
   var cachedVoices = null; // null until first read; speechSynthesis.getVoices()
 
   /* ---------- language ---------- */
 
   function setLang(lang) {
-    var langs = (FC.lessons && FC.lessons.LANGS) || ['en'];
-    var def = (FC.lessons && FC.lessons.DEFAULT_LANG) || 'en';
-    var next = langs.indexOf(lang) !== -1 ? lang : def;
+    var next = Ls.isLang(lang) ? lang : Ls.DEFAULT_LANG;
     if (next !== currentLang) {
       // Only the current language's clips are kept decoded, to save memory
       // on a 2 GB tablet (about 25 MB of decoded audio per language).
-      // English clips that Telugu needs as a fallback are loaded on demand
-      // (see say()), not kept.
+      // Clips of a fallback language (English, for Telugu) are loaded on
+      // demand (see say()), not kept.
       var keep = {};
       keep[next] = buffers[next] || {};
       buffers = keep;
@@ -141,51 +126,57 @@ var QUEUE_MAX = 4;
     }
   })();
 
-  function pickTeluguVoice(voices) {
-    var candidates = voices.filter(function (v) {
-      return v.lang && v.lang.slice(0, 2).toLowerCase() === 'te';
-    });
-    if (!candidates.length) return null;
-    var female = candidates.filter(function (v) { return /female/i.test(v.name); });
-    return female[0] || candidates[0];
+  // True if a voice's language tag is the registry's speech prefix, alone or
+  // followed by a region ("en", "en-US", "te_IN").
+  function voiceMatches(voice, prefix) {
+    if (!voice.lang) return false;
+    var tag = voice.lang.toLowerCase();
+    return tag === prefix || tag.indexOf(prefix + '-') === 0 || tag.indexOf(prefix + '_') === 0;
   }
 
-  function pickEnglishVoice(voices) {
-    var en = voices.filter(function (v) {
-      return v.lang && v.lang.slice(0, 2).toLowerCase() === 'en';
-    });
-    if (!en.length) return null;
+  /*
+   * A device voice for lang: those whose language tag starts with the
+   * registry's speech prefix, then that language's voicePrefs if it has any:
+   * preferred names in order, then any name containing "female", then
+   * voices not on the avoid list (with the preferred regions first), then
+   * any. A language with no voicePrefs just gets a "female" voice if there
+   * is one, else the first.
+   */
+  function pickVoice(lang) {
+    var voices = getVoices();
+    if (!voices.length) return null;
+    var entry = Ls.get(lang);
+    var prefix = (entry ? entry.speech : String(lang)).toLowerCase();
+    var candidates = voices.filter(function (v) { return voiceMatches(v, prefix); });
+    if (!candidates.length) return null;
+    var prefs = (entry && entry.voicePrefs) || {};
 
-    for (var i = 0; i < EN_PREFERRED_NAMES.length; i++) {
-      var re = EN_PREFERRED_NAMES[i];
-      for (var j = 0; j < en.length; j++) {
-        if (re.test(en[j].name)) return en[j];
+    var names = prefs.preferNames || [];
+    for (var i = 0; i < names.length; i++) {
+      for (var j = 0; j < candidates.length; j++) {
+        if (names[i].test(candidates[j].name)) return candidates[j];
       }
     }
 
-    var female = en.filter(function (v) { return /female/i.test(v.name); });
+    var female = candidates.filter(function (v) { return /female/i.test(v.name); });
     if (female.length) return female[0];
 
     // Skip voices known to be male before preferring a region, so a deep
     // en-IN or en-GB voice never wins over a softer one.
-    var notMale = en.filter(function (v) { return !EN_MALE_NAMES.test(v.name); });
+    var allowed = prefs.avoidNames
+      ? candidates.filter(function (v) { return !prefs.avoidNames.test(v.name); })
+      : candidates;
 
-    var enIN = notMale.filter(function (v) { return v.lang.toLowerCase() === 'en-in'; });
-    if (enIN.length) return enIN[0];
+    var regions = prefs.preferRegions || [];
+    for (var k = 0; k < regions.length; k++) {
+      var inRegion = allowed.filter(function (v) { return v.lang.toLowerCase() === regions[k]; });
+      if (inRegion.length) return inRegion[0];
+    }
 
-    var enGB = notMale.filter(function (v) { return v.lang.toLowerCase() === 'en-gb'; });
-    if (enGB.length) return enGB[0];
+    if (allowed.length) return allowed[0];
 
-    if (notMale.length) return notMale[0];
-
-    // Every English voice is on the avoid list: a voice is still better than silence.
-    return en[0];
-  }
-
-  function pickVoice(lang) {
-    var voices = getVoices();
-    if (!voices.length) return null;
-    return lang === 'te' ? pickTeluguVoice(voices) : pickEnglishVoice(voices);
+    // Every voice is on the avoid list: a voice is still better than silence.
+    return candidates[0];
   }
 
   /* ---------- playback plumbing ---------- */
@@ -278,15 +269,17 @@ var QUEUE_MAX = 4;
     }
   }
 
-  // Loads the current language's clips for ids (and, in Telugu, English
-  // clips for ids with no Telugu clip). done() when all have settled.
+  // Loads, for each id, the clip in the first language of the current
+  // language's fallback chain that has one (so, in Telugu, an English clip
+  // for an id with no Telugu clip). done() when all have settled.
   function preload(ids, done) {
     done = done || function () {};
-    var lang = currentLang;
+    var chain = Ls.fallbackChain(currentLang);
     var wanted = [];
     (ids || []).forEach(function (id) {
-      if (hasClip(lang, id)) wanted.push([lang, id]);
-      else if (lang === 'te' && hasClip('en', id)) wanted.push(['en', id]);
+      for (var i = 0; i < chain.length; i++) {
+        if (hasClip(chain[i], id)) { wanted.push([chain[i], id]); return; }
+      }
     });
     var remaining = wanted.length;
     if (!remaining) { done(); return; }
@@ -428,19 +421,18 @@ var QUEUE_MAX = 4;
       next();
     }
 
-    var lang = currentLang;
-    if (lang === 'te') {
-      // Telugu clip, Telugu speech, English clip, English speech, silence.
-      tryClip('te', function () {
-        trySpeech('te', function () {
-          tryClip('en', function () {
-            trySpeech('en', silence);
-          });
-        });
+    // For each language in the fallback chain: its clip, then its speech;
+    // then silence. (Telugu: te clip, te speech, en clip, en speech,
+    // silence. English: en clip, en speech, silence.)
+    var chain = Ls.fallbackChain(currentLang);
+    function step(i) {
+      if (i >= chain.length) { silence(); return; }
+      var lang = chain[i];
+      tryClip(lang, function () {
+        trySpeech(lang, function () { step(i + 1); });
       });
-    } else {
-      tryClip(lang, function () { trySpeech(lang, silence); });
     }
+    step(0);
   }
 
   // Interrupts the current line and drops the queue. done is called when

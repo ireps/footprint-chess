@@ -523,34 +523,38 @@
 
   /* ---------- team bars (games, and the "turns" lesson) ---------- */
 
+  // The team's entry in FC.themes.TEAMS, or null.
+  function teamEntry(themeId, side) {
+    var teams = T.TEAMS;
+    return (teams && teams[themeId] && teams[themeId][side]) || null;
+  }
+
   // FC.themes.TEAMS[themeId][side].<lang>, without the trailing "!" the
   // spoken team-pick lines use (js/lessons.js LINES['team-<id>-<side>']).
-  // Falls back to a plain placeholder if TEAMS or the theme id is somehow
-  // missing, so a team bar never shows nothing.
+  // The current language's name, else the next language in its fallback
+  // chain (js/langs.js). Falls back to a plain placeholder if TEAMS or the
+  // theme id is somehow missing, so a team bar never shows nothing.
   function teamName(themeId, side) {
-    var teams = T.TEAMS;
-    var entry = teams && teams[themeId] && teams[themeId][side];
+    var entry = teamEntry(themeId, side);
     if (!entry) return side === 'a' ? 'Team A' : 'Team B';
-    var lang = V.getLang();
-    return entry[lang] || entry.en;
+    var chain = FC.langs.fallbackChain(V.getLang());
+    for (var i = 0; i < chain.length; i++) {
+      if (entry[chain[i]]) return entry[chain[i]];
+    }
+    return side === 'a' ? 'Team A' : 'Team B';
   }
 
   // The mode badge's text while a team bar's foe side has the turn (see
   // js/player.js and js/games-ui.js): "<name>'s turn" in English,
-  // "<name> వంతు" in Telugu.
-  // Telugu uses the team's teOf form (మెరుపుల వంతు, not మెరుపులు వంతు);
-  // English plural names ending in s take a bare apostrophe (Androids’ turn).
-  function turnBadgeText(name) {
-    if (V.getLang() === 'te') {
-      var teams = T.TEAMS || {};
-      for (var id in teams) {
-        for (var side in teams[id]) {
-          if (teams[id][side].te === name && teams[id][side].teOf) return teams[id][side].teOf + ' వంతు';
-        }
-      }
-      return name + ' వంతు';
-    }
-    return /s$/.test(name) ? (name + '’ turn') : (name + '’s turn');
+  // "<name> వంతు" in Telugu. The wording is per language (turnOf in
+  // js/langs.js); the team's optional possessive form for the current
+  // language (TEAMS[..].of[lang]: Telugu మెరుపుల వంతు, not మెరుపులు వంతు)
+  // is passed along with the name.
+  function turnBadgeText(themeId, side) {
+    var lang = V.getLang();
+    var entry = teamEntry(themeId, side);
+    var ofForm = entry && entry.of ? entry.of[lang] : undefined;
+    return FC.langs.get(lang).turnOf(teamName(themeId, side), ofForm);
   }
 
   function buildTeamBar(container, name, pawnSide) {

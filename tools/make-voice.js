@@ -10,8 +10,13 @@
  * modern Node syntax; it still has no npm dependencies, only Node's own
  * fs/path/https modules.
  *
+ * Languages come from the registry in js/langs.js: --lang accepts any
+ * registry id, or "all" (every language, in registry order). Each language's
+ * Azure voice is the registry's azureVoice; the SSML xml:lang is that name's
+ * first two dash-separated parts (en-IN-NeerjaNeural gives en-IN).
+ *
  * Usage (run from the repo root):
- *   node tools/make-voice.js                       generate every line, both languages
+ *   node tools/make-voice.js                       generate every line, every language
  *   node tools/make-voice.js --lang en              generate English only
  *   node tools/make-voice.js --lang te --force      regenerate Telugu, overwriting files
  *   node tools/make-voice.js --only hello-1,hello-2 generate just these ids
@@ -40,10 +45,16 @@ const fs = require('node:fs');
 const path = require('node:path');
 const https = require('node:https');
 
-// Azure neural voice per language, and the xml:lang the SSML declares for
-// it. Matches the languages in js/lessons.js (FC.lessons.LANGS).
-const VOICE_NAMES = { en: 'en-IN-NeerjaNeural', te: 'te-IN-ShrutiNeural' };
-const XML_LANGS = { en: 'en-IN', te: 'te-IN' };
+const Langs = require('../js/langs.js');
+
+// Azure neural voice per language id, and the xml:lang the SSML declares for
+// it, both derived from the registry (js/langs.js azureVoice).
+const VOICE_NAMES = {};
+const XML_LANGS = {};
+for (const entry of Langs.LANGUAGES) {
+  VOICE_NAMES[entry.id] = entry.azureVoice;
+  XML_LANGS[entry.id] = entry.azureVoice.split('-').slice(0, 2).join('-');
+}
 
 const DELAY_BETWEEN_REQUESTS_MS = 300;
 
@@ -64,7 +75,7 @@ function buildSsml(lang, text) {
   const xmlLang = XML_LANGS[lang];
   const voiceName = VOICE_NAMES[lang];
   if (!xmlLang || !voiceName) {
-    throw new Error(`Unsupported language "${lang}"; expected one of ${Object.keys(VOICE_NAMES).join(', ')}`);
+    throw new Error(`Unsupported language "${lang}"; expected one of ${Langs.ids().join(', ')}`);
   }
   const escaped = escapeXml(text);
   return '<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="' + xmlLang + '">' +
@@ -82,7 +93,7 @@ function parseArgs(argv) {
     if (raw === '--help' || raw === '-h') { args.help = true; continue; }
     if (raw === '--lang') {
       const value = argv[++i];
-      if (!value) throw new Error('--lang requires a value: en, te or all');
+      if (!value) throw new Error(`--lang requires a value: ${langChoices()}`);
       args.lang = value;
       continue;
     }
@@ -99,15 +110,20 @@ function parseArgs(argv) {
     }
     throw new Error(`Unknown argument: ${raw}`);
   }
-  if (!['en', 'te', 'all'].includes(args.lang)) {
-    throw new Error(`--lang must be en, te or all (got "${args.lang}")`);
+  if (args.lang !== 'all' && !Langs.isLang(args.lang)) {
+    throw new Error(`--lang must be ${langChoices()} (got "${args.lang}")`);
   }
   return args;
 }
 
+// "en, te or all": the registry ids, then "all".
+function langChoices() {
+  return Langs.ids().join(', ') + ' or all';
+}
+
 // Ids that have a file at <root>/audio/voice/<lang>/<id>.mp3, sorted, for
-// each language in langs, in that order.
-function buildClipIndex(root, langs) {
+// each language in langs (default: every registry language), in that order.
+function buildClipIndex(root, langs = Langs.ids()) {
   const index = {};
   for (const lang of langs) {
     const dir = path.join(root, 'audio', 'voice', lang);
@@ -132,9 +148,10 @@ function formatLangArray(ids) {
 }
 
 // Rewrites the "var voiceClips = { ... };" block in the file at filePath to
-// match index, for each language in langs (in that order), leaving
-// everything else in the file - including its header comment - untouched.
-function rebuildVoiceClipsFile(filePath, index, langs) {
+// match index, for each language in langs (default: every registry language,
+// in that order), leaving everything else in the file - including its
+// header comment - untouched.
+function rebuildVoiceClipsFile(filePath, index, langs = Langs.ids()) {
   const current = fs.readFileSync(filePath, 'utf8');
   const block = /var voiceClips = \{[\s\S]*?\n  \};/;
   if (!block.test(current)) {
@@ -195,7 +212,7 @@ function printHelp() {
   console.log([
     'Usage: node tools/make-voice.js [options]',
     '',
-    '  --lang en|te|all   Language(s) to generate (default: all, English first)',
+    '  --lang ' + Langs.ids().join('|') + '|all   Language(s) to generate (default: all, in registry order)',
     '  --only id1,id2     Only these line ids',
     '  --force            Overwrite files that already exist (default: skip them)',
     '  --index-only       Rebuild js/voice-clips.js from audio/voice/ and exit; no network',
@@ -216,10 +233,11 @@ async function main() {
   const root = path.join(__dirname, '..');
   const lessons = require(path.join(root, 'js', 'lessons.js'));
   const clipsFile = path.join(root, 'js', 'voice-clips.js');
+  const registryIds = Langs.ids();
 
   if (args.indexOnly) {
-    const index = buildClipIndex(root, lessons.LANGS);
-    rebuildVoiceClipsFile(clipsFile, index, lessons.LANGS);
+    const index = buildClipIndex(root, registryIds);
+    rebuildVoiceClipsFile(clipsFile, index, registryIds);
     console.log('Rebuilt js/voice-clips.js from audio/voice/ (no network requests made).');
     return;
   }
@@ -231,8 +249,8 @@ async function main() {
       'Use --index-only if you only want to rebuild js/voice-clips.js from existing files.');
   }
 
-  // English first, then Telugu, matching FC.lessons.LANGS.
-  const langs = args.lang === 'all' ? lessons.LANGS.slice() : [args.lang];
+  // Registry order (js/langs.js), matching FC.lessons.LANGS.
+  const langs = args.lang === 'all' ? registryIds.slice() : [args.lang];
   const ids = args.only || Object.keys(lessons.LINES).sort();
 
   for (const lang of langs) {
@@ -265,8 +283,8 @@ async function main() {
     }
   }
 
-  const index = buildClipIndex(root, lessons.LANGS);
-  rebuildVoiceClipsFile(clipsFile, index, lessons.LANGS);
+  const index = buildClipIndex(root, registryIds);
+  rebuildVoiceClipsFile(clipsFile, index, registryIds);
   console.log('Rebuilt js/voice-clips.js from audio/voice/.');
 }
 

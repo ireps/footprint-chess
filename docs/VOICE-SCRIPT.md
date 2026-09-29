@@ -3,25 +3,31 @@
 The lesson player speaks the lines below, in English (the default) or
 Telugu (`?lang=te`). Ids and text must match `js/lessons.js`
 (`FC.lessons.LINES`) exactly; `tests/lessons.test.js` checks this file
-against that source in both languages.
+against that source in every language of the registry (`js/langs.js`). The
+Lines table has one column per language, headed with the registry's English
+name for it; adding a language adds a column (see [LANGUAGES.md](LANGUAGES.md)).
 
 ## How clips are used
 
 A recorded clip lives at `audio/voice/<lang>/<id>.mp3`, one folder per
-language (`audio/voice/en/` and `audio/voice/te/`). `js/voice-clips.js`
+language (`audio/voice/en/` and `audio/voice/te/`, and one more folder for each further language in the registry). `js/voice-clips.js`
 lists, per language, which ids actually have a file, so `js/voice.js` never
 fetches a file that does not exist.
 
-For the language currently selected, `js/voice.js` tries, in order:
+For the language currently selected, `js/voice.js` walks that language's
+fallback chain (the registry's `fallback` links, ending at the default
+language) and, for each language in it, tries a recorded clip and then the
+device's speech synthesis speaking that language's text; after the whole
+chain, silence, timed by the line's `ms` estimate, so the lesson keeps its
+pacing. For Telugu (whose fallback is English) that is:
 
-1. a recorded clip in that language;
-2. the device's speech synthesis, speaking that language's text;
-3. when the language is Telugu only, a recorded clip in **English**;
-4. when the language is Telugu only, device speech in **English**;
-5. otherwise, silence, timed by the line's `ms` estimate, so the lesson
-   keeps its pacing.
+1. a recorded clip in Telugu;
+2. the device's speech synthesis, speaking the Telugu text;
+3. a recorded clip in **English**;
+4. device speech in **English**;
+5. silence.
 
-English never falls back to Telugu. This means English clips are worth
+English (the default) has no fallback, so it never falls back to Telugu. This means English clips are worth
 recording first: they are also what a Telugu-speaking child hears if a
 Telugu clip and Telugu device speech are both unavailable.
 

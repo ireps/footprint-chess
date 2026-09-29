@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const TH = require('../js/themes.js');
 const L = require('../js/lessons.js');
+const LG = require('../js/langs.js');
 
 const ROOT = path.join(__dirname, '..');
 const TYPES = ['r', 'b', 'q', 'k', 'n', 'p'];
@@ -37,19 +38,32 @@ test('isTheme accepts every listed id and rejects anything else', () => {
 
 /* ---------- games: team names (stage 3) ---------- */
 
-test('TEAMS has a and b team names, in English and Telugu, for every theme, and nothing extra', () => {
+test('TEAMS has a and b team names, in every registry language, for every theme, and nothing extra', () => {
   assert.deepEqual(Object.keys(TH.TEAMS).sort(), TH.THEMES.map(t => t.id).sort());
   for (const theme of TH.THEMES) {
     const teams = TH.TEAMS[theme.id];
     assert.ok(teams, `TEAMS.${theme.id} is missing`);
+    assert.deepEqual(Object.keys(teams).sort(), ['a', 'b'], `TEAMS.${theme.id} should have exactly teams a and b`);
     for (const side of ['a', 'b']) {
       const t = teams[side];
-      assert.ok(t && typeof t.en === 'string' && t.en.trim().length > 0, `TEAMS.${theme.id}.${side}.en missing`);
-      assert.ok(t && typeof t.te === 'string' && t.te.trim().length > 0, `TEAMS.${theme.id}.${side}.te missing`);
-      assert.match(t.te, /[ఀ-౿]/, `TEAMS.${theme.id}.${side}.te should be Telugu script`);
-      assert.ok(typeof t.teOf === 'string' && /[ఀ-౿]/.test(t.teOf), `TEAMS.${theme.id}.${side}.teOf missing`);
+      for (const lang of LG.ids()) {
+        assert.ok(t && typeof t[lang] === 'string' && t[lang].trim().length > 0, `TEAMS.${theme.id}.${side}.${lang} missing`);
+        const script = LG.get(lang).script;
+        if (script) {
+          assert.match(t[lang], script, `TEAMS.${theme.id}.${side}.${lang} should contain the ${lang} script`);
+        }
+      }
+      // The optional possessive forms are per language, and each is in that language's script.
+      if (t.of !== undefined) {
+        for (const [lang, form] of Object.entries(t.of)) {
+          assert.ok(LG.isLang(lang), `TEAMS.${theme.id}.${side}.of has unknown language "${lang}"`);
+          assert.ok(typeof form === 'string' && form.trim().length > 0, `TEAMS.${theme.id}.${side}.of.${lang} is empty`);
+          const script = LG.get(lang).script;
+          if (script) assert.match(form, script, `TEAMS.${theme.id}.${side}.of.${lang} should contain the ${lang} script`);
+        }
+      }
     }
-    assert.notEqual(teams.a.en, teams.b.en, `${theme.id}: team a and b should have different English names`);
+    assert.notEqual(teams.a[LG.DEFAULT_LANG], teams.b[LG.DEFAULT_LANG], `${theme.id}: team a and b should have different ${LG.DEFAULT_LANG} names`);
   }
 });
 
@@ -60,11 +74,11 @@ test('DEFAULT_TEAM is "a", team a of every theme is the White (moves-first) side
 
 test('TEAMS matches the agreed group names exactly', () => {
   assert.deepEqual(TH.TEAMS, {
-    robots: { a: { en: 'Humanoids', te: 'మెరుపులు', teOf: 'మెరుపుల' }, b: { en: 'Androids', te: 'పిడుగులు', teOf: 'పిడుగుల' } },
-    classic: { a: { en: 'White', te: 'తెల్ల పావులు', teOf: 'తెల్ల పావుల' }, b: { en: 'Black', te: 'నల్ల పావులు', teOf: 'నల్ల పావుల' } },
-    space: { a: { en: 'Astronauts', te: 'సూర్య జట్టు', teOf: 'సూర్య జట్టు' }, b: { en: 'Cosmonauts', te: 'చంద్ర జట్టు', teOf: 'చంద్ర జట్టు' } },
-    dinos: { a: { en: 'Theropods', te: 'కొండ జట్టు', teOf: 'కొండ జట్టు' }, b: { en: 'Sauropods', te: 'అడవి జట్టు', teOf: 'అడవి జట్టు' } },
-    pirate: { a: { en: 'Buccaneers', te: 'సొరచేపలు', teOf: 'సొరచేపల' }, b: { en: 'Corsairs', te: 'తిమింగలాలు', teOf: 'తిమింగలాల' } }
+    robots: { a: { en: 'Humanoids', te: 'మెరుపులు', of: { te: 'మెరుపుల' } }, b: { en: 'Androids', te: 'పిడుగులు', of: { te: 'పిడుగుల' } } },
+    classic: { a: { en: 'White', te: 'తెల్ల పావులు', of: { te: 'తెల్ల పావుల' } }, b: { en: 'Black', te: 'నల్ల పావులు', of: { te: 'నల్ల పావుల' } } },
+    space: { a: { en: 'Astronauts', te: 'సూర్య జట్టు', of: { te: 'సూర్య జట్టు' } }, b: { en: 'Cosmonauts', te: 'చంద్ర జట్టు', of: { te: 'చంద్ర జట్టు' } } },
+    dinos: { a: { en: 'Theropods', te: 'కొండ జట్టు', of: { te: 'కొండ జట్టు' } }, b: { en: 'Sauropods', te: 'అడవి జట్టు', of: { te: 'అడవి జట్టు' } } },
+    pirate: { a: { en: 'Buccaneers', te: 'సొరచేపలు', of: { te: 'సొరచేపల' } }, b: { en: 'Corsairs', te: 'తిమింగలాలు', of: { te: 'తిమింగలాల' } } }
   });
 });
 
@@ -74,8 +88,9 @@ test('every TEAMS name matches its team-<theme>-<a|b> voice line in js/lessons.j
       const line = L.LINES['team-' + theme.id + '-' + side];
       assert.ok(line, `LINES missing team-${theme.id}-${side}`);
       const team = TH.TEAMS[theme.id][side];
-      assert.equal(line.en, team.en + '!', `team-${theme.id}-${side}: English text does not match TEAMS`);
-      assert.equal(line.te, team.te + '!', `team-${theme.id}-${side}: Telugu text does not match TEAMS`);
+      for (const lang of LG.ids()) {
+        assert.equal(line[lang], team[lang] + '!', `team-${theme.id}-${side}: ${lang} text does not match TEAMS`);
+      }
     }
   }
 });
@@ -99,6 +114,18 @@ test('index.html has a sprite symbol for every theme x piece type, and no leftov
 test('index.html has an ic-palette icon symbol for the theme tool button', () => {
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   assert.ok(/<symbol id="ic-palette"/.test(html));
+});
+
+test('index.html loads js/langs.js first, before js/rules.js and every other script', () => {
+  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const scripts = html.match(/<script src="[^"]+"><\/script>/g) || [];
+  assert.equal(scripts[0], '<script src="js/langs.js"></script>');
+  assert.ok(html.indexOf('<script src="js/langs.js">') < html.indexOf('<script src="js/rules.js">'));
+});
+
+test('index.html has a #lang-row container (the language picker for three or more languages), hidden at first', () => {
+  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  assert.ok(/<div class="lang-row" id="lang-row" hidden><\/div>/.test(html));
 });
 
 test('index.html loads js/themes.js before js/board.js', () => {

@@ -388,8 +388,7 @@
   // step drives it here, this says turn-foe/turn-me itself.
   function playReply(reply, myToken) {
     var theme = B.getTheme();
-    var foeName = B.teamName(theme, 'b');
-    B.setMode('watch', B.turnBadgeText(foeName));
+    B.setMode('watch', B.turnBadgeText(theme, 'b'));
     B.setActiveTeamBar('far');
     var proceeded = false;
     function proceed() {

@@ -1297,6 +1297,46 @@ body {
 
 .theme-swatch:focus-visible { outline: 4px solid var(--ink); outline-offset: 3px; }
 
+/* ---------- language picker (three or more languages) ---------- */
+
+/* Like the theme row: no visible text besides one glyph per language (its
+   name is an aria-label only). Fixed to the viewport so the language button
+   on the home screen and the one in the side panel can both open it. */
+.lang-row {
+  position: fixed;
+  top: 92px;
+  right: 24px;
+  z-index: 40;
+  display: flex;
+  gap: 12px;
+}
+
+.lang-row[hidden] { display: none; }
+
+.lang-choice {
+  background: #eef3ff;
+  color: var(--ink);
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  border: 4px solid transparent;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.18);
+}
+
+.lang-choice.selected {
+  border-color: var(--ink);
+  box-shadow: 0 5px 0 var(--ink), 0 0 0 4px #fff inset;
+}
+
+.lang-choice:focus-visible { outline: 4px solid var(--ink); outline-offset: 3px; }
+
 /* ---------- themes (stage 4) ----------
  * Every theme keeps the real chess silhouettes, names and badges (see
  * CLAUDE.md, "Design decisions"); only colours and the piece artwork
@@ -1556,6 +1596,7 @@ body.theme-pirate {
 .no-flexgap .logo > * + * { margin-left: 16px; }
 .no-flexgap .feet > * + * { margin-left: 6px; }
 .no-flexgap .theme-row > * + * { margin-left: 12px; }
+.no-flexgap .lang-row > * + * { margin-left: 12px; }
 
 /* .home-cards wraps, so every card carries the 22px gap as a margin and the
    container's negative margin takes the outer half back. */

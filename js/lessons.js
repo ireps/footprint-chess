@@ -22,15 +22,17 @@
 
   var isNode = typeof module !== 'undefined' && module.exports;
   var R = isNode ? require('./rules.js') : root.FC.rules;
+  var Ls = isNode ? require('./langs.js') : root.FC.langs;
 
   /*
-   * Languages the app can speak. English is the default (the owner's
-   * decision); Telugu is the alternative, chosen with ?lang=te. Anything
-   * that needs "the current language, else the app default" should fall
-   * back to DEFAULT_LANG, not to LANGS[0], so the two stay independent.
+   * Languages the app can speak, from the registry in js/langs.js (English
+   * is the default, the owner's decision; Telugu is the alternative, chosen
+   * with ?lang=te). Anything that needs "the current language, else the app
+   * default" should fall back to DEFAULT_LANG, not to LANGS[0], so the two
+   * stay independent. Adding a language: docs/LANGUAGES.md.
    */
-  var LANGS = ['en', 'te'];
-  var DEFAULT_LANG = 'en';
+  var LANGS = Ls.ids();
+  var DEFAULT_LANG = Ls.DEFAULT_LANG;
 
   /*
    * Real chess piece names, per language, keyed by the same one-letter
@@ -45,9 +47,12 @@
   var TYPE_ORDER = ['r', 'b', 'q', 'k', 'n', 'p'];
 
   /*
-   * Every voice line's text, in English and Telugu, exactly as agreed with
-   * the owner (docs/VOICE-SCRIPT.md carries the same text, plus a delivery
-   * note per line, and tests/lessons.test.js checks the two files match).
+   * Every voice line's text, one property per language id in the registry
+   * (js/langs.js; today English and Telugu), exactly as agreed with the
+   * owner (docs/VOICE-SCRIPT.md carries the same text, plus a delivery note
+   * per line, and tests/lessons.test.js checks the two files match). A
+   * language's text is written natively for children, never translated
+   * word for word.
    */
   var RAW_LINES = {
     /* used outside lessons, by js/app.js (see APP_LINES below) */
@@ -163,21 +168,29 @@
   /*
    * Estimated spoken length in ms (not a recording length): used to pace
    * the watch script before real recordings exist, and as a guard timer
-   * once they do. About 60ms per English character (minimum 1100ms);
-   * Telugu is usually longer spoken, so the estimate also takes 75ms per
-   * Telugu character, and the line uses whichever estimate is longer.
-   * Shared by both languages, since it only paces the animation.
+   * once they do. texts maps a language id to that language's text. Each
+   * language has its own rate (the registry's msPerChar: about 60ms per
+   * English character, 75ms per Telugu character, which is usually longer
+   * spoken); the line uses whichever estimate is longest, with a minimum of
+   * 1100ms. Shared by every language, since it only paces the animation.
    */
-  function estimateLineMs(en, te) {
-    var enMs = Math.max(1100, Math.round(en.length * 60));
-    var teMs = Math.max(1100, Math.round(te.length * 75));
-    return Math.max(enMs, teMs);
+  function estimateLineMs(texts) {
+    var ms = 1100;
+    LANGS.forEach(function (lang) {
+      var text = texts[lang];
+      if (typeof text !== 'string') return;
+      ms = Math.max(ms, Math.round(text.length * Ls.get(lang).msPerChar));
+    });
+    return ms;
   }
 
   var LINES = {};
   Object.keys(RAW_LINES).forEach(function (id) {
     var line = RAW_LINES[id];
-    LINES[id] = { en: line.en, te: line.te, ms: estimateLineMs(line.en, line.te) };
+    var entry = {};
+    LANGS.forEach(function (lang) { entry[lang] = line[lang]; });
+    entry.ms = estimateLineMs(entry);
+    LINES[id] = entry;
   });
 
   var PRACTICE_LINES = ['your-turn', 'tap-piece', 'tap-footprint', 'great'];
@@ -421,7 +434,7 @@
     return {
       id: 'capture-' + type,
       type: type,
-      title: 'Capture: ' + PIECE_NAMES.en[type],
+      title: 'Capture: ' + PIECE_NAMES[DEFAULT_LANG][type],
       setup: { hero: hero, foes: [foe] },
       watch: [
         { wait: 500 },

@@ -13,6 +13,7 @@
   var L = FC.levels;
   var LS = FC.lessons;
   var TH = FC.themes;
+  var LG = FC.langs;
   var S = FC.sound;
   var V = FC.voice;
   var B = FC.board;
@@ -48,7 +49,8 @@
     homeSound: byId('home-sound-toggle'),
     homeCards: byId('home-cards'),
     themeToggle: byId('theme-toggle'),
-    themeRow: byId('theme-row')
+    themeRow: byId('theme-row'),
+    langRow: byId('lang-row')
   };
 
   // Bumped by stopRound(): every callback a round schedules (a move's
@@ -112,35 +114,45 @@
   }
 
   function pieceName(type) { return LS.PIECE_NAMES[V.getLang()][type]; }
-  function pieceNameEn(type) { return LS.PIECE_NAMES.en[type]; }
+  // The default language's name, used for aria-labels and the Meet card's sub-name.
+  function pieceNameEn(type) { return LS.PIECE_NAMES[LS.DEFAULT_LANG][type]; }
 
   /* ---------- language ---------- */
 
-  // Simple, dependency-free ?lang= reader: no URLSearchParams needed. English
-  // is the default (no param, or an unrecognised value); ?lang=te bookmarks
-  // Telugu. FC.voice.setLang falls back to the default for anything else.
+  // Simple, dependency-free ?lang= reader: no URLSearchParams needed. The
+  // default language (English) is used for no param or an unrecognised
+  // value; ?lang=<id> bookmarks any language of the registry (js/langs.js),
+  // for example ?lang=te for Telugu. FC.voice.setLang falls back to the
+  // default for anything else.
   function parseLangFromUrl() {
     var m = /[?&]lang=([^&]*)/.exec(window.location.search || '');
     return m ? safeDecode(m[1]) : null;
   }
 
-  // Shows the OTHER language's glyph: tapping switches to it.
-  function langGlyph(lang) {
-    return lang === 'te' ? 'A' : 'అ';
+  // With exactly two languages the language button switches to the other
+  // one, so its glyph shows the language you would switch to. With three or
+  // more it opens the language row (see buildLangRow), so its glyph shows
+  // the current language. The aria-label is always "Language: <name>" of the
+  // current language.
+  function langButtonGlyph(lang) {
+    var shown = LG.LANGUAGES.length === 2 ? LG.get(LG.next(lang)) : LG.get(lang);
+    return shown ? shown.glyph : '';
   }
 
   function langName(lang) {
-    return lang === 'te' ? 'Telugu' : 'English';
+    var entry = LG.get(lang);
+    return entry ? entry.name : lang;
   }
 
   function updateLangButtons() {
     var lang = V.getLang();
-    var glyph = langGlyph(lang);
+    var glyph = langButtonGlyph(lang);
     var label = 'Language: ' + langName(lang);
     dom.langGlyph.textContent = glyph;
     dom.homeLangGlyph.textContent = glyph;
     dom.lang.setAttribute('aria-label', label);
     dom.homeLang.setAttribute('aria-label', label);
+    markLangRow();
   }
 
   // Rewrites ?lang= in place, keeping any other query parameters and the
@@ -163,9 +175,60 @@
     }
   }
 
+  // The language row (three or more languages only): one round button per
+  // registry language showing its glyph, with the language's name as an
+  // aria-label; the current one is ringed. Built afresh each time it opens.
+  function buildLangRow() {
+    clear(dom.langRow);
+    LG.LANGUAGES.forEach(function (lang) {
+      var btn = el('button', 'lang-choice');
+      btn.type = 'button';
+      btn.setAttribute('aria-label', lang.name);
+      btn.appendChild(textEl('span', 'lang-glyph', lang.glyph));
+      btn.addEventListener('click', function () { onLangChoose(lang.id); });
+      dom.langRow.appendChild(btn);
+    });
+    markLangRow();
+  }
+
+  function markLangRow() {
+    var current = V.getLang();
+    var kids = dom.langRow.children;
+    for (var i = 0; i < kids.length; i++) {
+      var on = LG.LANGUAGES[i] && LG.LANGUAGES[i].id === current;
+      kids[i].classList.toggle('selected', !!on);
+      kids[i].setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+  }
+
+  function hideLangRow() {
+    dom.langRow.hidden = true;
+  }
+
   function onLangToggle() {
     S.unlock();
-    var next = V.getLang() === 'te' ? 'en' : 'te';
+    if (LG.LANGUAGES.length > 2) {
+      // The language row and the theme row share a spot: one at a time.
+      var hidden = dom.langRow.hidden;
+      if (hidden) buildLangRow();
+      dom.langRow.hidden = !hidden;
+      if (hidden) dom.themeRow.hidden = true;
+      return;
+    }
+    switchLang(LG.next(V.getLang()));
+  }
+
+  function onLangChoose(id) {
+    S.unlock();
+    hideLangRow();
+    if (id === V.getLang()) {
+      S.play('select');
+      return;
+    }
+    switchLang(id);
+  }
+
+  function switchLang(next) {
     V.setLang(next);
     updateLangButtons();
     if (B.getMode() !== 'none') B.setMode(B.getMode(), modeText(B.getMode()));
@@ -242,7 +305,10 @@
     var hidden = dom.themeRow.hidden;
     if (hidden && !dom.themeRow.children.length) buildThemeRow();
     dom.themeRow.hidden = !hidden;
-    if (!dom.themeRow.hidden) markThemeRow();
+    if (!dom.themeRow.hidden) {
+      markThemeRow();
+      hideLangRow();
+    }
   }
 
   function onThemeChoose(id) {
@@ -384,6 +450,7 @@
     mode = 'home';
     updateToolButtons();
     renderHomeCards();
+    hideLangRow();
     dom.homescreen.hidden = false;
     if (FC.gamesUI && FC.gamesUI.onEnterHome) FC.gamesUI.onEnterHome();
   }
@@ -391,6 +458,7 @@
   function hideHomeScreen() {
     dom.homescreen.hidden = true;
     dom.themeRow.hidden = true;
+    hideLangRow();
     if (FC.gamesUI && FC.gamesUI.onLeaveHome) FC.gamesUI.onLeaveHome();
   }
 
@@ -523,7 +591,7 @@
 
     var go = el('button', 'go-btn');
     go.type = 'button';
-    go.setAttribute('aria-label', LS.LINES.mission.en);
+    go.setAttribute('aria-label', LS.LINES.mission[LS.DEFAULT_LANG]);
     go.appendChild(svgUse('play-tri'));
     frag.appendChild(go);
     return frag;

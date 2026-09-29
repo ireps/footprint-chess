@@ -1,9 +1,14 @@
 /*
  * Footprint Chess: device check page.
  * Reports browser features the app relies on. Output uses textContent only.
+ * The speech checks go through the language registry (js/langs.js, loaded
+ * first), so a new language shows up here without changes to this file
+ * beyond an optional test line in TEST_LINES.
  */
 (function () {
   'use strict';
+
+  var LG = window.FC.langs;
 
   var tbody = document.getElementById('results');
   var status = document.getElementById('action-result');
@@ -61,23 +66,47 @@
   var hasSpeech = 'speechSynthesis' in window;
   var voiceCell = row('Speech voices', hasSpeech ? 'Checking...' : 'Speech not available', hasSpeech ? '' : 'warn');
 
+  // True if a voice's language tag is the registry's speech prefix, alone or
+  // followed by a region ("en", "en-US", "te_IN").
+  function voiceIsLang(voice, entry) {
+    var tag = (voice.lang || '').toLowerCase();
+    return tag === entry.speech || tag.indexOf(entry.speech + '-') === 0 || tag.indexOf(entry.speech + '_') === 0;
+  }
+
+  // One count per registry language ("2 English (a, b, c), 0 Telugu"); the
+  // cell is green when the default language has a voice.
   function reportVoices() {
     var voices = window.speechSynthesis.getVoices() || [];
-    var english = voices.filter(function (v) { return /^en[-_]/i.test(v.lang); });
-    voiceCell.textContent = voices.length + ' voices, ' + english.length + ' English' +
-      (english.length ? ' (' + english.slice(0, 3).map(function (v) { return v.name; }).join(', ') + ')' : '');
-    voiceCell.className = english.length ? 'ok' : 'warn';
+    var parts = [];
+    var defaultCount = 0;
+    LG.LANGUAGES.forEach(function (entry) {
+      var matching = voices.filter(function (v) { return voiceIsLang(v, entry); });
+      if (entry.id === LG.DEFAULT_LANG) defaultCount = matching.length;
+      parts.push(matching.length + ' ' + entry.name +
+        (matching.length && entry.id === LG.DEFAULT_LANG
+          ? ' (' + matching.slice(0, 3).map(function (v) { return v.name; }).join(', ') + ')'
+          : ''));
+    });
+    voiceCell.textContent = voices.length + ' voices, ' + parts.join(', ');
+    voiceCell.className = defaultCount ? 'ok' : 'warn';
   }
 
   /* ---------- speech voice list ---------- */
 
   var voiceListBody = document.getElementById('voice-list');
-  var EN_TEST_LINE = 'Hop, hop, turn!';
-  var TE_TEST_LINE = 'ఇదిగో, నీ రోబో!';
+  // A short sentence per language id. A language with no entry here is
+  // tested with the default language's line.
+  var TEST_LINES = {
+    en: 'Hello! Let\'s learn chess.',
+    te: 'హలో! చదరంగం నేర్చుకుందాం.'
+  };
 
   function testLineFor(voice) {
-    var lang = (voice.lang || '').slice(0, 2).toLowerCase();
-    return lang === 'te' ? TE_TEST_LINE : EN_TEST_LINE;
+    for (var i = 0; i < LG.LANGUAGES.length; i++) {
+      var entry = LG.LANGUAGES[i];
+      if (voiceIsLang(voice, entry) && TEST_LINES[entry.id]) return TEST_LINES[entry.id];
+    }
+    return TEST_LINES[LG.DEFAULT_LANG];
   }
 
   function speakVoice(voice) {
@@ -175,7 +204,7 @@
       return;
     }
     try {
-      var u = new SpeechSynthesisUtterance('Hop, hop, turn!');
+      var u = new SpeechSynthesisUtterance("Hello! Let's learn chess.");
       u.lang = 'en-US';
       u.onend = function () { status.textContent = 'Speech finished.'; };
       u.onerror = function (ev) { status.textContent = 'Speech error: ' + (ev.error || 'unknown'); };

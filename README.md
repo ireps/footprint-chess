@@ -20,9 +20,14 @@ Details are in [docs/DESIGN.md](docs/DESIGN.md).
 English is the default. Telugu is available at `?lang=te` (for example
 `https://ireps.github.io/footprint-chess/?lang=te`), so it can be
 bookmarked; nothing is stored on the device. A language button in the side
-bar switches at any time: it shows the *other* language's glyph ('అ' in
-English, 'A' in Telugu) and updates the address bar to match. Lines already
-playing when you switch are not interrupted.
+bar switches at any time: with two languages it shows the *other* language's
+glyph ('అ' in English, 'A' in Telugu) and updates the address bar to match.
+Lines already playing when you switch are not interrupted.
+
+The languages are listed in one registry, `js/langs.js`, which everything
+else reads. With three or more languages the button opens a small row of
+round buttons, one per language, like the theme row. Adding a language is
+mostly a data change: see [docs/LANGUAGES.md](docs/LANGUAGES.md).
 
 ## Themes
 
@@ -70,7 +75,7 @@ Requires Node.js 18 or later. There is nothing to install.
 node --test
 ```
 
-The tests cover the movement rules (`js/rules.js`), capture round generation (`js/levels.js`), the games and their opponent (`js/games.js`), the lesson scripts (`js/lessons.js`), the theme registry (`js/themes.js`) and the voice clip generator (`tools/make-voice.js`): every move is legal, timings fit, every line uses real chess terms and never a robot name, left, right or a square name in either language, every theme has a sprite symbol for every piece type and a colour rule in `css/app.css`, and the clip-generating tool's SSML, argument parsing and file indexing behave correctly (its Azure network call is never exercised by the tests).
+The tests cover the movement rules (`js/rules.js`), capture round generation (`js/levels.js`), the games and their opponent (`js/games.js`), the lesson scripts (`js/lessons.js`), the theme registry (`js/themes.js`), the language registry (`js/langs.js`) and the voice clip generator (`tools/make-voice.js`): every move is legal, timings fit, every line uses real chess terms and never a robot name, left, right or a square name in either language, every theme has a sprite symbol for every piece type and a colour rule in `css/app.css`, and the clip-generating tool's SSML, argument parsing and file indexing behave correctly (its Azure network call is never exercised by the tests).
 
 ## Deploy
 
@@ -88,6 +93,7 @@ css/check.css     Device check page styles.
 js/rules.js       Movement rules. No DOM access. Tested.
 js/levels.js      Capture round generation. No DOM access. Tested.
 js/games.js       Rules for the three games and the gentle opponent. No DOM access. Tested.
+js/langs.js       Language registry: ids, names, glyphs, speech and voice settings, fallback chain, turn wording. No DOM access. Tested.
 js/lessons.js     Lesson scripts, piece names and voice line text (English and Telugu). No DOM access. Tested.
 js/themes.js      Theme ids, English names (for aria-labels) and team names. No DOM access. Tested.
 js/sound.js       Sound effects generated with the Web Audio API, including per-theme sounds.
@@ -102,7 +108,7 @@ audio/voice/te/   Telugu voice clips (MP3).
 js/check.js       Device check page logic, including the speech voice list.
 tools/make-voice.js  Dev tool: generates voice clips with Azure text-to-speech. Not loaded by the site.
 tests/            Node test files.
-docs/             Design notes, setup instructions and the voice script.
+docs/             Design notes, setup instructions, the voice script and how to add a language.
 ```
 
 ## Browser support and coding rules

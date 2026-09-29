@@ -293,6 +293,13 @@
   <div class="sticker-row" id="sticker-row" hidden></div>
 </div>
 
+<!-- Language picker: shown only when the registry (js/langs.js) has three or
+     more languages; with two, the language button just switches. No visible
+     text, ever: each button shows one glyph and carries the language name as
+     an aria-label. js/app.js fills this. -->
+<div class="lang-row" id="lang-row" hidden></div>
+
+<script src="js/langs.js"></script>
 <script src="js/rules.js"></script>
 <script src="js/levels.js"></script>
 <script src="js/games.js"></script>

@@ -118,12 +118,17 @@
 
   // No dedicated short name line exists for a game (only its longer
   // mission line), so the card caption is that line's first clause (every
-  // mission line reads "<Name>! <rest>" in both languages) - a strict
-  // substring of the owner-approved text, not a new translation.
+  // mission line reads "<Name>! <rest>" in every language) - a strict
+  // substring of the owner-approved text, not a new translation. The current
+  // language's text, else the next language in its fallback chain.
   function shortCaption(lineId) {
     var line = LS.LINES[lineId];
     if (!line) return '';
-    var text = line[V.getLang()] || line.en;
+    var chain = FC.langs.fallbackChain(V.getLang());
+    var text = '';
+    for (var i = 0; i < chain.length; i++) {
+      if (line[chain[i]]) { text = line[chain[i]]; break; }
+    }
     var idx = text.indexOf('!');
     return (idx === -1 ? text : text.slice(0, idx)).trim();
   }
@@ -235,6 +240,7 @@
     if (FC.app && FC.app.stopRound) FC.app.stopRound();
     byId('homescreen').hidden = true;
     byId('theme-row').hidden = true;
+    byId('lang-row').hidden = true;
     onLeaveHome();
     P.stop();
     gameId = id;
@@ -595,9 +601,8 @@
     botTurnCount += 1;
     var theme = B.getTheme();
     var otherSide = childSide === 'a' ? 'b' : 'a';
-    var foeName = B.teamName(theme, otherSide);
     B.setActiveTeamBar('far');
-    B.setMode('watch', announce ? B.turnBadgeText(foeName) : modeTextWatch());
+    B.setMode('watch', announce ? B.turnBadgeText(theme, otherSide) : modeTextWatch());
     if (announce) V.sayAfter('turn-foe');
     var myToken = gameToken;
     // Pacing: the other team's "thinking" pause, which reduced motion must

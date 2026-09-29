@@ -6,6 +6,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const SRC = fs.readFileSync(path.join(__dirname, '..', 'js', 'voice.js'), 'utf8');
+const LANGS_SRC = fs.readFileSync(path.join(__dirname, '..', 'js', 'langs.js'), 'utf8');
 
 /*
  * js/voice.js is a browser script. Here it runs in a sandbox with sound off,
@@ -33,6 +34,8 @@ function load() {
     }
   };
   vm.createContext(sandbox);
+  // js/voice.js depends on the language registry (FC.langs), loaded first.
+  vm.runInContext(LANGS_SRC, sandbox);
   vm.runInContext(SRC, sandbox);
   return sandbox.FC.voice;
 }
@@ -133,6 +136,109 @@ test('a flow callback is kept even when the queue is full', async () => {
   V.sayAfter('f', () => log.push('f'));
   await sleep(260);
   assert.deepEqual(log, ['a', 'b', 'c', 'd', 'e', 'f']);
+});
+
+/* ---------- device voices and the fallback chain (mocked speechSynthesis) ---------- */
+
+// Sound is "enabled" but there is no AudioContext and no clip list, so every
+// line skips its clips and goes straight to device speech: this exercises
+// pickVoice and the language chain. spoken collects { text, voice } for each
+// utterance; every utterance ends by itself after a few ms.
+function loadWithSpeech(voices) {
+  const spoken = [];
+  const sandbox = {
+    setTimeout: setTimeout,
+    clearTimeout: clearTimeout,
+    speechSynthesis: {
+      getVoices: () => voices,
+      addEventListener: () => {},
+      cancel: () => {},
+      speak: (u) => { spoken.push({ text: u.text, voice: u.voice }); setTimeout(() => u.onend && u.onend(), 5); }
+    },
+    SpeechSynthesisUtterance: function (text) { this.text = text; },
+    FC: {
+      lessons: {
+        LINES: { g: { ms: 30, en: 'english g', te: 'telugu g' } }
+      },
+      sound: { isEnabled: () => true }
+    }
+  };
+  vm.createContext(sandbox);
+  vm.runInContext(LANGS_SRC, sandbox);
+  vm.runInContext(SRC, sandbox);
+  return { V: sandbox.FC.voice, spoken };
+}
+
+const voice = (name, lang) => ({ name, lang });
+
+async function speakOnce(V, lang) {
+  V.setLang(lang);
+  let done = false;
+  V.say('g', () => { done = true; });
+  await sleep(80);
+  assert.ok(done, 'the line must finish');
+}
+
+test('English: the first preferred name wins, in the registry order', async () => {
+  const { V, spoken } = loadWithSpeech([
+    voice('David', 'en-US'), voice('Zira', 'en-US'), voice('Google UK English Female', 'en-GB'), voice('Neerja', 'en-IN')
+  ]);
+  await speakOnce(V, 'en');
+  assert.equal(spoken.length, 1);
+  assert.equal(spoken[0].text, 'english g');
+  assert.equal(spoken[0].voice.name, 'Google UK English Female');
+});
+
+test('English: with no preferred name, a "female" voice, then en-IN, then en-GB, skipping avoided names', async () => {
+  let r = loadWithSpeech([voice('Foo', 'en-GB'), voice('Some Female Voice', 'en-US'), voice('Bar', 'en-IN')]);
+  await speakOnce(r.V, 'en');
+  assert.equal(r.spoken[0].voice.name, 'Some Female Voice');
+
+  r = loadWithSpeech([voice('Foo', 'en-GB'), voice('Baz', 'en-US'), voice('Bar', 'en-IN')]);
+  await speakOnce(r.V, 'en');
+  assert.equal(r.spoken[0].voice.name, 'Bar');
+
+  // Mark is on the avoid list, so en-IN is skipped and en-GB wins.
+  r = loadWithSpeech([voice('Mark', 'en-IN'), voice('Zed', 'en-GB'), voice('Qux', 'en-US')]);
+  await speakOnce(r.V, 'en');
+  assert.equal(r.spoken[0].voice.name, 'Zed');
+
+  // Every English voice avoided: still better than silence, the first one.
+  r = loadWithSpeech([voice('David', 'en-US'), voice('Mark', 'en-GB')]);
+  await speakOnce(r.V, 'en');
+  assert.equal(r.spoken[0].voice.name, 'David');
+});
+
+test('Telugu: a "female" Telugu voice if there is one, else the first; the line is spoken in Telugu', async () => {
+  let r = loadWithSpeech([voice('Zira', 'en-US'), voice('Plain', 'te-IN'), voice('Some Female', 'te-IN')]);
+  await speakOnce(r.V, 'te');
+  assert.equal(r.spoken.length, 1);
+  assert.equal(r.spoken[0].text, 'telugu g');
+  assert.equal(r.spoken[0].voice.name, 'Some Female');
+
+  r = loadWithSpeech([voice('Plain', 'te-IN'), voice('Other', 'te_IN')]);
+  await speakOnce(r.V, 'te');
+  assert.equal(r.spoken[0].voice.name, 'Plain');
+});
+
+test('Telugu falls back to English speech when the device has no Telugu voice', async () => {
+  const { V, spoken } = loadWithSpeech([voice('Zira', 'en-US')]);
+  await speakOnce(V, 'te');
+  assert.equal(spoken.length, 1);
+  assert.equal(spoken[0].text, 'english g');
+  assert.equal(spoken[0].voice.name, 'Zira');
+});
+
+test('English never falls back to Telugu: with only a Telugu voice, the line is silent but still finishes', async () => {
+  const { V, spoken } = loadWithSpeech([voice('Plain', 'te-IN')]);
+  await speakOnce(V, 'en');
+  assert.equal(spoken.length, 0);
+});
+
+test('a voice whose tag only starts with the prefix letters does not match ("eng" is not "en")', async () => {
+  const { V, spoken } = loadWithSpeech([voice('Odd', 'eng'), voice('Real', 'en-US')]);
+  await speakOnce(V, 'en');
+  assert.equal(spoken[0].voice.name, 'Real');
 });
 
 test('nothing throws on unknown ids or missing callbacks', async () => {

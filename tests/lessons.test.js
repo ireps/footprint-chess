@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const R = require('../js/rules.js');
 const L = require('../js/lessons.js');
+const LG = require('../js/langs.js');
 const voiceClips = require('../js/voice-clips.js');
 
 const ROOT = path.join(__dirname, '..');
@@ -12,9 +13,32 @@ const NO_LEFT_RIGHT = /\b(left|right)\b/i;
 const NO_SQUARE_NAME = /\b[a-h][1-8]\b/;
 // Whole words only: Telugu has no \b, and సైనికుడిలా ("like a soldier") contains కుడి.
 const NO_TELUGU_LEFT_RIGHT = /(^|[^\u0C00-\u0C7F])(ఎడమ|కుడి)/;
-const HAS_TELUGU_SCRIPT = /[ఀ-౿]/;
 const BANNED_EN = /\b(bots?|robots?|junk\w*|charging|bump\w*|rail bot|slide bot|star bot|sleepy|spring bot|mini bot)\b/i;
 const BANNED_TE = /రోబో|బాట్|జంక్|(^|[^\u0C00-\u0C7F])(ఎడమ|కుడి)/;
+
+/*
+ * Language-specific content rules for the voice lines, keyed by language id
+ * (docs/LANGUAGES.md, step 5): banned patterns, each with the reason shown on
+ * failure, and an optional word limit. A language with no entry here gets
+ * only the generic checks below (non-empty text, its script if the registry
+ * lists one). Add an entry when adding a language.
+ */
+const CONTENT_RULES = {
+  en: {
+    banned: [
+      [NO_LEFT_RIGHT, 'contains "left" or "right"'],
+      [NO_SQUARE_NAME, 'contains a square name'],
+      [BANNED_EN, 'contains banned robot-theme wording']
+    ],
+    maxWords: 14 // short enough for a 6-year-old
+  },
+  te: {
+    banned: [
+      [NO_TELUGU_LEFT_RIGHT, 'contains ఎడమ or కుడి'],
+      [BANNED_TE, 'contains banned robot-theme wording']
+    ]
+  }
+};
 
 /* ---------- helpers shared by several tests ---------- */
 
@@ -27,21 +51,35 @@ function cloneBoard(board) {
   return board.map(row => row.slice());
 }
 
-/* Parse the "id | English | Telugu | delivery note" table out of
-   docs/VOICE-SCRIPT.md. */
+/* Parse the "id | <language name> ... | delivery note" table out of
+   docs/VOICE-SCRIPT.md. The header row maps each column to a language by
+   the registry's English name (a future language adds a column); a column
+   whose header is no registry name (the delivery note) is ignored. Returns
+   { columns: { <lang id>: column index }, rows: { <line id>: { <lang id>: text } } }. */
 function parseVoiceScript() {
   const text = fs.readFileSync(path.join(ROOT, 'docs', 'VOICE-SCRIPT.md'), 'utf8');
+  const columns = {};
   const rows = {};
+  let cols = null;
   for (const line of text.split('\n')) {
     const trimmed = line.trim();
     if (!trimmed.startsWith('|') || !trimmed.endsWith('|')) continue;
     const cells = trimmed.slice(1, -1).split('|').map(c => c.trim());
-    if (cells.length < 3) continue;
-    if (cells[0] === 'id') continue; // header
+    if (cells[0] === 'id') { // header
+      cols = {};
+      cells.forEach((name, i) => {
+        const entry = LG.LANGUAGES.find(l => l.name === name);
+        if (entry) { cols[entry.id] = i; columns[entry.id] = i; }
+      });
+      continue;
+    }
+    if (!cols) continue;
     if (/^-+$/.test(cells[0])) continue; // separator row
-    rows[cells[0]] = { en: cells[1], te: cells[2] };
+    const row = {};
+    for (const lang of Object.keys(cols)) row[lang] = cells[cols[lang]];
+    rows[cells[0]] = row;
   }
-  return rows;
+  return { columns, rows };
 }
 
 /* ---------- watch timing ---------- */
@@ -229,60 +267,99 @@ test('lesson order is hello, rook, bishop, queen, king, knight, pawn, a capture 
   ]);
 });
 
-test('every LINES entry has non-empty English and Telugu text and a positive ms estimate', () => {
+test('every LINES entry has non-empty text in every registry language and a positive ms estimate', () => {
   for (const [id, line] of Object.entries(L.LINES)) {
-    assert.ok(typeof line.en === 'string' && line.en.trim().length > 0, `${id}: missing English text`);
-    assert.ok(typeof line.te === 'string' && line.te.trim().length > 0, `${id}: missing Telugu text`);
+    for (const lang of L.LANGS) {
+      assert.ok(typeof line[lang] === 'string' && line[lang].trim().length > 0, `${id}: missing ${lang} text`);
+    }
     assert.ok(typeof line.ms === 'number' && line.ms >= 1100, `${id}: bad ms estimate`);
   }
 });
 
-test('every Telugu line actually contains Telugu script', () => {
+test('LINES has no text for a language that is not in the registry', () => {
   for (const [id, line] of Object.entries(L.LINES)) {
-    assert.ok(HAS_TELUGU_SCRIPT.test(line.te), `${id}: Telugu text has no Telugu script`);
+    assert.deepEqual(Object.keys(line).sort(), [...L.LANGS, 'ms'].sort(), `${id}: unexpected keys`);
   }
 });
 
-test('no LINES text says left, right, or a square name, in English or Telugu', () => {
+test('the ms estimate is the longest of each language\'s length times its msPerChar, at least 1100', () => {
   for (const [id, line] of Object.entries(L.LINES)) {
-    assert.ok(!NO_LEFT_RIGHT.test(line.en), `${id}: English contains "left" or "right"`);
-    assert.ok(!NO_SQUARE_NAME.test(line.en), `${id}: English contains a square name`);
-    assert.ok(!NO_TELUGU_LEFT_RIGHT.test(line.te), `${id}: Telugu contains ఎడమ or కుడి`);
+    let want = 1100;
+    for (const lang of L.LANGS) want = Math.max(want, Math.round(line[lang].length * LG.get(lang).msPerChar));
+    assert.equal(line.ms, want, `${id}: ms`);
   }
 });
 
-test('no LINES text uses a robot name, "bot", "robot", junk, charging or bump, in either language', () => {
-  for (const [id, line] of Object.entries(L.LINES)) {
-    assert.ok(!BANNED_EN.test(line.en), `${id}: English contains banned robot-theme wording`);
-    assert.ok(!BANNED_TE.test(line.te), `${id}: Telugu contains banned robot-theme wording`);
+test('every text in a language with a script hint contains that script (LINES, PIECE_NAMES, UI_TEXT)', () => {
+  for (const lang of L.LANGS) {
+    const script = LG.get(lang).script;
+    if (!script) continue;
+    for (const [id, line] of Object.entries(L.LINES)) {
+      assert.match(line[lang], script, `${id}: ${lang} text has no ${lang} script`);
+    }
+    for (const type of L.TYPE_ORDER) {
+      assert.match(L.PIECE_NAMES[lang][type], script, `PIECE_NAMES.${lang}.${type} has no ${lang} script`);
+    }
+    for (const key of Object.keys(L.UI_TEXT)) {
+      assert.match(L.UI_TEXT[key][lang], script, `UI_TEXT.${key}.${lang} has no ${lang} script`);
+    }
   }
 });
 
-test('every English line is short enough for a 6-year-old (14 words or fewer)', () => {
-  for (const [id, line] of Object.entries(L.LINES)) {
-    const words = line.en.trim().split(/\s+/).length;
-    assert.ok(words <= 14, `${id}: ${words} words is too long`);
+test('no LINES text breaks its language\'s content rules (left/right, square names, robot-theme words)', () => {
+  for (const lang of L.LANGS) {
+    const rules = CONTENT_RULES[lang];
+    if (!rules) continue; // generic checks only
+    for (const [id, line] of Object.entries(L.LINES)) {
+      for (const [re, why] of rules.banned) {
+        assert.ok(!re.test(line[lang]), `${id}: ${lang} text ${why}`);
+      }
+    }
   }
+});
+
+test('every line is short enough for a 6-year-old in each language that has a word limit', () => {
+  for (const lang of L.LANGS) {
+    const rules = CONTENT_RULES[lang];
+    if (!rules || !rules.maxWords) continue;
+    for (const [id, line] of Object.entries(L.LINES)) {
+      const words = line[lang].trim().split(/\s+/).length;
+      assert.ok(words <= rules.maxWords, `${id}: ${lang} has ${words} words, more than ${rules.maxWords}`);
+    }
+  }
+});
+
+test('CONTENT_RULES only names languages in the registry, and English and Telugu keep their rules', () => {
+  for (const lang of Object.keys(CONTENT_RULES)) assert.ok(LG.isLang(lang), `CONTENT_RULES has unknown language "${lang}"`);
+  assert.ok(CONTENT_RULES.en && CONTENT_RULES.te);
 });
 
 /* ---------- docs/VOICE-SCRIPT.md ---------- */
 
-test('docs/VOICE-SCRIPT.md lists exactly the LINES ids, with the same English and Telugu text', () => {
-  const rows = parseVoiceScript();
+test('docs/VOICE-SCRIPT.md has a column for every registry language and lists exactly the LINES ids, with the same text in each', () => {
+  const { columns, rows } = parseVoiceScript();
+  for (const lang of L.LANGS) {
+    assert.ok(lang in columns, `VOICE-SCRIPT.md has no column headed "${LG.get(lang).name}"`);
+  }
+  assert.deepEqual(Object.keys(columns).sort(), L.LANGS.slice().sort(), 'VOICE-SCRIPT.md has a language column that is not in the registry');
   const linesIds = Object.keys(L.LINES).sort();
   const docIds = Object.keys(rows).sort();
   assert.deepEqual(docIds, linesIds, 'VOICE-SCRIPT.md ids do not match LINES ids');
   for (const id of linesIds) {
-    assert.equal(rows[id].en, L.LINES[id].en, `${id}: VOICE-SCRIPT.md English text does not match LINES`);
-    assert.equal(rows[id].te, L.LINES[id].te, `${id}: VOICE-SCRIPT.md Telugu text does not match LINES`);
+    for (const lang of L.LANGS) {
+      assert.equal(rows[id][lang], L.LINES[id][lang], `${id}: VOICE-SCRIPT.md ${LG.get(lang).name} text does not match LINES`);
+    }
   }
 });
 
 /* ---------- js/lessons.js: LANGS / DEFAULT_LANG ---------- */
 
-test('LANGS is English then Telugu, and DEFAULT_LANG is English', () => {
+test('LANGS is the registry list (English first, then Telugu), and DEFAULT_LANG is English', () => {
+  assert.deepEqual(L.LANGS, LG.ids());
   assert.deepEqual(L.LANGS, ['en', 'te']);
+  assert.equal(L.DEFAULT_LANG, LG.DEFAULT_LANG);
   assert.equal(L.DEFAULT_LANG, 'en');
+  assert.ok(L.LANGS.includes(L.DEFAULT_LANG));
 });
 
 /* ---------- PIECE_NAMES / TYPE_ORDER ---------- */
@@ -413,10 +490,12 @@ test('boardFor places the hero and foe pawns from setup, nothing else', () => {
   assert.equal(occupied, 1 + knight.setup.foes.length);
 });
 
-test('control badges (watch / your turn) have English and Telugu labels', () => {
+test('control badges (watch / your turn) have a label in every registry language', () => {
   for (const key of ['watch', 'turn']) {
     const t = L.UI_TEXT[key];
-    assert.ok(t && t.en && t.te, `UI_TEXT.${key} needs en and te`);
-    assert.match(t.te, /[\u0C00-\u0C7F]/, `UI_TEXT.${key}.te should be Telugu script`);
+    assert.ok(t, `UI_TEXT.${key} is missing`);
+    for (const lang of L.LANGS) {
+      assert.ok(typeof t[lang] === 'string' && t[lang].trim().length > 0, `UI_TEXT.${key}.${lang} needs text`);
+    }
   }
 });
