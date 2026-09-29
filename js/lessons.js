@@ -113,7 +113,51 @@
     'mission': { en: 'Capture all three pawns!', te: 'మూడు భటులనీ పట్టుకో!' },
     'hint-pawn': { en: 'Follow the footprints to a pawn.', te: 'అడుగుల గుర్తుల దారిలో భటుడి దగ్గరికి వెళ్ళు.' },
     'won': { en: 'You captured them all!', te: 'అందరినీ పట్టేశావు!' },
-    'next': { en: 'Play again, or pick the next piece.', te: 'మళ్ళీ ఆడు, లేదా తర్వాతి పావుని ఎంచుకో.' }
+    'next': { en: 'Play again, or pick the next piece.', te: 'మళ్ళీ ఆడు, లేదా తర్వాతి పావుని ఎంచుకో.' },
+
+    /*
+     * Games (stage 3). Team names, said when the child picks a team (see
+     * js/themes.js TEAMS for the same names without the "!", used on the
+     * team bars). Real group names per theme, never "bot"/"robot".
+     */
+    'team-robots-a': { en: 'Humanoids!', te: 'హ్యూమనాయిడ్లు!' },
+    'team-robots-b': { en: 'Androids!', te: 'ఆండ్రాయిడ్లు!' },
+    'team-classic-a': { en: 'White!', te: 'తెల్లవి!' },
+    'team-classic-b': { en: 'Black!', te: 'నల్లవి!' },
+    'team-space-a': { en: 'Astronauts!', te: 'వ్యోమగాములు!' },
+    'team-space-b': { en: 'Cosmonauts!', te: 'కాస్మోనాట్లు!' },
+    'team-dinos-a': { en: 'Theropods!', te: 'థెరోపాడ్లు!' },
+    'team-dinos-b': { en: 'Sauropods!', te: 'సారోపాడ్లు!' },
+    'team-pirate-a': { en: 'Buccaneers!', te: 'బకనీర్లు!' },
+    'team-pirate-b': { en: 'Corsairs!', te: 'కోర్సెయిర్లు!' },
+    'pick-team': { en: 'Pick your team!', te: 'నీ జట్టుని ఎంచుకో!' },
+
+    /*
+     * Turn-taking. turn-me/turn-foe are said by the player whenever a
+     * { turn: 'me' | 'foe' } step (in a watch script or a practice reply)
+     * changes whose turn is shown; turns-1..4 are the 'turns' lesson's own
+     * watch script narration (see LESSONS below).
+     */
+    'turn-me': { en: 'Your turn!', te: 'నీ వంతు!' },
+    'turn-foe': { en: 'Their turn.', te: 'వాళ్ళ వంతు.' },
+    'turns-1': { en: 'In chess, we take turns.', te: 'చదరంగంలో వంతుల వారీగా ఆడతాం.' },
+    'turns-2': { en: 'First your team moves.', te: 'ముందు నీ జట్టు కదులుతుంది.' },
+    'turns-3': { en: 'Then their team moves.', te: 'తర్వాత వాళ్ళ జట్టు కదులుతుంది.' },
+    'turns-4': { en: 'Then it is your turn again!', te: 'మళ్ళీ నీ వంతు!' },
+
+    /* the three games' mission lines, said on each game's Mission card */
+    'game-catch': { en: 'Catch the knight! It hops away after every move.', te: 'గుర్రాన్ని పట్టుకో! ప్రతి సారీ అది దూకి పారిపోతుంది.' },
+    'game-race': { en: 'Pawn race! Get one pawn to the other side first.', te: 'భటుల పందెం! ముందుగా ఒక భటుడిని అవతలి వైపుకి చేర్చు.' },
+    'game-battle': { en: 'Capture all their pawns!', te: 'వాళ్ళ భటులందరినీ పట్టుకో!' },
+
+    /* game event lines */
+    'knight-tired': { en: 'The knight is getting tired!', te: 'గుర్రం అలసిపోతోంది!' },
+    'caught': { en: 'You caught the knight!', te: 'గుర్రాన్ని పట్టేశావు!' },
+    'race-won': { en: 'Your pawn reached the other side!', te: 'నీ భటుడు అవతలి వైపుకి చేరాడు!' },
+    'piece-back': { en: 'Your piece is back!', te: 'నీ పావు మళ్ళీ వచ్చింది!' },
+    'golden': { en: 'A golden pawn!', te: 'బంగారు భటుడు!' },
+    'sticker': { en: 'You got a sticker!', te: 'నీకు ఒక స్టిక్కర్ వచ్చింది!' },
+    'break': { en: 'Great playing! Time for a little break?', te: 'బాగా ఆడావు! కొంచెం విశ్రాంతి తీసుకుందామా?' }
   };
 
   /*
@@ -148,6 +192,27 @@
   var APP_LINES = [
     'pick', 'meet-r', 'meet-b', 'meet-q', 'meet-k', 'meet-n', 'meet-p',
     'mission', 'hint-pawn', 'won', 'next', 'tap-piece', 'tap-footprint'
+  ];
+
+  /*
+   * Games (stage 3): ids of lines said by js/app.js / js/player.js outside
+   * of any lesson's watch script - team picking, the turn-indicator lines
+   * (said whenever a { turn: 'me' | 'foe' } step fires, in a watch script
+   * or a practice reply), each game's mission line, and game events. Kept
+   * separate from APP_LINES so a reviewer can see at a glance which lines
+   * are stage-2 (lessons/rounds) versus stage-3 (games). Included in
+   * tests/lessons.test.js's line-coverage test alongside APP_LINES.
+   */
+  var GAME_LINES = [
+    'team-robots-a', 'team-robots-b',
+    'team-classic-a', 'team-classic-b',
+    'team-space-a', 'team-space-b',
+    'team-dinos-a', 'team-dinos-b',
+    'team-pirate-a', 'team-pirate-b',
+    'pick-team', 'turn-me', 'turn-foe',
+    'game-catch', 'game-race', 'game-battle',
+    'knight-tired', 'caught', 'race-won', 'piece-back',
+    'golden', 'sticker', 'break'
   ];
 
   var LESSONS = [
@@ -421,7 +486,55 @@
     ]
   });
 
-  var STEP_MS = { hand: 900, move: 700, select: 300, unselect: 300, reset: 300 };
+  /*
+   * Taking turns (stage 3): teaches turn-taking before the child meets any
+   * game. Two new step types, a contract with js/player.js:
+   *   { turn: 'me' | 'foe' } sets whose turn is shown (team bars + mode
+   *     badge; the player says turn-me/turn-foe when this fires, in a
+   *     watch script or a practice reply - see GAME_LINES above).
+   *   { foeMove: [[fr, fc], [tr, tc]] } moves an opponent piece with its
+   *     own animation (must be legal for team foe; never a capture in this
+   *     lesson - the foe pawn never lands on the hero).
+   * Practice tasks gain an optional `reply`: [[fr, fc], [tr, tc]], a foe
+   * move the player plays right after the child completes that task (foe
+   * turn shown, then control returns to the child). The reply on the first
+   * task is chosen to be legal no matter which of the hero pawn's two
+   * legal first moves (one or two squares) the child taps, since
+   * accept: 'any' lets either complete the task.
+   */
+  LESSONS.push({
+    id: 'turns',
+    type: 'p',
+    title: 'Taking turns',
+    setup: { hero: [6, 3], foes: [[1, 4]] },
+    watch: [
+      { wait: 1000 },
+      { say: 'turns-1' },
+      { waitVoice: true },
+      { turn: 'me' },
+      { wait: 800 },
+      { say: 'turns-2' },
+      { hand: [4, 3] },
+      { move: [4, 3] },
+      { waitVoice: true },
+      { turn: 'foe' },
+      { wait: 800 },
+      { say: 'turns-3' },
+      { foeMove: [[1, 4], [3, 4]] },
+      { waitVoice: true },
+      { turn: 'me' },
+      { say: 'turns-4' },
+      { waitVoice: true },
+      { wait: 1000 },
+      { reset: true }
+    ],
+    practice: [
+      { to: [5, 3], accept: 'any', reply: [[1, 4], [2, 4]] },
+      { to: [4, 3], accept: 'any' }
+    ]
+  });
+
+  var STEP_MS = { hand: 900, move: 700, select: 300, unselect: 300, reset: 300, foeMove: 700 };
 
   function get(id) {
     for (var i = 0; i < LESSONS.length; i++) {
@@ -468,8 +581,10 @@
         t += STEP_MS.unselect;
       } else if (step.reset) {
         t += STEP_MS.reset;
+      } else if (step.foeMove) {
+        t += STEP_MS.foeMove;
       }
-      // handAway, glow and landmark steps have no time cost.
+      // handAway, glow, landmark and turn steps have no time cost.
     });
     return Math.max(t, voiceEnd);
   }
@@ -532,6 +647,7 @@
     LINES: LINES,
     PRACTICE_LINES: PRACTICE_LINES,
     APP_LINES: APP_LINES,
+    GAME_LINES: GAME_LINES,
     LESSONS: LESSONS,
     get: get,
     boardFor: boardFor,

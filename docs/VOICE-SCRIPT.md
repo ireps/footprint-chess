@@ -79,6 +79,33 @@ naming a direction.
 | hint-pawn | Follow the footprints to a pawn. | అడుగుల గుర్తుల దారిలో భటుడి దగ్గరికి వెళ్ళు. | Plain hint, used if the child is idle mid-round with a piece selected. |
 | won | You captured them all! | అందరినీ పట్టేశావు! | Big and celebratory; the round's win line. |
 | next | Play again, or pick the next piece. | మళ్ళీ ఆడు, లేదా తర్వాతి పావుని ఎంచుకో. | Warm, inviting the child to choose what happens next. |
+| team-robots-a | Humanoids! | హ్యూమనాయిడ్లు! | Bright and proud, said the moment the child picks this team. |
+| team-robots-b | Androids! | ఆండ్రాయిడ్లు! | Bright and proud, said the moment the child picks this team. |
+| team-classic-a | White! | తెల్లవి! | Bright and proud, said the moment the child picks this team. |
+| team-classic-b | Black! | నల్లవి! | Bright and proud, said the moment the child picks this team. |
+| team-space-a | Astronauts! | వ్యోమగాములు! | Bright and proud, said the moment the child picks this team. |
+| team-space-b | Cosmonauts! | కాస్మోనాట్లు! | Bright and proud, said the moment the child picks this team. |
+| team-dinos-a | Theropods! | థెరోపాడ్లు! | Bright and proud, said the moment the child picks this team. |
+| team-dinos-b | Sauropods! | సారోపాడ్లు! | Bright and proud, said the moment the child picks this team. |
+| team-pirate-a | Buccaneers! | బకనీర్లు! | Bright and proud, said the moment the child picks this team. |
+| team-pirate-b | Corsairs! | కోర్సెయిర్లు! | Bright and proud, said the moment the child picks this team. |
+| pick-team | Pick your team! | నీ జట్టుని ఎంచుకో! | Warm and inviting, said once, on the Team card before a game. |
+| turn-me | Your turn! | నీ వంతు! | Short and bright, said whenever control passes back to the child in a game or the turns lesson. |
+| turn-foe | Their turn. | వాళ్ళ వంతు. | Calm and matter-of-fact, said whenever the other team's turn begins. |
+| turns-1 | In chess, we take turns. | చదరంగంలో వంతుల వారీగా ఆడతాం. | Plain, introducing the idea; the first line of the turns lesson. |
+| turns-2 | First your team moves. | ముందు నీ జట్టు కదులుతుంది. | Clear and simple, narrating the hero's move that follows. |
+| turns-3 | Then their team moves. | తర్వాత వాళ్ళ జట్టు కదులుతుంది. | Clear and simple, narrating the opponent's move that follows. |
+| turns-4 | Then it is your turn again! | మళ్ళీ నీ వంతు! | Bright, closing the idea on an upbeat note. |
+| game-catch | Catch the knight! It hops away after every move. | గుర్రాన్ని పట్టుకో! ప్రతి సారీ అది దూకి పారిపోతుంది. | Playful and energetic; states the goal on the Mission card. |
+| game-race | Pawn race! Get one pawn to the other side first. | భటుల పందెం! ముందుగా ఒక భటుడిని అవతలి వైపుకి చేర్చు. | Playful and energetic; states the goal on the Mission card. |
+| game-battle | Capture all their pawns! | వాళ్ళ భటులందరినీ పట్టుకో! | Playful and energetic; states the goal on the Mission card. |
+| knight-tired | The knight is getting tired! | గుర్రం అలసిపోతోంది! | Playful, signalling the knight will now try to be caught. |
+| caught | You caught the knight! | గుర్రాన్ని పట్టేశావు! | Big and celebratory; the Catch game's win line. |
+| race-won | Your pawn reached the other side! | నీ భటుడు అవతలి వైపుకి చేరాడు! | Big and celebratory; the Race game's win line. |
+| piece-back | Your piece is back! | నీ పావు మళ్ళీ వచ్చింది! | Warm and reassuring; said when a captured child piece returns in Little battle. |
+| golden | A golden pawn! | బంగారు భటుడు! | Excited, a little magical; said when a golden pawn appears. |
+| sticker | You got a sticker! | నీకు ఒక స్టిక్కర్ వచ్చింది! | Big and celebratory; said when the capture jar fills. |
+| break | Great playing! Time for a little break? | బాగా ఆడావు! కొంచెం విశ్రాంతి తీసుకుందామా? | Warm and gentle, never scolding; offered, not required. |
 
 ## Generating clips with tools/make-voice.js
 

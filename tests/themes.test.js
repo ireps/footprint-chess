@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const TH = require('../js/themes.js');
+const L = require('../js/lessons.js');
 
 const ROOT = path.join(__dirname, '..');
 const TYPES = ['r', 'b', 'q', 'k', 'n', 'p'];
@@ -31,6 +32,50 @@ test('isTheme accepts every listed id and rejects anything else', () => {
   }
   for (const bad of ['adventure', 'robot', 'Classic', '', null, undefined, 'space ']) {
     assert.equal(TH.isTheme(bad), false, String(bad));
+  }
+});
+
+/* ---------- games: team names (stage 3) ---------- */
+
+test('TEAMS has a and b team names, in English and Telugu, for every theme, and nothing extra', () => {
+  assert.deepEqual(Object.keys(TH.TEAMS).sort(), TH.THEMES.map(t => t.id).sort());
+  for (const theme of TH.THEMES) {
+    const teams = TH.TEAMS[theme.id];
+    assert.ok(teams, `TEAMS.${theme.id} is missing`);
+    for (const side of ['a', 'b']) {
+      const t = teams[side];
+      assert.ok(t && typeof t.en === 'string' && t.en.trim().length > 0, `TEAMS.${theme.id}.${side}.en missing`);
+      assert.ok(t && typeof t.te === 'string' && t.te.trim().length > 0, `TEAMS.${theme.id}.${side}.te missing`);
+      assert.match(t.te, /[ఀ-౿]/, `TEAMS.${theme.id}.${side}.te should be Telugu script`);
+    }
+    assert.notEqual(teams.a.en, teams.b.en, `${theme.id}: team a and b should have different English names`);
+  }
+});
+
+test('DEFAULT_TEAM is "a", team a of every theme is the White (moves-first) side', () => {
+  assert.equal(TH.DEFAULT_TEAM, 'a');
+  assert.ok(TH.TEAMS[TH.DEFAULT_THEME]);
+});
+
+test('TEAMS matches the agreed group names exactly', () => {
+  assert.deepEqual(TH.TEAMS, {
+    robots: { a: { en: 'Humanoids', te: 'హ్యూమనాయిడ్లు' }, b: { en: 'Androids', te: 'ఆండ్రాయిడ్లు' } },
+    classic: { a: { en: 'White', te: 'తెల్లవి' }, b: { en: 'Black', te: 'నల్లవి' } },
+    space: { a: { en: 'Astronauts', te: 'వ్యోమగాములు' }, b: { en: 'Cosmonauts', te: 'కాస్మోనాట్లు' } },
+    dinos: { a: { en: 'Theropods', te: 'థెరోపాడ్లు' }, b: { en: 'Sauropods', te: 'సారోపాడ్లు' } },
+    pirate: { a: { en: 'Buccaneers', te: 'బకనీర్లు' }, b: { en: 'Corsairs', te: 'కోర్సెయిర్లు' } }
+  });
+});
+
+test('every TEAMS name matches its team-<theme>-<a|b> voice line in js/lessons.js, with a trailing "!"', () => {
+  for (const theme of TH.THEMES) {
+    for (const side of ['a', 'b']) {
+      const line = L.LINES['team-' + theme.id + '-' + side];
+      assert.ok(line, `LINES missing team-${theme.id}-${side}`);
+      const team = TH.TEAMS[theme.id][side];
+      assert.equal(line.en, team.en + '!', `team-${theme.id}-${side}: English text does not match TEAMS`);
+      assert.equal(line.te, team.te + '!', `team-${theme.id}-${side}: Telugu text does not match TEAMS`);
+    }
   }
 });
 

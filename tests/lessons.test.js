@@ -133,6 +133,66 @@ test('pawn hero starts on row 6 so the first step can be a double step', () => {
   assert.equal(pawnCapture.setup.hero[0], 6);
 });
 
+/* ---------- turns lesson (stage 3): turn / foeMove steps, practice reply ---------- */
+
+test('turns lesson: setup matches the taking-turns spec', () => {
+  const lesson = L.get('turns');
+  assert.ok(lesson, 'no "turns" lesson');
+  assert.equal(lesson.type, 'p');
+  assert.deepEqual(lesson.setup, { hero: [6, 3], foes: [[1, 4]] });
+});
+
+test('turns lesson: every foeMove step in the watch script is legal for team foe at that point, and never captures the hero', () => {
+  const lesson = L.get('turns');
+  const start = L.boardFor(lesson);
+  let board = cloneBoard(start.board);
+  let hero = start.hero.slice();
+  let sawFoeMove = false;
+
+  for (const step of lesson.watch) {
+    if (step.move) {
+      applyMove(board, hero, step.move, lesson.type);
+      hero = step.move.slice();
+    } else if (step.foeMove) {
+      sawFoeMove = true;
+      const [from, to] = step.foeMove;
+      const piece = board[from[0]][from[1]];
+      assert.ok(piece && piece.team === 'foe', `foeMove ${JSON.stringify(step.foeMove)}: no foe piece at ${from}`);
+      const moves = R.movesFor(board, from[0], from[1]);
+      const legal = moves.some(m => m.r === to[0] && m.c === to[1]);
+      assert.ok(legal, `turns: illegal foeMove ${JSON.stringify(step.foeMove)}`);
+      assert.ok(!(to[0] === hero[0] && to[1] === hero[1]), 'foeMove must not capture the hero in this lesson');
+      board[to[0]][to[1]] = piece;
+      board[from[0]][from[1]] = null;
+    } else if (step.reset) {
+      board = cloneBoard(start.board);
+      hero = start.hero.slice();
+    }
+  }
+  assert.ok(sawFoeMove, 'turns watch script should include a foeMove step');
+});
+
+test('turns lesson: the practice reply is legal for team foe no matter which legal first move the hero pawn makes', () => {
+  const lesson = L.get('turns');
+  const task = lesson.practice[0];
+  assert.ok(task.reply, 'first practice task should have a reply');
+  const start = L.boardFor(lesson);
+  const heroMoves = R.movesFor(start.board, start.hero[0], start.hero[1]);
+  assert.ok(heroMoves.length > 1, 'expected more than one legal first move for the hero pawn');
+
+  const [from, to] = task.reply;
+  for (const hm of heroMoves) {
+    const board = cloneBoard(start.board);
+    applyMove(board, start.hero, [hm.r, hm.c], lesson.type);
+    const piece = board[from[0]][from[1]];
+    assert.ok(piece && piece.team === 'foe', `reply: no foe piece at ${from}`);
+    const moves = R.movesFor(board, from[0], from[1]);
+    const legal = moves.some(m => m.r === to[0] && m.c === to[1]);
+    assert.ok(legal, `reply ${JSON.stringify(task.reply)} illegal after hero moves to ${hm.r},${hm.c}`);
+  }
+  assert.ok(!lesson.practice[1].reply, 'second practice task should have no reply (the lesson ends after it)');
+});
+
 /* ---------- line ids and content ---------- */
 
 test('every said id, every PRACTICE_LINES id and every APP_LINES id exists in LINES, and no LINES entry is unused', () => {
@@ -151,15 +211,20 @@ test('every said id, every PRACTICE_LINES id and every APP_LINES id exists in LI
     assert.ok(L.LINES[id], `APP_LINES: unknown line "${id}"`);
     used.add(id);
   }
+  for (const id of L.GAME_LINES) {
+    assert.ok(L.LINES[id], `GAME_LINES: unknown line "${id}"`);
+    used.add(id);
+  }
   for (const id of Object.keys(L.LINES)) {
     assert.ok(used.has(id), `LINES entry "${id}" is never used`);
   }
 });
 
-test('lesson order is hello, rook, bishop, queen, king, knight, pawn, then a capture lesson per type', () => {
+test('lesson order is hello, rook, bishop, queen, king, knight, pawn, a capture lesson per type, then turns', () => {
   assert.deepEqual(L.LESSONS.map(l => l.id), [
     'hello', 'rook', 'bishop', 'queen', 'king', 'knight', 'pawn',
-    'capture-r', 'capture-b', 'capture-q', 'capture-k', 'capture-n', 'pawn-capture'
+    'capture-r', 'capture-b', 'capture-q', 'capture-k', 'capture-n', 'pawn-capture',
+    'turns'
   ]);
 });
 
