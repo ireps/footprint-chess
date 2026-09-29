@@ -404,3 +404,22 @@ test('the module adds no globals', () => {
   const added = Object.keys(globalThis).filter((k) => !before.has(k));
   assert.deepEqual(added, []);
 });
+
+/* ---------- progressOf (stage 5 UI) ---------- */
+
+test('progressOf returns a copy of any child\'s progress, and null for an unknown id', () => {
+  const s = ST.create(memBackend());
+  const a = s.addProfile(PIC, 'A');
+  const b = s.addProfile(PIC, 'B');
+  s.addSticker('robots', 'p');
+  s.setCurrent(b.id);
+  s.addSticker('dinos', 'golden-p');
+  assert.deepEqual(s.progressOf(a.id).stickers, { 'robots:p': 1 });
+  assert.deepEqual(s.progressOf(b.id).stickers, { 'dinos:golden-p': 1 });
+  assert.deepEqual(s.progressOf(b.id), s.progress());
+  s.progressOf(a.id).stickers['robots:r'] = 5; // a copy: changing it changes nothing
+  assert.deepEqual(s.progressOf(a.id).stickers, { 'robots:p': 1 });
+  for (const bad of ['pnope', '', null, undefined, 7, '__proto__', 'constructor']) {
+    assert.equal(s.progressOf(bad), null, String(bad));
+  }
+});

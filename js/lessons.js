@@ -162,7 +162,10 @@
     'piece-back': { en: 'Your piece is back!', te: 'నీ పావు మళ్ళీ వచ్చింది!' },
     'golden': { en: 'A golden pawn!', te: 'బంగారు భటుడు!' },
     'sticker': { en: 'You got a sticker!', te: 'నీకు ఒక స్టిక్కర్ వచ్చింది!' },
-    'break': { en: 'Great playing! Time for a little break?', te: 'బాగా ఆడావు! కొంచెం విశ్రాంతి తీసుకుందామా?' }
+    'break': { en: 'Great playing! Time for a little break?', te: 'బాగా ఆడావు! కొంచెం విశ్రాంతి తీసుకుందామా?' },
+
+    /* profiles (stage 5): said on the Who's playing screen, and shown there as its heading */
+    'who': { en: "Who's playing?", te: 'ఎవరు ఆడుతున్నారు?' }
   };
 
   /*
@@ -227,6 +230,13 @@
     'knight-tired', 'caught', 'race-won', 'piece-back',
     'golden', 'sticker', 'break'
   ];
+
+  /*
+   * Profiles (stage 5): ids of lines said by js/app.js outside of any
+   * lesson - the Who's playing screen's prompt, which is also that screen's
+   * heading text. Included in tests/lessons.test.js's line-coverage test.
+   */
+  var PROFILE_LINES = ['who'];
 
   var LESSONS = [
     {
@@ -417,11 +427,12 @@
 
   /*
    * capture-<type> lessons: the hero starts a single legal move away from
-   * a foe pawn, and the watch script narrates capturing it. Every lesson
-   * built from this template shares the same three voice lines, so they
-   * all take the same time to watch. The capture is shown twice: once
-   * narrated, then once more quietly, with the hand tapping the piece and
-   * then the pawn, so the child sees the exact taps before trying.
+   * a foe pawn, and the watch script narrates capturing it, once. Every
+   * lesson built from this template shares the same three voice lines, so
+   * they all take the same time to watch (js/app.js shows one of them per
+   * child: the idea is the same for every piece, so a later piece goes
+   * straight to its Mission card). The capture is shown once, not repeated:
+   * the practice task asks the child for it next.
    */
   var CAPTURE_POSITIONS = {
     r: { hero: [7, 3], foe: [4, 3] },
@@ -449,12 +460,6 @@
         { say: 'capture-3' },
         { waitVoice: true },
         { wait: 400 },
-        { reset: true },
-        { hand: hero },
-        { select: true },
-        { hand: foe },
-        { move: foe },
-        { wait: 600 },
         { reset: true }
       ],
       practice: [
@@ -486,12 +491,7 @@
       { move: [5, 4] },
       { say: 'capture-3' },
       { waitVoice: true },
-      { reset: true },
-      { hand: [6, 3] },
-      { select: true },
-      { hand: [5, 4] },
-      { move: [5, 4] },
-      { wait: 600 },
+      { wait: 400 },
       { reset: true }
     ],
     practice: [
@@ -661,6 +661,7 @@
     PRACTICE_LINES: PRACTICE_LINES,
     APP_LINES: APP_LINES,
     GAME_LINES: GAME_LINES,
+    PROFILE_LINES: PROFILE_LINES,
     LESSONS: LESSONS,
     get: get,
     boardFor: boardFor,

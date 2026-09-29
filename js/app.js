@@ -1,8 +1,10 @@
 /*
- * Footprint Chess: screen flow (home, meet, lesson, mission, round, won),
- * the side panel, and capture rounds.
- * Depends on FC.rules, FC.levels, FC.lessons, FC.sound, FC.voice, FC.board
- * and FC.player (loaded before this file).
+ * Footprint Chess: screen flow (who's playing, home, sticker book, meet,
+ * lesson, mission, round, won), the side panel, capture rounds, and the
+ * progress store (js/store.js: the children, their progress and settings).
+ * Depends on FC.rules, FC.levels, FC.lessons, FC.store, FC.sound, FC.voice,
+ * FC.board, FC.player, FC.stickers, FC.profileUI, FC.bookUI and
+ * FC.grownupsUI (loaded before this file).
  * DOM is built with createElement/textContent only (see SECURITY.md).
  */
 (function () {
@@ -30,6 +32,8 @@
 
   var IDLE_MS = 5000;
 
+  var STORE = FC.store;
+
   var dom = {
     app: byId('app'),
     portrait: byId('portrait'),
@@ -48,6 +52,8 @@
     homeLangGlyph: byId('home-lang-glyph'),
     homeSound: byId('home-sound-toggle'),
     homeCards: byId('home-cards'),
+    stickerRow: byId('sticker-row'),
+    bookToggle: byId('book-toggle'),
     themeToggle: byId('theme-toggle'),
     themeRow: byId('theme-row'),
     langRow: byId('lang-row')
@@ -73,10 +79,16 @@
     idleTimer: null
   };
 
-  // 'home' | 'meet' | 'lesson' | 'mission' | 'round' | 'won'.
+  // 'home' | 'meet' | 'lesson' | 'mission' | 'round' | 'won'. ('home' also
+  // covers Who's playing and the sticker book.)
   var mode = 'home';
-  var seen = {};          // lesson id -> true, once it has started this page load
-  var playedTypes = {};    // type -> true, once a round for it has started this page load
+  var store = null;         // the progress store (js/store.js), made at startup
+  var activeProfileId = null; // the child whose language, theme and progress are loaded
+  var EMPTY_PROGRESS = { seen: {}, met: {}, stickers: {}, jar: 0, teams: {}, wins: {}, lang: null, theme: null };
+  // A copy of the current child's progress, refreshed after every change
+  // to the store: seen (lesson id -> true) and met (piece type -> true) are
+  // read from here.
+  var progress = EMPTY_PROGRESS;
   var pendingType = null;   // the type the current meet/lesson step is ultimately leading to
   var cardTap = null;        // fn called when the open card is tapped, or null
   var rerenderCard = null;    // fn that rebuilds the open card's content (language switch)
@@ -96,6 +108,12 @@
     }
   }
   function clear(node) { node.textContent = ''; }
+
+  function refreshProgress() {
+    progress = (store && store.progress()) || EMPTY_PROGRESS;
+  }
+  function isSeen(id) { return !!progress.seen[id]; }
+  function markSeen(id) { store.markSeen(id); }
 
   function el(tag, className) {
     var node = document.createElement(tag);
@@ -230,6 +248,7 @@
 
   function switchLang(next) {
     V.setLang(next);
+    store.setLang(V.getLang());
     updateLangButtons();
     if (B.getMode() !== 'none') B.setMode(B.getMode(), modeText(B.getMode()));
     setUrlLang(next);
@@ -315,6 +334,7 @@
     S.unlock();
     B.setTheme(id);
     S.setTheme(B.getTheme());
+    store.setTheme(B.getTheme());
     setUrlTheme(B.getTheme());
     dom.themeRow.hidden = true;
     S.play('select');
@@ -346,6 +366,7 @@
     dom.toolSkip.appendChild(svgUse('ic-skip'));
     dom.home.appendChild(svgUse('house'));
     dom.themeToggle.appendChild(svgUse('ic-palette'));
+    dom.bookToggle.appendChild(svgUse('ic-book'));
   }
 
   function updateToolButtons() {
@@ -406,7 +427,7 @@
 
   function suggestedType() {
     for (var i = 0; i < TYPE_ORDER.length; i++) {
-      if (!playedTypes[TYPE_ORDER[i]]) return TYPE_ORDER[i];
+      if (!progress.met[TYPE_ORDER[i]]) return TYPE_ORDER[i];
     }
     return TYPE_ORDER[0];
   }
@@ -431,6 +452,12 @@
         badge.appendChild(svgUse('play-tri'));
         card.appendChild(badge);
       }
+      if (progress.met[type]) {
+        // A small green tick: this piece has been played before.
+        var tick = el('div', 'home-card-tick');
+        tick.appendChild(svgUse('ic-check'));
+        card.appendChild(tick);
+      }
       card.setAttribute('aria-label', pieceNameEn(type));
       card.addEventListener('click', function () {
         hideHomeScreen();
@@ -440,7 +467,9 @@
     });
   }
 
-  function showHomeScreen() {
+  // Stops whatever is going on (a game, a lesson, a round, a card) before
+  // a full-screen screen (Home, Who's playing, the sticker book) shows.
+  function goIdle() {
     if (FC.gamesUI && FC.gamesUI.stop) FC.gamesUI.stop();
     B.setMode('none');
     P.stop();
@@ -449,10 +478,47 @@
     hideOverlay();
     mode = 'home';
     updateToolButtons();
-    renderHomeCards();
     hideLangRow();
+    dom.themeRow.hidden = true;
+  }
+
+  function hideScreens() {
+    dom.homescreen.hidden = true;
+    FC.profileUI.hide();
+    FC.bookUI.close();
+  }
+
+  function showHomeScreen() {
+    goIdle();
+    hideScreens();
+    renderHomeCards();
+    FC.profileUI.renderChip();
     dom.homescreen.hidden = false;
     if (FC.gamesUI && FC.gamesUI.onEnterHome) FC.gamesUI.onEnterHome();
+  }
+
+  // Who's playing: at startup when there are two or more children, and from
+  // the child's picture on Home. Said aloud once audio is unlocked (the very
+  // first tap of the page unlocks it; see armFirstTapListener).
+  function showWho() {
+    goIdle();
+    hideScreens();
+    FC.profileUI.show();
+    if (FC.gamesUI && FC.gamesUI.onEnterHome) FC.gamesUI.onEnterHome();
+    if (S.context()) V.say('who', function () {});
+  }
+
+  function showBook() {
+    S.unlock();
+    dom.homescreen.hidden = true;
+    dom.themeRow.hidden = true;
+    hideLangRow();
+    FC.bookUI.open();
+  }
+
+  function onChip() {
+    S.unlock();
+    showWho();
   }
 
   function hideHomeScreen() {
@@ -726,7 +792,7 @@
     if (FC.gamesUI && FC.gamesUI.stop) FC.gamesUI.stop();
     stopRound();
     pendingType = type;
-    if (!seen.hello) {
+    if (!isSeen('hello')) {
       playLessonScreen(LS.get('hello'), function () { playOrRound(type); });
     } else {
       playOrRound(type);
@@ -741,7 +807,7 @@
     resetSlots();
 
     var lessonId = LS.lessonFor(type);
-    if (!seen[lessonId]) {
+    if (!isSeen(lessonId)) {
       showMeet(type, function () {
         playLessonScreen(LS.get(lessonId), function () { afterPieceLesson(type); });
       });
@@ -750,9 +816,19 @@
     }
   }
 
+  // The capture idea is the same for every piece but the pawn (its capture
+  // is on the slant, its own lesson), so the generic capture lesson plays
+  // once per child: once any of them has been seen, the rest are skipped.
+  function captureLessonNeeded(type) {
+    if (type === 'p') return !isSeen(LS.captureLessonFor('p'));
+    return !TYPE_ORDER.some(function (t) {
+      return t !== 'p' && isSeen(LS.captureLessonFor(t));
+    });
+  }
+
   function afterPieceLesson(type) {
     var capId = LS.captureLessonFor(type);
-    if (!seen[capId]) {
+    if (captureLessonNeeded(type)) {
       playLessonScreen(LS.get(capId), function () { showMissionThenRound(type); });
     } else {
       showMissionThenRound(type);
@@ -766,7 +842,7 @@
   function playLessonScreen(lesson, onDone) {
     mode = 'lesson';
     updateToolButtons();
-    seen[lesson.id] = true;
+    markSeen(lesson.id);
     P.start(lesson, { onDone: onDone });
   }
 
@@ -798,8 +874,8 @@
     var type = pendingType || state.type;
     P.stop();
     hideOverlay();
-    seen[LS.lessonFor(type)] = true;
-    seen[LS.captureLessonFor(type)] = true;
+    markSeen(LS.lessonFor(type));
+    markSeen(LS.captureLessonFor(type));
     if (type !== state.type) {
       state.type = type;
       renderTiles();
@@ -827,7 +903,7 @@
     stopRound();
     mode = 'round';
     updateToolButtons();
-    playedTypes[type] = true;
+    store.markMet(type);
     state.type = type;
     state.round = L.createCaptureRound(type, Math.random);
     state.collected = 0;
@@ -1056,12 +1132,15 @@
 
   function armFirstTapListener() {
     var done = false;
-    function onFirst() {
+    function onFirst(e) {
       if (done) return;
       done = true;
       S.unlock();
       V.preloadAll();
-      V.say('pick', function () {});
+      // On Who's playing the first tap says its prompt; a tap on a child's
+      // picture is the answer, and Home (next) greets instead.
+      var answering = e && e.target && e.target.closest && e.target.closest('.who');
+      V.say(FC.profileUI.isVisible() && !answering ? 'who' : 'pick', function () {});
       document.removeEventListener('pointerdown', onFirst, true);
     }
     document.addEventListener('pointerdown', onFirst, true);
@@ -1081,6 +1160,7 @@
       showHomeScreen();
     });
     dom.themeToggle.addEventListener('click', onThemeToggle);
+    dom.bookToggle.addEventListener('click', showBook);
     dom.card.addEventListener('click', onCardActivate);
     dom.card.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' || e.key === ' ') {
@@ -1099,20 +1179,28 @@
     return state.type === 'p' ? 'r' : state.type;
   }
 
-  // Non-pawn, non-rook types whose own lesson has been seen this page
-  // load, in TYPE_ORDER: js/games-ui.js's 'battle' game adds up to two of
-  // these to the rook, which is always included.
+  // Non-pawn, non-rook types whose own lesson the current child has seen,
+  // in TYPE_ORDER: js/games-ui.js's 'battle' game adds up to two of these to
+  // the rook, which is always included.
   function seenNonPawnTypes() {
-    return TYPE_ORDER.filter(function (t) { return t !== 'p' && t !== 'r' && seen[LS.lessonFor(t)]; });
+    return TYPE_ORDER.filter(function (t) { return t !== 'p' && t !== 'r' && isSeen(LS.lessonFor(t)); });
+  }
+
+  // The piece of the capture round (or lesson) in progress, or the last one
+  // chosen: a full jar earns a sticker of it (js/games-ui.js).
+  function roundType() {
+    return state.type;
   }
 
   FC.app = {
     goHome: showHomeScreen,
     stopRound: stopRound,
+    showWho: showWho,
     showCustomCard: showCustomCard,
     hideCard: hideOverlay,
     lastNonPawnType: lastNonPawnType,
-    seenNonPawnTypes: seenNonPawnTypes
+    seenNonPawnTypes: seenNonPawnTypes,
+    roundType: roundType
   };
 
   /* ---------- start ---------- */
@@ -1139,11 +1227,91 @@
     }
   }
 
+  /* ---------- children: whose language, theme and progress are loaded ---------- */
+
+  // Language and theme for the page load: a valid ?lang= / ?theme= in the
+  // address wins, then the current child's own choice, then the defaults.
+  function startLang() {
+    var fromUrl = parseLangFromUrl();
+    if (LG.isLang(fromUrl)) return fromUrl;
+    return LG.isLang(progress.lang) ? progress.lang : LS.DEFAULT_LANG;
+  }
+
+  function startTheme() {
+    var fromUrl = parseThemeFromUrl();
+    if (TH.isTheme(fromUrl)) return fromUrl;
+    return TH.isTheme(progress.theme) ? progress.theme : TH.DEFAULT_THEME;
+  }
+
+  // Applies a language and theme after the child changed (and rewrites the
+  // address to match, as a switch does).
+  function applyPrefs(lang, theme) {
+    V.setLang(lang);
+    B.setTheme(theme);
+    S.setTheme(B.getTheme());
+    updateLangButtons();
+    markThemeRow();
+    setUrlLang(V.getLang());
+    setUrlTheme(B.getTheme());
+    renderTiles();
+    setPortrait(state.type);
+    if (FC.gamesUI && FC.gamesUI.onLangChange) FC.gamesUI.onLangChange();
+    if (FC.gamesUI && FC.gamesUI.onThemeChange) FC.gamesUI.onThemeChange();
+    if (S.context()) V.preloadAll();
+  }
+
+  // Loads everything that belongs to the current child, after a different
+  // child was chosen, the current one was removed, or everything was
+  // replaced (a restore or clear-all in the grown-ups' corner).
+  function syncProfile() {
+    var cur = store.current();
+    activeProfileId = cur ? cur.id : null;
+    refreshProgress();
+    state.type = 'r';
+    applyPrefs(LG.isLang(progress.lang) ? progress.lang : LS.DEFAULT_LANG,
+      TH.isTheme(progress.theme) ? progress.theme : TH.DEFAULT_THEME);
+    if (FC.gamesUI && FC.gamesUI.onProfileChange) FC.gamesUI.onProfileChange();
+    FC.grownupsUI.applySettings(store.settings());
+  }
+
+  function onWhoPick(id) {
+    S.unlock();
+    store.setCurrent(id);
+    syncProfile();
+    showHomeScreen();
+  }
+
+  // The corner closed: a picture, a name or the current child may have
+  // changed (removing the current child makes another one current).
+  function onGrownupsClosed() {
+    var cur = store.current();
+    if (!cur || cur.id !== activeProfileId) syncProfile();
+    if (FC.profileUI.isVisible() && store.profiles().length < 2) {
+      showHomeScreen();
+    } else if (FC.profileUI.isVisible()) {
+      FC.profileUI.show();
+    } else if (!dom.homescreen.hidden) {
+      showHomeScreen();
+    }
+  }
+
+  function onProgressReplaced() {
+    syncProfile();
+    if (store.profiles().length >= 2) showWho();
+    else showHomeScreen();
+  }
+
   function init() {
     detectFlexGap();
-    V.setLang(parseLangFromUrl());
-    B.setTheme(parseThemeFromUrl() || TH.DEFAULT_THEME);
+    store = STORE.create(STORE.localBackend());
+    store.ensureProfile({ theme: 'robots', type: 'n', ring: STORE.RINGS[0] });
+    refreshProgress();
+    store.onChange(refreshProgress);
+    activeProfileId = store.current().id;
+    V.setLang(startLang());
+    B.setTheme(startTheme());
     S.setTheme(B.getTheme());
+    FC.grownupsUI.applySettings(store.settings());
     B.init(onBoardTap);
     buildToolIcons();
     wireTools();
@@ -1153,9 +1321,15 @@
     setPortrait(state.type);
     resetSlots();
     P.prepare(LS.get('hello'));
-    if (FC.gamesUI && FC.gamesUI.init) FC.gamesUI.init();
-    showHomeScreen();
+    FC.stickers.init(store);
+    FC.profileUI.init(store, { onPick: onWhoPick, onChip: onChip });
+    FC.bookUI.init(store, { onHome: showHomeScreen });
+    FC.grownupsUI.init(store, { onClose: onGrownupsClosed, onReplaced: onProgressReplaced });
+    if (FC.gamesUI && FC.gamesUI.init) FC.gamesUI.init(store);
+    if (store.profiles().length >= 2) showWho();
+    else showHomeScreen();
     armFirstTapListener();
+    FC.grownupsUI.openIfRequested();
   }
 
   init();

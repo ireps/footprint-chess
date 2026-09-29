@@ -96,6 +96,8 @@ code {
   box-shadow: 0 5px 0 #cfd8f0;
 }
 
+.back + .back { margin-left: 12px; }
+
 .back:hover, .back:focus-visible { background: #e2eaff; }
 
 @media (max-width: 480px) {

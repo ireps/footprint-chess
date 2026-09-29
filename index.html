@@ -183,6 +183,18 @@
     <symbol id="house" viewBox="0 0 100 100"><path d="M14 50 L50 16 L86 50 V86 H60 V62 H40 V86 H14 Z" fill="currentColor" stroke="currentColor" stroke-width="6" stroke-linejoin="round"/></symbol>
     <symbol id="play-tri" viewBox="0 0 100 100"><path d="M24 12 L88 50 L24 88 Z" fill="currentColor" stroke="currentColor" stroke-width="10" stroke-linejoin="round"/></symbol>
     <symbol id="arrow" viewBox="0 0 100 100"><path d="M14 50 H74 M56 28 L80 50 L56 72" stroke="currentColor" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+
+    <!-- Stage 5: the sticker book button (Home), the tick on a met piece's
+         card, and the grown-ups' corner's lock and close icons. -->
+    <symbol id="ic-book" viewBox="0 0 100 100">
+      <path d="M50 26 C40 18 24 16 12 20 V80 C24 76 40 78 50 86 C60 78 76 76 88 80 V20 C76 16 60 18 50 26 Z" fill="#ffffff" stroke="currentColor" stroke-width="6" stroke-linejoin="round"/>
+      <path d="M50 26 V86" stroke="currentColor" stroke-width="6"/>
+      <circle cx="31" cy="46" r="9" fill="#f2c14e" stroke="currentColor" stroke-width="4"/>
+      <circle cx="69" cy="54" r="9" fill="#ec5f99" stroke="currentColor" stroke-width="4"/>
+    </symbol>
+    <symbol id="ic-check" viewBox="0 0 100 100"><path d="M20 53 L42 75 L82 27" stroke="currentColor" stroke-width="14" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-lock" viewBox="0 0 100 100"><rect x="22" y="44" width="56" height="42" rx="8" fill="none" stroke="currentColor" stroke-width="6"/><path d="M34 44 V32 a16 16 0 0 1 32 0 V44" fill="none" stroke="currentColor" stroke-width="6"/></symbol>
+    <symbol id="ic-close" viewBox="0 0 100 100"><path d="M24 24 L76 76 M76 24 L24 76" stroke="currentColor" stroke-width="9" stroke-linecap="round" fill="none"/></symbol>
   </defs>
 </svg>
 
@@ -269,13 +281,17 @@
 </main>
 
 <div class="homescreen" id="homescreen">
+  <!-- Stage 5: the child's own picture (js/profile-ui.js fills it); tapping it
+       opens the Who's playing screen. -->
+  <button class="me-chip" id="me-chip" type="button" aria-label="Who is playing"></button>
   <div class="corner">
+    <button class="tool tool-book" id="book-toggle" type="button" aria-label="Sticker book"></button>
     <button class="tool" id="theme-toggle" type="button" aria-label="Theme"></button>
     <button class="tool tool-lang" id="home-lang-toggle" type="button" aria-label="Language">
       <span class="lang-glyph" id="home-lang-glyph"></span>
     </button>
     <button class="tool" id="home-sound-toggle" type="button" aria-pressed="true" aria-label="Sound"></button>
-    <a class="tool tool-lang" id="help-link" href="help.html" aria-label="Help for grown-ups">?</a>
+    <a class="tool tool-lang help-link" id="help-link" href="help.html" aria-label="Help for grown-ups">?<span class="hold-ring" aria-hidden="true"></span></a>
   </div>
   <!-- Theme picker: no visible text, ever (a theme's own English name would
        have to appear in an aria-label only). js/app.js fills this with one
@@ -293,6 +309,31 @@
   <div class="sticker-row" id="sticker-row" hidden></div>
 </div>
 
+<!-- Who's playing (stage 5; js/profile-ui.js): full screen like the home
+     screen. Shown at startup only when there are two or more children, and
+     opened from the child's picture on Home. No add or remove controls here:
+     those are in the grown-ups' corner. -->
+<div class="whoscreen" id="whoscreen" hidden>
+  <div class="corner">
+    <a class="tool tool-lang help-link" id="who-help" href="help.html" aria-label="Help for grown-ups">?<span class="hold-ring" aria-hidden="true"></span></a>
+  </div>
+  <h1 class="who-title" id="who-title"></h1>
+  <div class="who-row" id="who-row"></div>
+</div>
+
+<!-- Sticker book (stage 5; js/book-ui.js): one tab per theme, two pages of
+     four slots. No numbers anywhere. -->
+<div class="bookscreen" id="bookscreen" hidden>
+  <button class="tool book-home" id="book-home" type="button" aria-label="Home"></button>
+  <div class="book-me" id="book-me" aria-hidden="true"></div>
+  <div class="book-tabs" id="book-tabs" role="group" aria-label="Themes"></div>
+  <div class="book" id="book"></div>
+</div>
+
+<!-- The grown-ups' corner (stage 5; js/grownups-ui.js builds the panel):
+     opened by holding the ? button for two seconds, or from help.html. -->
+<div class="gu" id="grownups" hidden></div>
+
 <!-- Language picker: shown only when the registry (js/langs.js) has three or
      more languages; with two, the language button just switches. No visible
      text, ever: each button shows one glyph and carries the language name as
@@ -305,11 +346,16 @@
 <script src="js/games.js"></script>
 <script src="js/lessons.js"></script>
 <script src="js/themes.js"></script>
+<script src="js/store.js"></script>
 <script src="js/sound.js"></script>
 <script src="js/voice-clips.js"></script>
 <script src="js/voice.js"></script>
 <script src="js/board.js"></script>
 <script src="js/player.js"></script>
+<script src="js/stickers.js"></script>
+<script src="js/profile-ui.js"></script>
+<script src="js/book-ui.js"></script>
+<script src="js/grownups-ui.js"></script>
 <script src="js/games-ui.js"></script>
 <script src="js/app.js"></script>
 </body>

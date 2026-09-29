@@ -20,7 +20,8 @@ The app is a static site. It has no server-side code, no accounts and no data se
 - **No dependencies.** Tests use only Node.js built-in modules.
 - **Safe DOM updates.** The code uses `createElement` and `textContent`. It does not use `innerHTML`, `outerHTML`, `insertAdjacentHTML` or `document.write`.
 - **Referrer policy.** `no-referrer` is set on every page.
-- **No storage.** The current version sets no cookies and stores nothing on the device. See [PRIVACY.md](PRIVACY.md) for planned changes.
+- **Local storage only.** The app sets no cookies. Progress, children's pictures and optional names, and the grown-up settings are kept in the browser's local storage on the device, under one key, and are never sent anywhere. See [PRIVACY.md](PRIVACY.md).
+- **Stored data and backup codes are untrusted.** Local storage can be edited, corrupted or written by a newer version, and a backup code is text a person pastes in. `js/store.js` rebuilds the whole document field by field from known keys and allowed values on every load and import (names have control and direction characters removed and are length-limited; ids, themes, languages, piece types and counts are checked; prototype keys are refused). A code carries a checksum and a version, and a code from a newer version, or stored data from one, is refused without being overwritten. Nothing stored or pasted is ever treated as markup: it is shown only through `textContent`.
 
 ## Known limitations
 
@@ -38,3 +39,4 @@ The target tablet runs Android 5.1 with a browser that no longer receives full s
 - Do not use `innerHTML`, `outerHTML`, `insertAdjacentHTML` or `document.write`.
 - Never commit secrets, access tokens or personal information. The repository is public.
 - Do not collect or store anything about the child beyond what [PRIVACY.md](PRIVACY.md) describes. Update that file in the same change if this ever changes.
+- Treat everything read from local storage or a backup code as untrusted: go through `js/store.js`, never parse it elsewhere.

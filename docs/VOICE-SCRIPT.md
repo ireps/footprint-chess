@@ -112,6 +112,7 @@ naming a direction.
 | golden | A golden pawn! | బంగారు భటుడు! | Excited, a little magical; said when a golden pawn appears. |
 | sticker | You got a sticker! | నీకు ఒక స్టిక్కర్ వచ్చింది! | Big and celebratory; said when the capture jar fills. |
 | break | Great playing! Time for a little break? | బాగా ఆడావు! కొంచెం విశ్రాంతి తీసుకుందామా? | Warm and gentle, never scolding; offered, not required. |
+| who | Who's playing? | ఎవరు ఆడుతున్నారు? | Warm and curious, like asking a friend; said on the Who's playing screen, and shown there as its heading. |
 
 ## How the owner makes the clips
 

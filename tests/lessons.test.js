@@ -84,10 +84,20 @@ function parseVoiceScript() {
 
 /* ---------- watch timing ---------- */
 
-test('every lesson watch estimate is between 10 and 18 seconds', () => {
+test('every lesson watch estimate is between 6 and 18 seconds', () => {
   for (const lesson of L.LESSONS) {
     const ms = L.estimateWatchMs(lesson);
-    assert.ok(ms >= 10000 && ms <= 18000, `${lesson.id}: ${ms}ms out of range`);
+    assert.ok(ms >= 6000 && ms <= 18000, `${lesson.id}: ${ms}ms out of range`);
+  }
+});
+
+test('no capture lesson demonstrates the same move twice (the capture is shown once, then practised)', () => {
+  const captureLessons = L.LESSONS.filter((l) => l.id.indexOf('capture-') === 0 || l.id === 'pawn-capture');
+  assert.equal(captureLessons.length, 6);
+  for (const lesson of captureLessons) {
+    const targets = lesson.watch.filter((s) => s.move).map((s) => s.move.join(','));
+    assert.equal(new Set(targets).size, targets.length, `${lesson.id}: the watch script moves to the same square twice`);
+    assert.equal(targets.length, 1, `${lesson.id}: expected exactly one demonstrated move`);
   }
 });
 
@@ -252,6 +262,10 @@ test('every said id, every PRACTICE_LINES id and every APP_LINES id exists in LI
   }
   for (const id of L.GAME_LINES) {
     assert.ok(L.LINES[id], `GAME_LINES: unknown line "${id}"`);
+    used.add(id);
+  }
+  for (const id of L.PROFILE_LINES) {
+    assert.ok(L.LINES[id], `PROFILE_LINES: unknown line "${id}"`);
     used.add(id);
   }
   for (const id of Object.keys(L.LINES)) {

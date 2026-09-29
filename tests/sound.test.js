@@ -268,3 +268,79 @@ test('the pitch multiplier does not leak into the next sound', () => {
   const first = rec.log.find((l) => l.indexOf('osc.frequency.set ') === 0);
   assert.ok(first.indexOf('osc.frequency.set 660 ') === 0, first);
 });
+
+/* ---------- another theme's sound, and calm mode (stage 5) ---------- */
+
+test('play() can use another theme\'s sound without changing the current theme', () => {
+  const { S, rec } = loadInBrowser();
+  S.setTheme('robots');
+  const logOf = (fn) => { rec.log.length = 0; fn(); return rec.log.slice(); };
+  const own = logOf(() => S.play('pick', 'k'));
+  const pirate = logOf(() => S.play('pick', 'k', 'pirate'));
+  const pirateNative = record('pirate', 'pick', 'k').log;
+  assert.deepEqual(pirate, pirateNative);
+  assert.notDeepEqual(pirate, own);
+  assert.equal(S.getTheme(), 'robots');
+  // capture and win take the override too
+  assert.deepEqual(logOf(() => S.play('capture', 1, 'space')), record('space', 'capture', 1).log);
+  assert.deepEqual(logOf(() => S.play('win', undefined, 'dinos')), record('dinos', 'win').log);
+});
+
+test('an unknown theme override plays the current theme\'s sound', () => {
+  const { S, rec } = loadInBrowser();
+  S.setTheme('space');
+  const base = record('space', 'pick', 'q').log;
+  for (const bad of ['nope', '', null, 'toString', '__proto__']) {
+    rec.log.length = 0;
+    S.play('pick', 'q', bad);
+    assert.deepEqual(rec.log, base, String(bad));
+  }
+});
+
+test('calm mode lowers the effects bus to 0.6 and leaves the master and the voice output alone', () => {
+  const { S, rec } = loadInBrowser();
+  const gains = rec.nodes.filter((n) => n.kind === 'gain');
+  const master = gains[0];
+  const fx = gains[1];
+  assert.equal(master.gain.value, 0.5);
+  assert.deepEqual(fx.connected, [master]);
+  assert.equal(fx.gain.value, 1);
+  assert.equal(S.output(), master, 'the voice must connect to the master, not to the effects bus');
+  assert.equal(S.isCalm(), false);
+  S.setCalm(true);
+  assert.equal(S.isCalm(), true);
+  assert.equal(fx.gain.value, 0.6);
+  assert.equal(master.gain.value, 0.5);
+  assert.equal(S.output(), master);
+  S.setCalm(false);
+  assert.equal(fx.gain.value, 1);
+});
+
+test('every effect reaches the master through the effects bus, never directly', () => {
+  for (const [name, arg] of [['select'], ['your-turn'], ['pick', 'k'], ['capture', 3], ['win'], ['move-q']]) {
+    for (const t of TH.THEMES) {
+      const { S, rec } = loadInBrowser();
+      S.setTheme(t.id);
+      const before = rec.nodes.length;
+      S.play(name, arg);
+      const master = rec.nodes.find((n) => n.kind === 'gain');
+      const made = rec.nodes.slice(before);
+      assert.ok(made.length > 0, name + ' scheduled nothing');
+      for (const n of made) {
+        assert.ok(n.connected.indexOf(master) === -1, name + ' in ' + t.id + ': a node connects straight to the master');
+      }
+    }
+  }
+});
+
+test('calm mode set before the first tap is applied when the audio context is created', () => {
+  const made = makeRecorder();
+  const sandbox = { AudioContext: made.FakeAudioContext };
+  vm.runInNewContext(SRC, sandbox);
+  const S = sandbox.FC.sound;
+  S.setCalm(true);
+  assert.doesNotThrow(() => S.setCalm(true)); // no context yet
+  S.unlock();
+  const fx = made.rec.nodes.filter((n) => n.kind === 'gain')[1];
+  assert.equal(fx.gain.value, 0.6);
+});

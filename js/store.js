@@ -436,6 +436,12 @@
         var p = cur();
         return p ? copy(p) : null;
       },
+      // A copy of any profile's progress (the Who's playing screen shows each
+      // child's stickers), or null for an unknown id.
+      progressOf: function (id) {
+        var p = (typeof id === 'string' && own(doc.progress, id)) ? doc.progress[id] : null;
+        return p ? copy(p) : null;
+      },
       markSeen: function (lessonId) {
         var p = cur();
         if (!p || typeof lessonId !== 'string' || !LESSON_RE.test(lessonId) || BAD_KEYS[lessonId] || p.seen[lessonId]) return;

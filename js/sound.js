@@ -28,6 +28,14 @@
   var enabled = true;
   var themeId = 'robots';
 
+  // Calm mode (the grown-ups' corner): sound effects are about 40% quieter.
+  // Every effect goes through fxBus, a gain node between the effects and the
+  // master, so the level of the voice (which connects to the master through
+  // output()) does not change.
+  var CALM_GAIN = 0.6;
+  var calm = false;
+  var fxBus = null;
+
   // Level of the theme sounds. They were auditioned with a master gain of
   // 0.8 and a 1.6 boost on every node; the app's master gain is 0.5, so the
   // boost here is 1.6 * 0.8 / 0.5. No single gain node goes above 1 (see
@@ -62,6 +70,9 @@
         master.gain.value = 0.5;
         master.connect(limiter);
         limiter.connect(ctx.destination);
+        fxBus = ctx.createGain();
+        fxBus.gain.value = calm ? CALM_GAIN : 1;
+        fxBus.connect(master);
         // Two seconds of white noise, shared by every noise burst. Made with
         // its own small generator so sound effects never use Math.random,
         // which the games' opponent moves rely on.
@@ -75,6 +86,7 @@
       } catch (e) {
         ctx = null;
         master = null;
+        fxBus = null;
         noiseBuf = null;
         return;
       }
@@ -118,7 +130,7 @@
     gain.gain.exponentialRampToValueAtTime(level(vol), t + (opt.attack || 0.012));
     gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     node.connect(gain);
-    gain.connect(master);
+    gain.connect(fxBus);
     osc.start(t);
     osc.stop(t + dur + 0.05);
   }
@@ -142,7 +154,7 @@
     gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     src.connect(filter);
     filter.connect(gain);
-    gain.connect(master);
+    gain.connect(fxBus);
     // Start each burst at a different point in the shared noise buffer.
     noiseOffset = (noiseOffset + 0.37) % 1.5;
     src.start(t, noiseOffset);
@@ -193,7 +205,7 @@
     });
     filter.connect(trem);
     trem.connect(amp);
-    amp.connect(master);
+    amp.connect(fxBus);
     lfo.start(t);
     lfo.stop(t + dur + 0.05);
     // noise() applies pitchMul itself, so hand it the unscaled values.
@@ -351,6 +363,12 @@
     return themeId;
   }
 
+  // Calm mode on or off: effects (not the voice) about 40% quieter.
+  function setCalm(value) {
+    calm = !!value;
+    if (fxBus) fxBus.gain.value = calm ? CALM_GAIN : 1;
+  }
+
   // Runs one sound with the given level and pitch multipliers, then puts the
   // multipliers back so the next sound is not affected.
   function run(fn, gm, pm) {
@@ -364,7 +382,10 @@
     }
   }
 
-  // arg: an optional extra value a sound can use.
+  // arg: an optional extra value a sound can use; forTheme: an optional
+  // theme id whose sound to play instead of the current theme's (the sticker
+  // book plays another theme's piece sound without changing the app's theme;
+  // an unknown id means the current theme).
   //   'pick'    arg = piece type (r b q k n p): the theme's tap sound.
   //   'capture' arg = streak: 1 for the first capture in a run, 2 for the
   //             next, and so on (js/games-ui.js resets it on a non-capturing
@@ -373,10 +394,10 @@
   //             increasingly juicy without going shrill.
   //   'win'     the theme's win sound.
   // Every other name is the same in all themes (SOUNDS).
-  function play(name, arg) {
+  function play(name, arg, forTheme) {
     if (!enabled || !ctx) return;
     try {
-      var theme = THEME_SOUNDS[themeId];
+      var theme = THEME_SOUNDS[has(THEME_SOUNDS, forTheme) ? forTheme : themeId];
       if (name === 'pick') {
         if (has(theme.pieces, arg)) run(theme.pieces[arg], THEME_GAIN, 1);
       } else if (name === 'capture') {
@@ -410,6 +431,8 @@
     output: output,
     setTheme: setTheme,
     getTheme: getTheme,
+    setCalm: setCalm,
+    isCalm: function () { return calm; },
     setEnabled: function (value) { enabled = !!value; },
     isEnabled: function () { return enabled; },
     // Exposed for tests.

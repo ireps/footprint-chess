@@ -34,6 +34,13 @@
 
   var reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
+  // Calm mode (the grown-ups' corner, js/grownups-ui.js): no board bump, at
+  // most CALM_BURST_MAX bits in a capture burst, no full-screen confetti and
+  // half the in-board confetti. Sound effects have their own switch in
+  // FC.sound.setCalm; the grown-ups' corner sets both together.
+  var CALM_BURST_MAX = 3;
+  var calm = false;
+
   var dom = {
     board: byId('board'),
     squares: byId('squares'),
@@ -446,6 +453,7 @@
   // board's fx layer so it sits behind any card that follows.
   function confettiInBoard(count) {
     if (reduceMotion) return;
+    if (calm) count = Math.ceil(count / 2);
     for (var i = 0; i < count; i++) {
       later((function (i2) {
         return function () { boardConfetto(i2); };
@@ -474,7 +482,7 @@
   // Full-screen confetti for the Won card. Self-removing; safe to call
   // repeatedly (each call is its own overlay).
   function screenConfetti(count) {
-    if (reduceMotion) return;
+    if (reduceMotion || calm) return;
     var layer = document.createElement('div');
     layer.className = 'confetti-burst';
     layer.setAttribute('aria-hidden', 'true');
@@ -507,6 +515,7 @@
 
   function captureBurst(r, c, count) {
     if (reduceMotion) return;
+    if (calm) count = Math.min(count, CALM_BURST_MAX);
     var host = document.createElement('div');
     host.className = 'burst-host';
     place(host, r, c);
@@ -518,8 +527,12 @@
   // A small board "bump" (translateY and back): part of a capture's juice.
   // Finite, transform only.
   function bump() {
+    if (calm) return;
     replay(dom.board, 'bump');
   }
+
+  function setCalm(value) { calm = !!value; }
+  function isCalm() { return calm; }
 
   /* ---------- team bars (games, and the "turns" lesson) ---------- */
 
@@ -790,6 +803,8 @@
     TYPE_ORDER: TYPE_ORDER,
     setTheme: setTheme,
     getTheme: getTheme,
+    setCalm: setCalm,
+    isCalm: isCalm,
     reduceMotion: reduceMotion,
     init: init,
     layout: layout,

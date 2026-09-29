@@ -35,7 +35,6 @@
   var IDLE_MS = 5000;
   var GOLDEN_CHANCE = 0.2;
   var JAR_MAX = 10;
-  var BREAK_MS_DEFAULT = 15 * 60 * 1000;
 
   /*
    * Test hooks, both harmless and off by default:
@@ -43,11 +42,13 @@
    *                 instead of leaving it to a 1-in-5 chance, so a
    *                 golden capture can be exercised without hundreds of
    *                 retries. Never changes anything else.
-   *   ?breakmins=N  overrides the 15-minute break threshold with N
-   *                 minutes (may be fractional, e.g. 0.1), for testing the
-   *                 Break card without a 15-minute wait.
-   *   ?break=off    the owner-facing switch from the spec: disables the
-   *                 break reminder entirely (documented in help.html).
+   *   ?breakmins=N  overrides the break length (the grown-ups' corner
+   *                 setting, 15 minutes at first) with N minutes (may be
+   *                 fractional, e.g. 0.1), for testing the Break card
+   *                 without a wait. It never turns the reminder on: the
+   *                 corner's switch and ?break=off still win.
+   *   ?break=off    disables the break reminder entirely (documented in
+   *                 help.html); the corner has the same switch.
    */
   function parseParam(name) {
     var m = new RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search || '');
@@ -61,7 +62,7 @@
   var FORCE_GOLDEN = parseParam('golden') === '1';
   var BREAK_OFF = parseParam('break') === 'off';
   var breakMinsParam = parseFloat(parseParam('breakmins'));
-  var BREAK_MS = (!isNaN(breakMinsParam) && breakMinsParam >= 0) ? breakMinsParam * 60 * 1000 : BREAK_MS_DEFAULT;
+  var BREAK_MS_PARAM = (!isNaN(breakMinsParam) && breakMinsParam >= 0) ? breakMinsParam * 60 * 1000 : null;
 
   /* ---------- small DOM helpers (see js/app.js for the same pattern) ---------- */
 
@@ -83,8 +84,7 @@
   var active = false;        // true from a game card tap until Home
   var gameId = null;         // 'catch' | 'race' | 'battle'
   var gmode = 'none';        // 'turns' | 'team' | 'mission' | 'play' | 'won' | 'break'
-  var childSide = null;      // 'a' | 'b', remembered for this page load once chosen
-  var turnsSeen = false;     // the "turns" lesson, shown once per page load
+  var childSide = null;      // 'a' | 'b': the team the child is playing (set at the Team card, kept for Again / next game)
   var gstate = null;         // FC.games state
   var pieceNodes = {};       // "r,c" -> DOM node, every piece currently on the board
   var selected = null;       // [r, c] or null
@@ -101,8 +101,8 @@
   var gameToken = 0;
 
   var streak = 0;            // consecutive captures (js/app.js shares this via captureJuice)
-  var jarCount = 0;          // 0..JAR_MAX, session-only
-  var stickers = [];         // [{ type }], session-only, earned this page load
+  var jarCount = 0;          // 0..JAR_MAX, saved for the current child (js/store.js)
+  var store = null;          // the FC.store instance (js/app.js passes it to init)
 
   var accumMs = 0;           // active play time before the current stretch
   var activeSince = null;    // timestamp the current away-from-Home stretch began, or null
@@ -198,15 +198,10 @@
     });
   }
 
+  // The shelf on Home: up to four stickers (earned this page load first,
+  // then the book's), drawn by js/stickers.js.
   function renderStickerRow() {
-    if (!dom.stickerRow) return;
-    clear(dom.stickerRow);
-    stickers.forEach(function (s) {
-      var chip = el('div', 'sticker-chip');
-      chip.appendChild(B.pieceSvg(s.type, 'me'));
-      dom.stickerRow.appendChild(chip);
-    });
-    dom.stickerRow.hidden = stickers.length === 0;
+    if (dom.stickerRow && FC.stickers) FC.stickers.renderShelf(dom.stickerRow);
   }
 
   // The side panel's mission box: while a game (or the "turns" lesson) is
@@ -231,8 +226,16 @@
   }
 
   /* =====================================================================
-   * Flow: game card -> turns lesson (once) -> team (once) -> mission -> play -> won/break
+   * Flow: game card -> turns lesson (once per child) -> team -> mission -> play -> won/break
    * ===================================================================*/
+
+  function progress() { return (store && store.progress()) || null; }
+
+  // The team the current child last chose in the current theme, or null.
+  function rememberedTeam() {
+    var p = progress();
+    return (p && p.teams[B.getTheme()]) || null;
+  }
 
   function onGameCardTap(id) {
     S.unlock();
@@ -246,11 +249,16 @@
     gameId = id;
     active = true;
     prepared = false;
-    if (!turnsSeen) {
-      turnsSeen = true;
+    // The Team card always shows when a game is entered from Home; the
+    // remembered team is only ringed on it. Play again and the next game
+    // (on the Won card) skip it and keep childSide.
+    childSide = null;
+    var p = progress();
+    if (!(p && p.seen.turns)) {
+      if (store) store.markSeen('turns');
       startTurnsLesson();
     } else {
-      showTeamOrMission();
+      showTeamCard();
     }
   }
 
@@ -261,17 +269,9 @@
     P.start(LS.get('turns'), {
       onDone: function () {
         if (dom.toolSkip) dom.toolSkip.hidden = true;
-        showTeamOrMission();
+        showTeamCard();
       }
     });
-  }
-
-  function showTeamOrMission() {
-    if (!childSide) {
-      showTeamCard();
-    } else {
-      showMissionCard();
-    }
   }
 
   function showTeamCard() {
@@ -280,11 +280,12 @@
     setPanel(gameId);
     if (dom.toolSkip) dom.toolSkip.hidden = true;
     var theme = B.getTheme();
+    var remembered = rememberedTeam();
     function build() {
       var frag = document.createDocumentFragment();
       var row = el('div', 'card-row team-row');
       ['a', 'b'].forEach(function (side) {
-        var opt = el('button', 'team-option');
+        var opt = el('button', 'team-option' + (side === remembered ? ' remembered' : ''));
         opt.type = 'button';
         var portrait = el('div', 'portrait card-portrait');
         portrait.appendChild(B.pieceSvg('p', side === 'a' ? 'me' : 'foe'));
@@ -309,6 +310,7 @@
   function onTeamChosen(side) {
     S.unlock();
     childSide = side;
+    if (store) store.setTeam(B.getTheme(), side);
     var lineId = 'team-' + B.getTheme() + '-' + side;
     // Interrupts the "pick a team" prompt; the mission line then queues
     // behind this one (showMissionCard uses sayAfter).
@@ -640,11 +642,21 @@
     B.confetti(28);
     var lineId = gstate.id === 'catch' ? 'caught' : gstate.id === 'race' ? 'race-won' : 'won';
     var myToken = gameToken;
-    // Queued behind any sticker/golden line that is still playing.
-    V.sayAfter(lineId, function () {
+    function toWon() {
       if (myToken !== gameToken) return;
       showGameWonOrBreak();
-    });
+    }
+    // Winning all three games in a theme for the first time also earns the
+    // golden king: its pop and the sticker line come before the Won card.
+    // markWin is true exactly once per child and theme.
+    var goldenKing = !!store && store.markWin(B.getTheme(), gstate.id);
+    if (goldenKing) {
+      V.sayAfter(lineId);
+      awardSticker('golden-k', toWon);
+    } else {
+      // Queued behind any sticker/golden line that is still playing.
+      V.sayAfter(lineId, toWon);
+    }
   }
 
   function showGameWonOrBreak() {
@@ -717,6 +729,7 @@
     if (activeSince === null) activeSince = Date.now();
   }
   function onEnterHome() {
+    renderStickerRow();
     pausedByHide = false;
     if (activeSince !== null) {
       accumMs += Date.now() - activeSince;
@@ -746,8 +759,14 @@
       if (activeSince === null) activeSince = Date.now();
     }
   }
+  // The grown-ups' corner's break settings (js/store.js); ?break=off and
+  // ?breakmins= (test hooks, see the top of this file) still apply.
   function dueForBreak() {
-    return !BREAK_OFF && elapsedMs() >= BREAK_MS;
+    if (BREAK_OFF) return false;
+    var s = store ? store.settings() : { breakOn: true, breakMins: 15 };
+    if (!s.breakOn) return false;
+    var ms = BREAK_MS_PARAM !== null ? BREAK_MS_PARAM : s.breakMins * 60 * 1000;
+    return elapsedMs() >= ms;
   }
 
   function showBreakCard(onKeepPlaying) {
@@ -810,7 +829,7 @@
     if (opts.node) B.replay(opts.node, 'cheer');
     if (opts.golden) {
       V.sayAfter('golden');
-      awardSticker();
+      awardSticker('golden-p');
     } else if (opts.isPawn) {
       growJar();
     }
@@ -838,34 +857,50 @@
     if (dom.jarFill) dom.jarFill.style.transform = 'scaleY(' + (jarCount / JAR_MAX) + ')';
   }
 
+  function saveJar() {
+    if (store) store.setJar(jarCount);
+  }
+
   function growJar() {
     jarCount = Math.min(jarCount + 1, JAR_MAX);
     updateJarDom();
+    saveJar();
     if (jarCount >= JAR_MAX) {
       jarCount = 0;
       updateJarDom();
-      awardSticker();
+      saveJar();
+      awardSticker(pieceStickerType());
     }
   }
 
-  function stickerPieceType() {
-    if (gameId === 'catch') return (FC.app && FC.app.lastNonPawnType) ? FC.app.lastNonPawnType() : 'r';
-    return 'p';
+  // The piece a full jar earns a sticker of: the piece the child was
+  // playing. In a game that is the chasing piece (Catch), the pawn (Pawn
+  // race) or the rook (Little battle); in a capture round it is that
+  // round's piece.
+  function pieceStickerType() {
+    if (active && gameId === 'catch') return (FC.app && FC.app.lastNonPawnType) ? FC.app.lastNonPawnType() : 'r';
+    if (active && gameId === 'race') return 'p';
+    if (active && gameId === 'battle') return 'r';
+    return (FC.app && FC.app.roundType) ? FC.app.roundType() : 'p';
   }
 
-  function showStickerPop() {
+  function showStickerPop(theme, kind) {
     var host = byId('mission-box');
     if (!host) return;
     var pop = el('div', 'sticker-pop');
-    pop.appendChild(B.pieceSvg(stickerPieceType(), 'me'));
+    pop.appendChild(FC.stickers.art(theme, kind));
     host.appendChild(pop);
     window.setTimeout(function () { pop.remove(); }, 1500);
   }
 
-  function awardSticker() {
-    stickers.push({ type: stickerPieceType() });
-    V.sayAfter('sticker');
-    showStickerPop();
+  // Saves the sticker for the current child (js/store.js), pops it in the
+  // side panel and says the sticker line; done runs when that line settles.
+  function awardSticker(kind, done) {
+    var theme = B.getTheme();
+    if (store) store.addSticker(theme, kind);
+    FC.stickers.record(theme, kind);
+    V.sayAfter('sticker', done);
+    showStickerPop(theme, kind);
     renderStickerRow();
   }
 
@@ -904,7 +939,7 @@
     if (gmode === 'turns') {
       P.stop();
       if (dom.toolSkip) dom.toolSkip.hidden = true;
-      showTeamOrMission();
+      showTeamCard();
     }
   }
 
@@ -912,11 +947,22 @@
     if (gmode === 'turns') startTurnsLesson();
   }
 
-  function init() {
-    document.addEventListener('visibilitychange', onVisibilityChange);
-    renderHomeGames();
+  // A different child is now playing (or everything was replaced): the
+  // jar and the shelf belong to the child.
+  function onProfileChange() {
+    var p = progress();
+    jarCount = p ? p.jar : 0;
+    streak = 0;
+    childSide = null;
     updateJarDom();
     renderStickerRow();
+  }
+
+  function init(theStore) {
+    store = theStore;
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    renderHomeGames();
+    onProfileChange();
   }
 
   FC.gamesUI = {
@@ -929,6 +975,7 @@
     onThemeChange: onThemeChange,
     onLeaveHome: onLeaveHome,
     onEnterHome: onEnterHome,
+    onProfileChange: onProfileChange,
     stop: stop,
     captureJuice: captureJuice,
     resetStreak: resetStreak,

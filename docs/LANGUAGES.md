@@ -92,7 +92,11 @@ gets the generic checks (text present, and its script if the registry lists
 one). Add an entry with the language's own banned words, especially the words
 for "left", "right" and "robot".
 
-## 6. Test
+## 6. The grown-ups' corner (optional)
+
+The grown-ups' corner (`js/grownups-ui.js`) is in English only. All its text is in the `GROWNUP_TEXT` table there, keyed by language id; a language with no entry uses the next language of its fallback chain, so nothing is needed for a new language. To translate the corner, add an entry with the same keys as `en`. The children's Who's playing screen needs nothing beyond the `who` line (step 2).
+
+## 7. Test
 
 Run `node --test`. Then open `?lang=<id>` and play a lesson. With three or
 more languages the language button opens a row of buttons, one per language.

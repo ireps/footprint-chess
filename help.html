@@ -36,7 +36,10 @@
       <dt>Home</dt>
       <dd>Six piece cards. The glowing card is a suggestion, not a
         requirement: any card can be tapped at any time, and nothing is ever
-        locked.</dd>
+        locked. A piece that has been played has a small green tick. The
+        child's own picture is at the top left, the sticker book button is at
+        the top right, and up to four recent stickers sit on a shelf under
+        the games.</dd>
       <dt>Meet</dt>
       <dd>The first time a piece is chosen, a card shows the real piece
         shape next to its robot character and says its name.</dd>
@@ -55,6 +58,55 @@
       <dd>A short celebration, then a choice: play the same piece again, try
         the next piece, or go back to the home screen.</dd>
     </dl>
+  </section>
+
+  <section class="card">
+    <h2>Children and progress</h2>
+    <p>
+      The app remembers each child. There is no login: a child is a picture
+      (a piece, a theme's artwork and a coloured ring), and a name is
+      optional. Progress is kept in this browser, on this device only (see
+      Privacy below). For each child it remembers which lessons have been
+      seen, which pieces have been played, stickers, the capture jar, which
+      team was picked in each theme, which games have been won, and the
+      language and theme the child chose.
+    </p>
+    <p>
+      A first-time child goes straight to the home screen: one child is
+      created automatically. With two or more children, the app starts on
+      <strong>Who's playing?</strong>, with one big picture for each child
+      (and up to three of their stickers under it). Tapping a picture loads
+      that child's progress, language and theme. Tapping the child's picture
+      at the top left of the home screen opens the same screen at any time.
+      Adding, changing and removing children is done in the grown-ups'
+      corner, not on that screen.
+    </p>
+    <p>
+      When a game is started from the home screen, the Team card always
+      shows, with the team the child chose last time in that theme ringed.
+      Either team can be tapped. "Play again" and the next game skip it.
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>The sticker book</h2>
+    <p>
+      The book button at the top right of the home screen opens the sticker
+      book. There is one tab per theme; the current theme's tab is selected
+      first. Each theme has two pages of four slots: rook, bishop, queen and
+      king, then knight, pawn, golden pawn and golden king. A slot shows its
+      sticker once earned, and a faint outline of the piece until then.
+      Stickers earned in this visit have a dashed ring. There are no numbers:
+      a sticker earned twice looks the same as once. Tapping a sticker plays
+      that theme's sound for the piece.
+    </p>
+    <p>
+      A full jar earns a sticker of the piece the child was playing (the
+      chasing piece in Catch the knight, the pawn in Pawn race, the rook in
+      Little battle, or the round's piece in a capture round). A golden pawn
+      earns a golden pawn at once. Winning all three games in one theme, for
+      the first time, earns that theme's golden king.
+    </p>
   </section>
 
   <section class="card">
@@ -112,6 +164,45 @@
     </p>
   </section>
 
+  <section class="card" id="grownups-corner">
+    <h2>The grown-ups' corner</h2>
+    <p>
+      Hold the <strong>?</strong> button on the home screen (or on Who's
+      playing) for two seconds. A ring fills while it is held. A quick tap
+      still opens this help page. The corner is in English. If you are using
+      a keyboard, the link at the end of this page opens it directly.
+    </p>
+    <dl>
+      <dt>Calm mode</dt>
+      <dd>No board bump when a pawn is captured, smaller capture bursts, no
+        full-screen confetti, half the in-board confetti, and sound effects
+        about 40% quieter. Spoken lines keep their normal level.</dd>
+      <dt>Break reminder</dt>
+      <dd>On or off, and how long a child plays before a calm card
+        suggests a break: 10, 15, 20 or 30 minutes.</dd>
+      <dt>Children</dt>
+      <dd>Each child's picture and optional name (up to 20 characters). The
+        <em>Picture</em> button opens a picker (style, piece and ring
+        colour). <em>Remove</em> deletes that child's progress after asking
+        first, and is not offered for the only child. Up to four children.</dd>
+      <dt>Move progress to another device</dt>
+      <dd>Shows a backup code to copy. On the other device, paste it into
+        the box and choose <em>Restore from code</em>. This replaces
+        everything on that device, so it asks first. The code has a checksum,
+        so a code that was mistyped or cut short is refused and nothing is
+        changed. The code includes any names: share it only between your own
+        devices.</dd>
+      <dt>Clear all progress</dt>
+      <dd>Removes every child and all progress from this browser, after
+        asking first.</dd>
+    </dl>
+    <p>
+      If the browser cannot save (private browsing, or blocked site data),
+      the corner says so at the top: the app still works, and progress lasts
+      until the page is closed.
+    </p>
+  </section>
+
   <section class="card">
     <h2>Rewards and breaks</h2>
     <dl>
@@ -122,15 +213,16 @@
       <dd>Every captured pawn, in games and in capture rounds, fills a jar in
         the side panel (a picture only, no numbers). When it is full, the
         child gets a sticker, and the jar empties. Now and then one of the
-        pawns is golden: capturing it gives a sticker at once. Stickers
-        earned so far show as a small row on the home screen. They are kept
-        only until the page is reloaded; nothing is saved on the device.</dd>
+        pawns is golden: capturing it gives a sticker at once. Stickers go in
+        the child's sticker book and are saved on this device; the four most
+        recent sit on a shelf on the home screen.</dd>
       <dt>Break reminder</dt>
       <dd>After about 15 minutes of play (time on the home screen does not
-        count), the next "won" card is replaced by a calm card with a moon,
-        a spoken suggestion to take a little break, a button to keep playing
-        and a button for home. Add <code>?break=off</code> to the address to
-        turn the reminder off for that visit.</dd>
+        count; the length can be changed in the grown-ups' corner), the next
+        "won" card is replaced by a calm card with a moon, a spoken
+        suggestion to take a little break, a button to keep playing and a
+        button for home. It can be turned off in the grown-ups' corner, or
+        for one visit by adding <code>?break=off</code> to the address.</dd>
     </dl>
   </section>
 
@@ -166,7 +258,8 @@
         the piece being taught.</dd>
       <dt>Language</dt>
       <dd>Switches between English and Telugu at any time. The button shows
-        the name of the language it will switch to.</dd>
+        the name of the language it will switch to. The choice is saved for
+        the current child.</dd>
       <dt>Theme (palette icon, home screen)</dt>
       <dd>Opens a row of five round buttons, one per theme, each showing
         only that theme's own knight on its own colours (no text, so it
@@ -177,6 +270,13 @@
       <dd>Turns sound effects and spoken lines on or off together.</dd>
       <dt>Home</dt>
       <dd>Returns to the home screen and stops whatever is happening.</dd>
+      <dt>Picture (top left of the home screen)</dt>
+      <dd>Opens Who's playing, to switch to another child.</dd>
+      <dt>Sticker book (top right of the home screen)</dt>
+      <dd>Opens the sticker book.</dd>
+      <dt>? (home screen)</dt>
+      <dd>A tap opens this page. Holding it for two seconds opens the
+        grown-ups' corner.</dd>
     </dl>
   </section>
 
@@ -186,7 +286,8 @@
       English is the default. Telugu is available at
       <code>?lang=te</code> added to the address, for example
       <code>https://ireps.github.io/footprint-chess/?lang=te</code>, so it
-      can be bookmarked separately. The language button in the side panel
+      can be bookmarked separately, and it wins over the child's saved
+      language for that visit. The language button in the side panel
       (and on the home screen) switches at any time without losing whatever
       is currently being said.
     </p>
@@ -225,13 +326,20 @@
   <section class="card">
     <h2>Privacy</h2>
     <p>
-      Nothing is stored: there is no login, no account, no cookies and no
-      tracking. Progress, including stickers, is not saved between visits. See
+      There is no login, no account, no cookies and no tracking, and nothing
+      is sent anywhere. Each child's picture, optional name, progress,
+      stickers and settings are stored in this browser's local storage on
+      this device, under the key <code>footprint-chess</code>. "Clear all
+      progress" in the grown-ups' corner, or clearing the site's data in the
+      browser settings, deletes it. See
       <a href="PRIVACY.md">PRIVACY.md</a> for details.
     </p>
   </section>
 
-  <a class="back" href="./">Back to the game</a>
+  <p>
+    <a class="back" href="./">Back to the game</a>
+    <a class="back" href="index.html#grownups">Open the grown-ups corner</a>
+  </p>
 </main>
 </body>
 </html>

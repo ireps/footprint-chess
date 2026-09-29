@@ -11,7 +11,7 @@ Live site: https://ireps.github.io/footprint-chess/
 - Each piece is drawn as a robot character whose movement animation matches its rule, but every piece is always named and shown with its real chess shape; the robot theme is decoration, not vocabulary.
 - Short rounds: capture three opponent pawns. Instant feedback, no fail states, no locked levels.
 - Three short games against a gentle opponent (catch the knight, pawn race, little battle), with two named teams per theme, a "taking turns" lesson, a capture jar that earns stickers, and an optional break reminder. See "Games" in [docs/DESIGN.md](docs/DESIGN.md).
-- No login, no tracking, no data collection.
+- Picture profiles for up to four children, a sticker book, and a grown-ups' corner. No login, no tracking, and nothing is sent anywhere: progress is saved only in this browser, on this device.
 
 Details are in [docs/DESIGN.md](docs/DESIGN.md).
 
@@ -19,7 +19,7 @@ Details are in [docs/DESIGN.md](docs/DESIGN.md).
 
 English is the default. Telugu is available at `?lang=te` (for example
 `https://ireps.github.io/footprint-chess/?lang=te`), so it can be
-bookmarked; nothing is stored on the device. A language button in the side
+bookmarked (it wins over the language a child last chose, for that visit). A language button in the side
 bar switches at any time: with two languages it shows the *other* language's
 glyph ('అ' in English, 'A' in Telugu) and updates the address bar to match.
 Lines already playing when you switch are not interrupted.
@@ -39,21 +39,29 @@ per-type colours as Robots in every theme except Classic, which uses a
 single ivory-and-black pair for both. Choose a theme with `?theme=<id>` (for example
 `https://ireps.github.io/footprint-chess/?theme=pirate`), the same way as
 `?lang=`, or with the palette button on the home screen, which shows each
-theme only as its own knight on its own colours, with no text. Nothing is
-stored on the device.
+theme only as its own knight on its own colours, with no text. The theme
+and the language a child chooses are saved for that child (see Profiles).
+
+## Profiles, stickers and the grown-ups' corner
+
+Each child has a picture profile (a piece in a theme's artwork with a coloured ring, and an optional name), saved in this browser's local storage on this device, under the key `footprint-chess`. A first-time child goes straight to the home screen; with two or more children the app starts on "Who's playing?". The child's picture at the top left of Home opens that screen. For each child the app remembers lessons seen, pieces played (a green tick on their Home card), stickers, the capture jar, the team picked in each theme, games won, language and theme.
+
+The book button on Home opens the sticker book: a tab per theme, and two pages of four slots (rook, bishop, queen, king; knight, pawn, golden pawn, golden king). A full jar earns a sticker of the piece being played, a golden pawn earns a golden pawn, and winning all three games in a theme for the first time earns its golden king. No numbers are shown anywhere.
+
+Holding the "?" button on Home for two seconds opens the grown-ups' corner (a tap still opens `help.html`; `index.html#grownups` opens it too, from a link on the help page): calm mode, the break reminder and its length, the children (pictures, names, adding and removing), a backup code to move progress to another device, and clearing everything. It is in English. All progress goes through `js/store.js`, which treats stored data and backup codes as untrusted. See [PRIVACY.md](PRIVACY.md).
 
 ## Status
 
-Stages 1, 2, 3 and 4 of 6 are complete (stage 3, the games, awaits tablet testing): a home screen, board, tap-to-move, footprints for all six pieces, five themes (Robots, Classic, Space, Dinosaurs, Pirate; decoration only, every piece is always named and shown with its real chess shape), capture rounds (capture three opponent pawns), sound effects (with per-theme sounds for tapping a piece, a capture and a win), a device check page (`check.html`), a lesson player with a "watch, then do" lesson and a capturing lesson for every piece, three games with teams, turn-taking, a capture jar and stickers, and a break reminder (see below), a grown-ups guide (`help.html`), and lesson text in English and Telugu with a language switch button. Every voice line has a clip in both languages (see [docs/VOICE-SCRIPT.md](docs/VOICE-SCRIPT.md)); if a clip is missing, the app falls back to the device's speech synthesis, or to silence. The roadmap is in [docs/DESIGN.md](docs/DESIGN.md#roadmap).
+Stages 1 to 5 of 6 are complete (stages 3 and 5, the games and the profiles, await tablet testing): a home screen, board, tap-to-move, footprints for all six pieces, five themes (Robots, Classic, Space, Dinosaurs, Pirate; decoration only, every piece is always named and shown with its real chess shape), capture rounds (capture three opponent pawns), sound effects (with per-theme sounds for tapping a piece, a capture and a win), a device check page (`check.html`), a lesson player with a "watch, then do" lesson and a capturing lesson for every piece, three games with teams, turn-taking, a capture jar and stickers, and a break reminder (see below), a grown-ups guide (`help.html`), and lesson text in English and Telugu with a language switch button. Every voice line has a clip in both languages (see [docs/VOICE-SCRIPT.md](docs/VOICE-SCRIPT.md)); if a clip is missing, the app falls back to the device's speech synthesis, or to silence. The roadmap is in [docs/DESIGN.md](docs/DESIGN.md#roadmap).
 
 ## Games
 
-The home screen has a second row of three games: catch the knight, pawn race and little battle. Each theme has two teams; the child picks one, and the picked team always plays from the bottom. The first game after a page load starts with a "Taking turns" lesson. Stickers are kept only until the page is reloaded.
+The home screen has a second row of three games: catch the knight, pawn race and little battle. Each theme has two teams; the child picks one, and the picked team always plays from the bottom. The first game after a page load starts with a "Taking turns" lesson. Stickers go in the child's sticker book. The Team card always shows when a game is started from Home, with the team chosen last time in that theme ringed; "play again" and the next game skip it.
 
-Query parameters, all read once at page load and never stored:
+Query parameters, all read once at page load:
 
-- `?break=off` turns off the break reminder (a calm card shown at the next "won" card after about 15 minutes of play). It is documented for grown-ups in `help.html`.
-- `?golden=1` and `?breakmins=<minutes>` are test hooks. `?golden=1` makes one target in every capture round and game a golden pawn, instead of a 1-in-5 chance. `?breakmins=0.1` sets the break threshold to a fraction of a minute instead of 15. Neither changes anything else.
+- `?break=off` turns off the break reminder for that visit (a calm card shown at the next "won" card after about 15 minutes of play; the corner has the same switch and the length). It is documented for grown-ups in `help.html`.
+- `?golden=1` and `?breakmins=<minutes>` are test hooks. `?golden=1` makes one target in every capture round and game a golden pawn, instead of a 1-in-5 chance. `?breakmins=0.1` sets the break length to a fraction of a minute instead of the corner's setting; it never turns the reminder on. Neither changes anything else.
 
 ## Run locally
 
@@ -75,7 +83,7 @@ Requires Node.js 18 or later. There is nothing to install.
 node --test
 ```
 
-The tests cover the movement rules (`js/rules.js`), capture round generation (`js/levels.js`), the games and their opponent (`js/games.js`), the lesson scripts (`js/lessons.js`), the theme registry (`js/themes.js`), the language registry (`js/langs.js`) and the voice clip generator (`tools/make-voice.js`): every move is legal, timings fit, every line uses real chess terms and never a robot name, left, right or a square name in either language, every theme has a sprite symbol for every piece type and a colour rule in `css/app.css`, and the clip-generating tool's SSML, argument parsing and file indexing behave correctly (its Azure network call is never exercised by the tests).
+The tests cover the movement rules (`js/rules.js`), capture round generation (`js/levels.js`), the games and their opponent (`js/games.js`), the lesson scripts (`js/lessons.js`), the theme registry (`js/themes.js`), the language registry (`js/langs.js`), the progress store and backup code (`js/store.js`), the sound effects (`js/sound.js`) and the voice clip generator (`tools/make-voice.js`): every move is legal, timings fit, every line uses real chess terms and never a robot name, left, right or a square name in either language, every theme has a sprite symbol for every piece type and a colour rule in `css/app.css`, and the clip-generating tool's SSML, argument parsing and file indexing behave correctly (its Azure network call is never exercised by the tests).
 
 ## Deploy
 
@@ -102,7 +110,12 @@ js/voice.js       Plays voice clips, with per-language speech and silent fallbac
 js/board.js       Board view: pieces, footprints, animations, ghost hand.
 js/player.js      Lesson player: runs a lesson's watch and practice parts.
 js/games-ui.js     Games screens and flow (home games row, team card, games, break card), capture juice, jar and stickers.
-js/app.js         Screen flow: home, meet, lesson, mission, round, won; side panel; language and sound.
+js/store.js       The progress store: children, progress, stickers, settings, backup code. Sanitizes everything it loads. No DOM access. Tested.
+js/stickers.js    Sticker art (a gold-rimmed badge in a theme's artwork), the Home shelf, stickers earned this visit.
+js/profile-ui.js  A child's picture, and the Who's playing screen.
+js/book-ui.js     The sticker book.
+js/grownups-ui.js The grown-ups' corner (hold "?" for two seconds).
+js/app.js         Screen flow: who, home, book, meet, lesson, mission, round, won; side panel; language, theme and sound; loads and saves the current child's progress.
 audio/voice/en/   English voice clips (MP3).
 audio/voice/te/   Telugu voice clips (MP3).
 js/check.js       Device check page logic, including the speech voice list.
@@ -121,7 +134,7 @@ The target engine is Chromium 108 (Silk 108 on Fire OS 5). Silk builds as old as
 - Do not put inline scripts, inline event handlers or `style` attributes in HTML. The Content Security Policy blocks them. Setting `element.style` from JavaScript is allowed.
 - Build DOM with `createElement` and `textContent`. Do not use `innerHTML` or similar APIs.
 - Animate only `transform` and `opacity`.
-- Chromium before 84 ignores `gap` on flex containers, so items would touch. `js/app.js` checks once at startup and, if `gap` is not supported, adds the class `no-flexgap` to `<html>`. `css/app.css` then gives every flex container that uses `gap` the equivalent margins. When you add `gap` to a flex container, add its fallback rule at the end of `css/app.css` (grid `gap` needs none).
+- Chromium before 84 ignores `gap` on flex containers, so items would touch. `js/app.js` checks once at startup and, if `gap` is not supported, adds the class `no-flexgap` to `<html>`. `css/app.css` then gives every flex container that uses `gap` the equivalent margins. When you add `gap` to a flex container, add its fallback rule at the end of `css/app.css` (grid `gap` needs none), or space the items with margins instead, as the stage 5 screens do.
 - Use `FC.board.later(fn, ms)` only to wait for an animation or visual effect to end (it is shortened under reduced motion). Use `FC.board.wait(fn, ms)`, a plain timer, for anything that sets the pace of a lesson, a turn or a card.
 
 ## Security and privacy
