@@ -42,6 +42,8 @@
   // The quiz's footprints are all one colour, so their colour never gives
   // the answer away (every theme but Classic colours footprints per piece).
   var QUIZ_PRINT = '#7a8699';
+  // Squares the king may not step to (Keep the king safe).
+  var DANGER = '#e0604d';
 
   /*
    * Test hooks, both harmless and off by default:
@@ -194,6 +196,28 @@
       pic.appendChild(B.pieceSvg('p', 'foe'));
       pic.appendChild(el('span', 'chain-dot'));
       pic.appendChild(B.pieceSvg('p', 'foe'));
+    } else if (id === 'hop' || id === 'way') {
+      // A finish flag over the piece (and, for Find the way, one of the
+      // child's own pawns in its way).
+      var stack2 = el('div', 'game-pic-stack');
+      stack2.appendChild(el('div', 'finish-flag'));
+      var row2 = el('div', 'game-pic-row');
+      if (id === 'way') row2.appendChild(B.pieceSvg('p', 'me'));
+      row2.appendChild(B.pieceSvg(id === 'hop' ? 'n' : 'r', 'me'));
+      stack2.appendChild(row2);
+      pic.appendChild(stack2);
+    } else if (id === 'stop') {
+      // An opponent pawn marching down onto the child's rook.
+      var stack3 = el('div', 'game-pic-stack game-pic-tight');
+      stack3.appendChild(B.pieceSvg('p', 'foe'));
+      stack3.appendChild(B.pieceSvg('r', 'me'));
+      pic.appendChild(stack3);
+    } else if (id === 'safe') {
+      // The king, with a shield ring, beside a watching opponent rook.
+      var king = el('div', 'safe-king');
+      king.appendChild(B.pieceSvg('k', 'me'));
+      pic.appendChild(king);
+      pic.appendChild(B.pieceSvg('r', 'foe'));
     } else if (id === 'whose') {
       pic.appendChild(buildWhoseMark());
       pic.appendChild(B.pieceSvg('n', 'me'));
@@ -471,8 +495,19 @@
     return (FC.app && FC.app.lastNonPawnType) ? FC.app.lastNonPawnType() : 'r';
   }
 
+  var wayType = null;       // the piece of the last Find the way; each new one uses the next piece
+
   function gameOptions(id) {
     if (id === 'catch') return { type: lastNonPawn() };
+    if (id === 'way') {
+      var wt = G.WAY_TYPES;
+      var start = wt.indexOf(lastNonPawn()) !== -1 ? lastNonPawn() : 'r';
+      wayType = wayType ? wt[(wt.indexOf(wayType) + 1) % wt.length] : start;
+      return { type: wayType };
+    }
+    if (id === 'stop') {
+      return { type: G.STOP_TYPES.indexOf(lastNonPawn()) !== -1 ? lastNonPawn() : 'r' };
+    }
     if (id === 'chain') {
       // The first chain uses the last piece chosen on Home; each new chain
       // (Play again included) the next piece, so every piece gets a turn.
@@ -615,8 +650,9 @@
       B.pulseFootprints();
     } else {
       S.play('nudge');
-      // Capture chain: the next pawn of the chain glows.
-      var next = G.nextInChain(gstate);
+      // A hint square glows: the next pawn of a capture chain, the next step
+      // toward a pawn or toward the other side (js/games.js hint).
+      var next = G.hint(gstate);
       if (next) B.glow([next]);
     }
     armIdle();
@@ -641,7 +677,14 @@
     node.classList.add('selected');
     B.replay(node, 'bounce');
     B.showFootprints(gstate.board[r][c].type, [r, c], moves, pieceNodes);
+    // Keep the king safe: the squares he may not step to glow red.
+    B.glow(G.dangerSquares(gstate, r, c), DANGER);
     S.play('pick', gstate.board[r][c].type);
+  }
+
+  function isDanger(r, c) {
+    if (!selected) return false;
+    return G.dangerSquares(gstate, selected[0], selected[1]).some(function (sq) { return sq[0] === r && sq[1] === c; });
   }
 
   function handleTap(r, c) {
@@ -657,6 +700,12 @@
     B.glow([]);
     var piece = gstate.board[r][c];
     if (piece && piece.team === 'me') {
+      if (gstate.heroOnly && !G.legalMoves(gstate, r, c).length) {
+        // Find the way: the child's pawns only stand in the way.
+        B.replay(pieceNodes[key(r, c)], 'wiggle');
+        S.play('bonk');
+        return;
+      }
       selectPiece(r, c);
       return;
     }
@@ -667,6 +716,15 @@
     var mv = findMove(r, c);
     if (mv) {
       doChildMove(selected, mv);
+    } else if (isDanger(r, c)) {
+      // A step the king may not take: the danger squares flash and the
+      // voice says why. Not counted as a wrong tap (the king's rule is not
+      // the thing to learn again here).
+      B.replay(pieceNodes[key(selected[0], selected[1])], 'wiggle');
+      B.glow(G.dangerSquares(gstate, selected[0], selected[1]), DANGER);
+      B.pulseFootprints();
+      S.play('bonk');
+      V.say('king-danger', function () {});
     } else {
       var t = gstate.board[selected[0]][selected[1]].type;
       wrongTaps[t] = (wrongTaps[t] || 0) + 1;
@@ -677,6 +735,7 @@
 
   function doChildMove(from, mv) {
     busy = true;
+    B.glow([]);
     var node = pieceNodes[key(from[0], from[1])];
     node.classList.remove('selected');
     B.hideFootprints(pieceNodes);
@@ -1246,6 +1305,92 @@
         });
       });
     },
+    // The knight hops to the footprints nearest the other side, twice.
+    hop: function (ctx, line) {
+      var board = R.emptyBoard();
+      board[7][2] = { type: 'n', team: 'me' };
+      var knight = tipPiece('n', 7, 2);
+      var done = join(2, ctx.end);
+      V.say(line, function () { if (ctx.alive()) done(); });
+      function hopFrom(at, to, then) {
+        tipPrints(board, at, {});
+        var best = R.movesFor(board, at[0], at[1]).filter(function (m) {
+          return m.r === at[0] - 2;
+        }).map(function (m) { return [m.r, m.c]; });
+        B.glow(best);
+        ctx.after(1400, function () {
+          B.glow([]);
+          tipMove(ctx, board, knight, at, to, null, then);
+        });
+      }
+      hopFrom([7, 2], [5, 3], function () {
+        ctx.after(300, function () { hopFrom([5, 3], [3, 4], done); });
+      });
+    },
+    // The rook's footprints stop at its own pawn; it goes around.
+    way: function (ctx, line) {
+      var board = R.emptyBoard();
+      board[7][3] = { type: 'r', team: 'me' };
+      board[4][3] = { type: 'p', team: 'me' };
+      var rook = tipPiece('r', 7, 3);
+      tipPiece('p', 4, 3);
+      var done = join(2, ctx.end);
+      V.say(line, function () { if (ctx.alive()) done(); });
+      tipPrints(board, [7, 3], {});
+      B.glow([[4, 3]], DANGER);
+      ctx.after(1800, function () {
+        B.glow([]);
+        tipMove(ctx, board, rook, [7, 3], [7, 5], null, function () {
+          ctx.after(300, function () {
+            tipPrints(board, [7, 5], {});
+            ctx.after(1000, function () {
+              tipMove(ctx, board, rook, [7, 5], [0, 5], null, done);
+            });
+          });
+        });
+      });
+    },
+    // The rook stands in front of a marching pawn, which cannot go on;
+    // then captures it.
+    stop: function (ctx, line) {
+      var board = R.emptyBoard();
+      board[7][4] = { type: 'r', team: 'me' };
+      board[2][4] = { type: 'p', team: 'foe' };
+      var items = {};
+      var rook = tipPiece('r', 7, 4);
+      items['2,4'] = tipFoe('p', 2, 4);
+      var done = join(2, ctx.end);
+      V.say(line, function () { if (ctx.alive()) done(); });
+      ctx.after(600, function () {
+        tipMove(ctx, board, rook, [7, 4], [3, 4], null, function () {
+          B.glow([[2, 4]]);
+          ctx.after(1800, function () {
+            B.glow([]);
+            tipMove(ctx, board, rook, [3, 4], [2, 4], items, done);
+          });
+        });
+      });
+    },
+    // The king's footprints skip the squares the rook watches, which glow
+    // red; he steps the safe way.
+    safe: function (ctx, line) {
+      var board = R.emptyBoard();
+      board[7][4] = { type: 'k', team: 'me' };
+      board[2][3] = { type: 'r', team: 'foe' };
+      var king = tipPiece('k', 7, 4);
+      tipFoe('r', 2, 3);
+      var done = join(2, ctx.end);
+      V.say(line, function () { if (ctx.alive()) done(); });
+      king.classList.add('selected');
+      var safeMoves = [[6, 4], [6, 5], [7, 5]].map(function (sq) { return { r: sq[0], c: sq[1], capture: false }; });
+      B.showFootprints('k', [7, 4], safeMoves, {});
+      B.glow([[6, 3], [7, 3]], DANGER);
+      ctx.after(2200, function () {
+        B.glow([]);
+        king.classList.remove('selected');
+        tipMove(ctx, board, king, [7, 4], [6, 5], null, done);
+      });
+    },
     // Rook, bishop, queen in turn on the same square, each with its own
     // footprints, in time with the line.
     whose: function (ctx, line) {
@@ -1423,7 +1568,9 @@
   // round's piece.
   function pieceStickerType() {
     if (active && gameId === 'catch') return lastNonPawn();
-    if (active && gameId === 'chain') return gstate ? gstate.heroType : 'r';
+    if (active && (gameId === 'chain' || gameId === 'way' || gameId === 'stop')) return gstate ? gstate.heroType : 'r';
+    if (active && gameId === 'hop') return 'n';
+    if (active && gameId === 'safe') return 'k';
     if (active && gameId === 'race') return 'p';
     if (active && gameId === 'battle') return 'r';
     return (FC.app && FC.app.roundType) ? FC.app.roundType() : 'p';

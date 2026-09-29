@@ -488,3 +488,193 @@ test('guarantee "chain": a random-but-greedy child captures every pawn within 60
 test('create "chain": an unknown piece type falls back to the rook', () => {
   assert.equal(G.create('chain', { type: 'p' }, seeded(1)).heroType, 'r');
 });
+
+// ---- hop, way, stop, safe (stage 6, parts 2 and 3) ----------------------
+
+// A child that follows the hint when there is one, else plays greedily.
+function hintChildMove(state, rng) {
+  const h = G.hint(state);
+  if (h && state.hero) {
+    const ok = G.legalMoves(state, state.hero[0], state.hero[1]).some(m => m.r === h[0] && m.c === h[1]);
+    if (ok) return { from: state.hero, to: h };
+  }
+  return greedyChildMove(state, rng);
+}
+
+function playWith(id, options, seed, maxChildMoves, chooser) {
+  const rng = seeded(seed);
+  const state = G.create(id, options, rng);
+  const events = [];
+  let childMoves = 0;
+  while (!state.over && childMoves < maxChildMoves) {
+    const mv = chooser(state, rng);
+    assert.ok(mv, `${id} seed ${seed}: child has no legal move`);
+    const res = G.applyMove(state, mv.from, mv.to);
+    events.push.apply(events, res.events);
+    childMoves++;
+    if (state.over) break;
+    const b = G.botMove(state, rng);
+    if (b) events.push.apply(events, b.events);
+  }
+  return { state, events, childMoves };
+}
+
+test('create "hop": a knight on row 7 and three still pawns on rows 2..5; solo', () => {
+  for (let seed = 1; seed <= SEEDS; seed++) {
+    const state = G.create('hop', {}, seeded(seed));
+    assert.equal(state.hero[0], 7);
+    assert.deepEqual(state.board[7][state.hero[1]], { type: 'n', team: 'me' });
+    const foes = boardPieces(state.board).filter(p => p.piece.team === 'foe');
+    assert.equal(foes.length, 3);
+    foes.forEach(p => assert.ok(p.r >= 2 && p.r <= 5));
+    assert.ok(state.solo);
+  }
+});
+
+test('guarantee "hop": following the hint reaches the other side in at most 6 moves', () => {
+  for (let seed = 1; seed <= SEEDS; seed++) {
+    const out = playWith('hop', {}, seed, 6, hintChildMove);
+    assert.ok(out.state.over && out.events.includes('reach-won'), `hop seed ${seed}`);
+    assert.equal(out.state.hero[0], 0);
+  }
+});
+
+test('"hop", "way", "safe": wherever a random child wanders, there is always a hint to the other side', () => {
+  for (const id of ['hop', 'way', 'safe']) {
+    for (let seed = 1; seed <= 60; seed++) {
+      const rng = seeded(seed);
+      const state = G.create(id, {}, rng);
+      for (let i = 0; i < 25 && !state.over; i++) {
+        assert.ok(G.hint(state), `${id} seed ${seed}: no hint after ${i} moves`);
+        const mv = greedyChildMove(state, rng);
+        assert.ok(mv, `${id} seed ${seed}: stuck`);
+        G.applyMove(state, mv.from, mv.to);
+      }
+    }
+  }
+});
+
+test('create "way": only the one piece moves, it cannot reach the other side in one move, and a way exists', () => {
+  for (const type of G.WAY_TYPES) {
+    for (let seed = 1; seed <= 100; seed++) {
+      const state = G.create('way', { type }, seeded(seed));
+      assert.equal(state.heroType, type);
+      const own = boardPieces(state.board).filter(p => p.piece.team === 'me' && p.piece.type === 'p');
+      assert.ok(own.length >= 3);
+      own.forEach(p => assert.deepEqual(G.legalMoves(state, p.r, p.c), []));
+      const first = G.legalMoves(state, state.hero[0], state.hero[1]);
+      assert.ok(!first.some(m => m.r === 0), `${type} seed ${seed}: reachable in one move`);
+      assert.ok(first.every(m => !m.capture), 'the hero never captures its own pawns');
+      assert.ok(G.hint(state), `${type} seed ${seed}: no way to the other side`);
+    }
+  }
+});
+
+test('guarantee "way": following the hint reaches the other side', () => {
+  for (const type of G.WAY_TYPES) {
+    for (let seed = 1; seed <= 100; seed++) {
+      const out = playWith('way', { type }, seed, 20, hintChildMove);
+      assert.ok(out.state.over && out.events.includes('reach-won'), `${type} seed ${seed}`);
+    }
+  }
+});
+
+test('create "stop": three foe pawns on row 1, the child\'s piece on row 7; team game', () => {
+  const state = G.create('stop', { type: 'q' }, seeded(5));
+  assert.equal(boardPieces(state.board).filter(p => p.piece.team === 'foe' && p.r === 1).length, 3);
+  assert.equal(state.heroType, 'q');
+  assert.ok(!state.solo);
+});
+
+test('botMove "stop": one single step forward, never a capture, never onto row 7; a blocked pawn stays', () => {
+  for (let seed = 1; seed <= 100; seed++) {
+    const rng = seeded(seed);
+    const state = G.create('stop', { type: 'r' }, rng);
+    for (let i = 0; i < 30 && !state.over; i++) {
+      const mv = greedyChildMove(state, rng);
+      G.applyMove(state, mv.from, mv.to);
+      if (state.over) break;
+      const b = G.botMove(state, rng);
+      if (!b) { assert.equal(state.turn, 'me'); continue; }
+      assert.equal(b.to[0] - b.from[0], 1);
+      assert.equal(b.to[1], b.from[1]);
+      assert.equal(b.captured, null);
+      assert.ok(b.to[0] <= 6);
+    }
+  }
+  // A pawn with a piece in front of it cannot move.
+  const state = G.create('stop', { type: 'r' }, seeded(9));
+  const R0 = state.board;
+  const pawns = boardPieces(R0).filter(p => p.piece.team === 'foe');
+  for (let c = 0; c < 8; c++) if (R0[1][c]) R0[1][c] = null;
+  R0[1][pawns[0].c] = { type: 'p', team: 'foe' };
+  R0[state.hero[0]][state.hero[1]] = null;
+  R0[2][pawns[0].c] = { type: 'r', team: 'me' };
+  state.hero = [2, pawns[0].c];
+  state.turn = 'foe';
+  assert.equal(G.botMove(state, seeded(1)), null);
+});
+
+test('guarantee "stop": following the hint captures all three pawns within 40 moves; a random-but-greedy rook or queen within 60', () => {
+  assert.equal(G.create('stop', { type: 'b' }, seeded(1)).heroType, 'r');
+  for (const type of G.STOP_TYPES) {
+    for (let seed = 1; seed <= 100; seed++) {
+      const hinted = playWith('stop', { type }, seed, 40, hintChildMove);
+      assert.ok(hinted.state.over, `${type} seed ${seed}: following the hint did not finish in 40 moves`);
+      if (type === 'k' || type === 'n') continue; // a wandering king or knight is slow, not stuck
+      const out = playGreedy('stop', { type }, seed, 60);
+      assert.ok(out.state.over, `${type} seed ${seed}`);
+      assert.ok(out.events.includes('stop-won'));
+      assert.ok(out.minChildPieces >= 1);
+    }
+  }
+});
+
+test('create "safe": the king starts safe, the guards already watch some first steps, and a safe way exists', () => {
+  let strict = 0;
+  for (let seed = 1; seed <= SEEDS; seed++) {
+    const state = G.create('safe', {}, seeded(seed));
+    assert.deepEqual(state.board[state.hero[0]][state.hero[1]], { type: 'k', team: 'me' });
+    const foes = boardPieces(state.board).filter(p => p.piece.team === 'foe').map(p => p.piece.type).sort();
+    assert.deepEqual(foes, ['b', 'r']);
+    if (G.dangerSquares(state, state.hero[0], state.hero[1]).length >= 2) strict++;
+    assert.ok(G.hint(state), `safe seed ${seed}: no safe way`);
+  }
+  assert.ok(strict >= SEEDS * 0.9);
+});
+
+test('legalMoves "safe": never a square a guard could capture on, and dangerSquares lists exactly those', () => {
+  const R2 = require('../js/rules.js');
+  for (let seed = 1; seed <= SEEDS; seed++) {
+    const state = G.create('safe', {}, seeded(seed));
+    const [kr, kc] = state.hero;
+    const all = R2.movesFor(state.board, kr, kc).map(m => m.r + ',' + m.c);
+    const legal = G.legalMoves(state, kr, kc).map(m => m.r + ',' + m.c);
+    const danger = G.dangerSquares(state, kr, kc).map(sq => sq.join(','));
+    assert.deepEqual([...legal, ...danger].sort(), all.sort());
+    // Check each legal square by hand: no guard's move (with the king lifted) lands on it.
+    const lifted = R2.cloneBoard(state.board);
+    lifted[kr][kc] = null;
+    for (const sq of legal) {
+      const [r, c] = sq.split(',').map(Number);
+      const probe = R2.cloneBoard(lifted);
+      probe[r][c] = { type: 'k', team: 'me' };
+      for (const g of boardPieces(probe).filter(p => p.piece.team === 'foe' && !(p.r === r && p.c === c))) {
+        const hits = R2.movesFor(probe, g.r, g.c).some(m => m.r === r && m.c === c);
+        assert.ok(!hits, `safe seed ${seed}: ${sq} is watched`);
+      }
+    }
+  }
+});
+
+test('guarantee "safe": following the hint walks the king to the other side safely', () => {
+  for (let seed = 1; seed <= SEEDS; seed++) {
+    const out = playWith('safe', {}, seed, 30, hintChildMove);
+    assert.ok(out.state.over && out.events.includes('reach-won'), `safe seed ${seed}`);
+  }
+});
+
+test('hint: null for games without one', () => {
+  assert.equal(G.hint(G.create('race', {}, seeded(1))), null);
+  assert.deepEqual(G.dangerSquares(G.create('race', {}, seeded(1)), 6, 0), []);
+});

@@ -42,7 +42,11 @@
     { id: 'battle', row: 'capture', mission: 'game-battle', win: 'won', tip: 'tip-battle', teams: true, kind: 'board' },
     { id: 'chain', row: 'capture', mission: 'game-chain', win: 'won', tip: 'tip-chain', teams: false, kind: 'board' },
     { id: 'race', row: 'reach', mission: 'game-race', win: 'race-won', tip: 'tip-race', teams: true, kind: 'board' },
-    { id: 'whose', row: 'think', mission: 'game-whose', win: 'quiz-won', tip: 'tip-whose', teams: false, kind: 'quiz' }
+    { id: 'hop', row: 'reach', mission: 'game-hop', win: 'reach-won', tip: 'tip-hop', teams: false, kind: 'board' },
+    { id: 'way', row: 'reach', mission: 'game-way', win: 'reach-won', tip: 'tip-way', teams: false, kind: 'board' },
+    { id: 'whose', row: 'think', mission: 'game-whose', win: 'quiz-won', tip: 'tip-whose', teams: false, kind: 'quiz' },
+    { id: 'stop', row: 'think', mission: 'game-stop', win: 'won', tip: 'tip-stop', teams: true, kind: 'board' },
+    { id: 'safe', row: 'think', mission: 'game-safe', win: 'reach-won', tip: 'tip-safe', teams: false, kind: 'board' }
   ];
 
   // Winning this many different games in a theme, for the first time,

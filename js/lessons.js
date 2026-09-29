@@ -179,7 +179,17 @@
     'tip-race': { en: "A pawn's first step can be two squares. Zoom ahead!", te: 'భటుడి మొదటి అడుగు రెండు గడులు కావచ్చు. ముందుకు దూసుకుపో!' },
     'tip-battle': { en: 'Use all your pieces. Each one moves its own way!', te: 'నీ పావులన్నిటినీ వాడు. ఒక్కొక్కటి ఒక్కోలా కదులుతుంది!' },
     'tip-chain': { en: 'Before you capture, look for the next pawn!', te: 'పట్టుకునే ముందు, తర్వాతి భటుడు ఎక్కడున్నాడో చూడు!' },
-    'tip-whose': { en: 'Straight lines, the rook. Slanty lines, the bishop. Both, the queen!', te: 'తిన్నగా అయితే ఏనుగు. వాలుగా అయితే ఒంటె. రెండూ అయితే మంత్రి!' }
+    'tip-whose': { en: 'Straight lines, the rook. Slanty lines, the bishop. Both, the queen!', te: 'తిన్నగా అయితే ఏనుగు. వాలుగా అయితే ఒంటె. రెండూ అయితే మంత్రి!' },
+    'game-hop': { en: 'Knight hop! Hop your knight to the other side.', te: 'గుర్రం గెంతులు! నీ గుర్రాన్ని అవతలి వైపుకి దూకించు.' },
+    'game-way': { en: 'Find the way! Get your piece to the other side.', te: 'దారి వెతుకు! నీ పావుని అవతలి వైపుకి చేర్చు.' },
+    'game-stop': { en: 'Stop the pawns! Capture them as they march toward you.', te: 'శత్రువు భటులను ఆపు! అవి నీ వైపు నడిచి వస్తుంటే పట్టుకో.' },
+    'game-safe': { en: 'Keep the king safe! Walk him to the other side.', te: 'రాజుని కాపాడు! అతన్ని అవతలి వైపుకి నడిపించు.' },
+    'reach-won': { en: 'You reached the other side!', te: 'అవతలి వైపుకి చేరుకున్నావు!' },
+    'king-danger': { en: 'Not there! That square is not safe for the king.', te: 'అక్కడ వద్దు! ఆ గడిలో రాజుకి ప్రమాదం.' },
+    'tip-hop': { en: 'Pick the footprints closest to the other side!', te: 'అవతలి వైపుకి దగ్గరగా ఉన్న అడుగు గుర్తుని ఎంచుకో!' },
+    'tip-way': { en: 'Your own pieces block the way. Go around them!', te: 'నీ పావులే దారికి అడ్డం. వాటి చుట్టూ తిరిగి వెళ్ళు!' },
+    'tip-stop': { en: 'A pawn cannot walk through you. Stand in front of it!', te: 'శత్రువు భటుడు నిన్ను దాటి నడవలేడు. అతని ముందు నిలబడు!' },
+    'tip-safe': { en: 'The king never steps where the other side could capture him.', te: 'శత్రువు పట్టుకోగలిగే గడిలోకి రాజు ఎప్పుడూ అడుగు పెట్టడు.' }
   };
 
   /*
@@ -261,7 +271,9 @@
   var MORE_GAME_LINES = [
     'games-pick', 'game-chain', 'game-whose',
     'quiz-ask', 'quiz-again', 'quiz-won',
-    'tip-look', 'tip-catch', 'tip-race', 'tip-battle', 'tip-chain', 'tip-whose'
+    'tip-look', 'tip-catch', 'tip-race', 'tip-battle', 'tip-chain', 'tip-whose',
+    'game-hop', 'game-way', 'game-stop', 'game-safe', 'reach-won', 'king-danger',
+    'tip-hop', 'tip-way', 'tip-stop', 'tip-safe'
   ];
 
   var LESSONS = [
