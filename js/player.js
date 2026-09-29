@@ -135,6 +135,8 @@
     hooks = h || {};
     current = lesson;
     resetToSetup(lesson, true);
+    B.setMode('watch', modeText('watch'));
+    S.play('watch');
 
     var ids = LS.lineIds(lesson).concat(LS.PRACTICE_LINES);
     var started = false;
@@ -257,6 +259,9 @@
     selected = false;
     resetToSetup(lesson, true);
     B.glow([]);
+    // Hand control to the child: green ring, "Your turn!" badge, chime.
+    B.setMode('play', modeText('play'));
+    S.play('your-turn');
     sayLine('your-turn', myToken);
     rest(local.hero[0], local.hero[1]);
     practicing = true;
@@ -334,7 +339,16 @@
     };
   }
 
+  function modeText(m) {
+    return LS.UI_TEXT[m === 'play' ? 'turn' : 'watch'][V.getLang()];
+  }
+
   function handleTap(r, c) {
+    if (current && !practicing && B.getMode() === 'watch') {
+      B.nudgeMode();
+      S.play('nudge');
+      return;
+    }
     if (!current || !practicing || busy) return;
     var myToken = token;
     armIdle(myToken);

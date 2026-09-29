@@ -8,7 +8,7 @@ Children around six years old. This includes children who find left and right, r
 
 1. **Show direction, never name it.** The app never says left, right or a square name like e4. Tapping a piece marks every square it can reach with footprints.
 2. **Fixed viewpoint.** The board never rotates. The child's side is always at the bottom.
-3. **Real chess terms, everywhere, in every language.** Every piece is always named and spoken of by its real chess name (rook, bishop, queen, king, knight, pawn) and every capture is called a capture. The board's two edges are "your side" (row 7, the child's home edge) and "the other side" (row 0, the opponent's edge); a voice line never names an edge directly, and never says left or right. The Telugu names are king రాజు, queen మంత్రి, rook ఏనుగు, bishop ఒంటె, knight గుర్రం, pawn భటుడు, and a chess piece generally is పావు. The robot theme is decoration, not vocabulary: no robot name (or word for robot, junk or bump) is ever said or written to the child, in any language.
+3. **Real chess terms, everywhere, in every language.** Every piece is always named and spoken of by its real chess name (rook, bishop, queen, king, knight, pawn) and every capture is called a capture. The board's two edges are "your side" (row 7, the child's home edge) and "the other side" (row 0, the opponent's edge). Voice lines use them for direction ("toward the other side"; Telugu అవతలి వైపు) and never say left or right. The Telugu names are king రాజు, queen మంత్రి, rook ఏనుగు, bishop ఒంటె, knight గుర్రం, pawn భటుడు, and a chess piece generally is పావు. The robot theme is decoration, not vocabulary: no robot name (or word for robot, junk or bump) is ever said or written to the child, in any language.
 4. **Characters whose movement matches the rule.** The robot theme is a costume over the real piece: every robot is always shown with a small badge of the real piece's silhouette, and always named with its real chess name (see the terminology rule above), never the robot's own nickname.
 
    | Piece  | Movement animation | Robot look |
@@ -23,11 +23,12 @@ Children around six years old. This includes children who find left and right, r
    Opponent pawns (the capture rounds' targets) are the same pawn robot in dark colours, standing in for "the other side"; they are still always called pawns.
 
 5. **Short rounds.** Each round lasts about 60 to 90 seconds and has one goal. Feedback arrives within about 100 ms of a tap.
-6. **No fail states.** On a wrong tap the piece wiggles and the footprints pulse. After 5 seconds without a tap, a hint plays. A star that can no longer be reached moves to a square that can.
+6. **No fail states.** On a wrong tap the piece wiggles and the footprints pulse. After 5 seconds without a tap, a hint plays. An opponent pawn that can no longer be captured moves to a square where it can.
 7. **Everything is open.** No level is locked.
 8. **Calm by default.** Motion responds to the child's actions. Nothing loops or flashes while the child is thinking. The system reduced-motion setting is respected, and a calm mode is planned.
 9. **Almost no text.** Instructions are short voice lines with pictures and animation.
 10. **Original artwork only.** Themes do not use characters or artwork from existing books, films, games or brands.
+11. **Always clear who is in control.** While the app is showing something, the board has a purple ring and a "Watch" badge (eye icon; Telugu చూడు), and taps on the board only wiggle the badge. When control passes to the child, the ring turns green and the badge pops to "Your turn!" (hand icon; Telugu నీ వంతు!) with a bright chime, followed by the "Now you try!" line. Rounds are always in the "Your turn" state; cards and the home screen show neither. Every future activity uses the same two signals.
 
 ## Flow
 

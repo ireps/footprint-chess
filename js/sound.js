@@ -46,6 +46,11 @@
   var SOUNDS = {
     select: function () { tone(660, 990, 0, 0.09, 'square', 0.07); },
     nudge: function () { tone(520, 620, 0, 0.08, 'sine', 0.12); tone(620, 520, 0.1, 0.08, 'sine', 0.12); },
+    // The app starts showing (soft, falling) / hands control to the child (bright, rising).
+    watch: function () { tone(660, 660, 0, 0.12, 'sine', 0.1); tone(494, 494, 0.14, 0.2, 'sine', 0.1); },
+    'your-turn': function () {
+      [523, 659, 784].forEach(function (f, i) { tone(f, f, i * 0.09, 0.14, 'triangle', 0.16); });
+    },
     bonk: function () { tone(220, 140, 0, 0.16, 'triangle', 0.22); },
     'move-r': function () { tone(300, 900, 0, 0.28, 'sawtooth', 0.05); },
     'move-b': function () { tone(900, 400, 0, 0.3, 'sine', 0.14); },

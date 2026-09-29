@@ -346,3 +346,11 @@ test('boardFor places the hero and foe pawns from setup, nothing else', () => {
   }
   assert.equal(occupied, 1 + knight.setup.foes.length);
 });
+
+test('control badges (watch / your turn) have English and Telugu labels', () => {
+  for (const key of ['watch', 'turn']) {
+    const t = L.UI_TEXT[key];
+    assert.ok(t && t.en && t.te, `UI_TEXT.${key} needs en and te`);
+    assert.match(t.te, /[\u0C00-\u0C7F]/, `UI_TEXT.${key}.te should be Telugu script`);
+  }
+});

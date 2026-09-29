@@ -85,6 +85,10 @@
     return node;
   }
 
+  function modeText(m) {
+    return LS.UI_TEXT[m === 'play' ? 'turn' : 'watch'][V.getLang()];
+  }
+
   function pieceName(type) { return LS.PIECE_NAMES[V.getLang()][type]; }
   function pieceNameEn(type) { return LS.PIECE_NAMES.en[type]; }
 
@@ -142,14 +146,17 @@
     var next = V.getLang() === 'te' ? 'en' : 'te';
     V.setLang(next);
     updateLangButtons();
+    if (B.getMode() !== 'none') B.setMode(B.getMode(), modeText(B.getMode()));
     setUrlLang(next);
     renderTiles();
     if (!dom.homescreen.hidden) renderHomeCards();
     if (rerenderCard) rerenderCard();
+    // Load the current lesson's lines first, then everything else.
     var lesson = P.active() ? P.lesson() : null;
     if (lesson) {
       V.preload(LS.lineIds(lesson).concat(LS.PRACTICE_LINES), function () {});
     }
+    V.preloadAll();
     S.play('select');
   }
 
@@ -272,6 +279,7 @@
   }
 
   function showHomeScreen() {
+    B.setMode('none');
     P.stop();
     clearIdle();
     B.hideHand();
@@ -338,6 +346,7 @@
   var MEET_MIN_MS = 2500;
 
   function showMeet(type, onContinue) {
+    B.setMode('none');
     hideOverlay();
     var myToken = cardToken;
     B.clearAll();
@@ -396,6 +405,7 @@
   }
 
   function showMission(type, onStart) {
+    B.setMode('none');
     hideOverlay();
     B.clearAll();
     mode = 'mission';
@@ -458,6 +468,7 @@
   }
 
   function showWon(type) {
+    B.setMode('none');
     mode = 'won';
     updateToolButtons();
     var nextType = TYPE_ORDER[(TYPE_ORDER.indexOf(type) + 1) % TYPE_ORDER.length];
@@ -593,6 +604,9 @@
     state.busy = false;
     state.items = {};
     B.clearAll();
+    // Rounds are always the child's turn.
+    B.setMode('play', modeText('play'));
+    S.play('your-turn');
     renderTiles();
     setPortrait(type);
     resetSlots();
@@ -781,6 +795,7 @@
       if (done) return;
       done = true;
       S.unlock();
+      V.preloadAll();
       V.say('pick', function () {});
       document.removeEventListener('pointerdown', onFirst, true);
     }

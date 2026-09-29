@@ -522,7 +522,47 @@
     dom.board.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   }
 
+  /* ---------- who is in control ---------- */
+
+  var mode = 'none';
+
+  // mode: 'watch' (the app is showing; board taps do nothing), 'play' (the
+  // child's turn) or 'none' (cards, home). text is the badge label in the
+  // current language. A change of mode pops the badge; setting the same
+  // mode again only updates the label (for a language switch).
+  function setMode(next, text) {
+    var scene = byId('scene');
+    var badge = byId('mode-badge');
+    if (!scene || !badge) return;
+    var changed = next !== mode;
+    mode = next;
+    scene.classList.toggle('mode-watch', next === 'watch');
+    scene.classList.toggle('mode-play', next === 'play');
+    badge.hidden = next === 'none';
+    badge.classList.toggle('watch', next === 'watch');
+    badge.classList.toggle('play', next === 'play');
+    byId('mode-text').textContent = text || '';
+    byId('mode-icon-use').setAttribute('href', next === 'play' ? '#ic-hand' : '#ic-eye');
+    if (changed && next !== 'none') {
+      badge.classList.remove('nudge');
+      replay(badge, 'pop');
+    }
+  }
+
+  function getMode() { return mode; }
+
+  // A tap while the app is showing: the badge wiggles ("not yet, watch").
+  function nudgeMode() {
+    var badge = byId('mode-badge');
+    if (!badge || badge.hidden) return;
+    badge.classList.remove('pop');
+    replay(badge, 'nudge');
+  }
+
   FC.board = {
+    setMode: setMode,
+    getMode: getMode,
+    nudgeMode: nudgeMode,
     TYPES: TYPES,
     TYPE_ORDER: TYPE_ORDER,
     THEME: THEME,

@@ -4,7 +4,10 @@
  * For the current language (see setLang/getLang), say(id, done) tries, in
  * order:
  *   1. a recorded clip in that language (audio/voice/<lang>/<id>.mp3,
- *      decoded through the shared AudioContext from js/sound.js);
+ *      decoded through the shared AudioContext from js/sound.js). If the
+ *      clip exists but is not decoded yet, say() waits for it (up to
+ *      LOAD_WAIT_MS) instead of switching voice, so a lesson never mixes
+ *      the recorded voice with a device voice;
  *   2. the device's speechSynthesis, speaking that language's text with a
  *      voice picked for that language;
  *   3. when the language is Telugu only, step 1 again in English;
@@ -47,7 +50,15 @@
   ];
   var EN_MALE_NAMES = /David|Mark|Ravi|Male|Guy|Brian|Joey|Justin|Matthew|Russell/;
 
+  // How long say() waits for a clip that is still loading before it gives
+  // up and falls back. Long enough for a slow tablet on Wi-Fi.
+  var LOAD_WAIT_MS = 6000;
+  // Background preloading fetches this many clips at a time, so it does not
+  // compete with the lesson on a slow device.
+  var PRELOAD_CONCURRENCY = 2;
+
   var buffers = {};    // lang -> { id -> decoded AudioBuffer }
+  var loading = {};    // "lang/id" -> [callbacks waiting for that clip]
   var token = 0;        // bumped by stop()/say() so stale callbacks are ignored
   var activeTimer = null;
   var activeSource = null;
@@ -61,7 +72,16 @@
   function setLang(lang) {
     var langs = (FC.lessons && FC.lessons.LANGS) || ['en'];
     var def = (FC.lessons && FC.lessons.DEFAULT_LANG) || 'en';
-    currentLang = langs.indexOf(lang) !== -1 ? lang : def;
+    var next = langs.indexOf(lang) !== -1 ? lang : def;
+    if (next !== currentLang) {
+      // Only the current language's clips are kept decoded, to save memory
+      // on a 2 GB tablet (about 25 MB of decoded audio per language).
+      var keep = {};
+      keep[next] = buffers[next] || {};
+      if (next === 'te' && buffers.en) keep.en = buffers.en;
+      buffers = keep;
+    }
+    currentLang = next;
   }
 
   function getLang() {
@@ -188,76 +208,90 @@
     clearActive();
   }
 
+  function hasClip(lang, id) {
+    var list = (FC.voiceClips || {})[lang] || [];
+    return list.indexOf(id) !== -1;
+  }
+
+  function decoded(lang, id) {
+    return !!(buffers[lang] && buffers[lang][id]);
+  }
+
   /*
-   * Preloads the current language's clips for ids, and, when the current
-   * language is Telugu, also the English clips for ids that have no
-   * Telugu clip (so the fallback in say() does not need a network round
-   * trip the first time it is needed).
+   * Fetches and decodes one clip once, however many callers ask for it.
+   * cb(ok) is called when the clip is decoded (true) or failed (false).
    */
+  function load(lang, id, cb) {
+    cb = cb || function () {};
+    if (decoded(lang, id)) { cb(true); return; }
+    var ctx = S && S.context ? S.context() : null;
+    if (!ctx || typeof root.fetch !== 'function' || typeof ctx.decodeAudioData !== 'function' || !hasClip(lang, id)) {
+      cb(false);
+      return;
+    }
+    var k = lang + '/' + id;
+    if (loading[k]) { loading[k].push(cb); return; }
+    loading[k] = [cb];
+    function settle(ok) {
+      var waiting = loading[k] || [];
+      delete loading[k];
+      waiting.forEach(function (fn) {
+        try { fn(ok); } catch (e) { /* a caller's problem must not stop the others */ }
+      });
+    }
+    try {
+      root.fetch('audio/voice/' + lang + '/' + id + '.mp3').then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.arrayBuffer();
+      }).then(function (data) {
+        ctx.decodeAudioData(data, function (buf) {
+          buffers[lang] = buffers[lang] || {};
+          buffers[lang][id] = buf;
+          settle(true);
+        }, function () { settle(false); });
+      }).catch(function () { settle(false); });
+    } catch (e) {
+      settle(false);
+    }
+  }
+
+  // Loads the current language's clips for ids (and, in Telugu, English
+  // clips for ids with no Telugu clip). done() when all have settled.
   function preload(ids, done) {
     done = done || function () {};
-    try {
-      var ctx = S && S.context ? S.context() : null;
-      if (!ctx || typeof root.fetch !== 'function' || typeof ctx.decodeAudioData !== 'function') {
-        done();
-        return;
-      }
-      var lang = currentLang;
-      var clipsByLang = FC.voiceClips || {};
-      var langClips = clipsByLang[lang] || [];
-      var wanted = [];
-
-      (ids || []).forEach(function (id) {
-        if (langClips.indexOf(id) !== -1 && !(buffers[lang] && buffers[lang][id])) {
-          wanted.push({ lang: lang, id: id });
-        }
+    var lang = currentLang;
+    var wanted = [];
+    (ids || []).forEach(function (id) {
+      if (hasClip(lang, id)) wanted.push([lang, id]);
+      else if (lang === 'te' && hasClip('en', id)) wanted.push(['en', id]);
+    });
+    var remaining = wanted.length;
+    if (!remaining) { done(); return; }
+    wanted.forEach(function (w) {
+      load(w[0], w[1], function () {
+        remaining -= 1;
+        if (remaining === 0) done();
       });
+    });
+  }
 
-      if (lang === 'te') {
-        var enClips = clipsByLang.en || [];
-        (ids || []).forEach(function (id) {
-          if (langClips.indexOf(id) === -1 && enClips.indexOf(id) !== -1 &&
-              !(buffers.en && buffers.en[id])) {
-            wanted.push({ lang: 'en', id: id });
-          }
+  // Quietly loads every clip of the current language, a few at a time.
+  // Called after the first tap (when audio is unlocked) and after a
+  // language switch, so later lines never have to wait.
+  function preloadAll() {
+    var lang = currentLang;
+    var queue = ((FC.voiceClips || {})[lang] || []).filter(function (id) { return !decoded(lang, id); });
+    var running = 0;
+    function pump() {
+      while (running < PRELOAD_CONCURRENCY && queue.length && lang === currentLang) {
+        running += 1;
+        load(lang, queue.shift(), function () {
+          running -= 1;
+          pump();
         });
       }
-
-      if (!wanted.length) {
-        done();
-        return;
-      }
-      var remaining = wanted.length;
-      var settled = false;
-      function settle() {
-        remaining -= 1;
-        if (remaining <= 0 && !settled) {
-          settled = true;
-          done();
-        }
-      }
-      wanted.forEach(function (w) {
-        try {
-          root.fetch('audio/voice/' + w.lang + '/' + w.id + '.mp3').then(function (res) {
-            return res.arrayBuffer();
-          }).then(function (data) {
-            try {
-              ctx.decodeAudioData(data, function (buf) {
-                buffers[w.lang] = buffers[w.lang] || {};
-                buffers[w.lang][w.id] = buf;
-                settle();
-              }, function () { settle(); });
-            } catch (e) {
-              settle();
-            }
-          }).catch(function () { settle(); });
-        } catch (e) {
-          settle();
-        }
-      });
-    } catch (e) {
-      done();
     }
+    pump();
   }
 
   // Tries to play a decoded clip for lang/id. Returns true if playback was
@@ -273,7 +307,8 @@
         source.connect(out);
         activeSource = source;
         source.onended = finish;
-        activeTimer = root.setTimeout(finish, ms + 3000);
+        // Guard in case onended never fires; based on the real clip length.
+        activeTimer = root.setTimeout(finish, Math.max(ms, buf.duration * 1000) + 1500);
         source.start(0);
         return true;
       }
@@ -331,15 +366,37 @@
 
     var lang = currentLang;
 
-    if (playClip(lang, id, ms, finish)) return;
-    if (line && playSpeech(lang, line[lang], ms, finish)) return;
-
-    if (lang === 'te') {
-      if (playClip('en', id, ms, finish)) return;
-      if (line && playSpeech('en', line.en, ms, finish)) return;
+    function fallBack() {
+      if (myToken !== token) return;
+      if (line && playSpeech(lang, line[lang], ms, finish)) return;
+      if (lang === 'te') {
+        if (playClip('en', id, ms, finish)) return;
+        if (line && playSpeech('en', line.en, ms, finish)) return;
+      }
+      activeTimer = root.setTimeout(finish, ms);
     }
 
-    activeTimer = root.setTimeout(finish, ms);
+    if (!hasClip(lang, id)) {
+      fallBack();
+      return;
+    }
+    if (playClip(lang, id, ms, finish)) return;
+
+    // The clip exists but is not decoded yet: wait for it rather than
+    // switching to a different voice.
+    var waited = false;
+    var giveUp = root.setTimeout(function () {
+      if (waited) return;
+      waited = true;
+      fallBack();
+    }, LOAD_WAIT_MS);
+    load(lang, id, function (ok) {
+      if (waited || myToken !== token) return;
+      waited = true;
+      root.clearTimeout(giveUp);
+      if (ok && playClip(lang, id, ms, finish)) return;
+      fallBack();
+    });
   }
 
   function release() {
@@ -351,6 +408,7 @@
     setLang: setLang,
     getLang: getLang,
     preload: preload,
+    preloadAll: preloadAll,
     say: say,
     stop: stop,
     release: release

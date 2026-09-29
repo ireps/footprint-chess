@@ -517,7 +517,14 @@
     return type === 'p' ? 'pawn-capture' : 'capture-' + type;
   }
 
+  // Badge labels for who is in control (see FC.board.setMode).
+  var UI_TEXT = {
+    watch: { en: 'Watch', te: 'చూడు' },
+    turn: { en: 'Your turn!', te: 'నీ వంతు!' }
+  };
+
   var api = {
+    UI_TEXT: UI_TEXT,
     LANGS: LANGS,
     DEFAULT_LANG: DEFAULT_LANG,
     PIECE_NAMES: PIECE_NAMES,
