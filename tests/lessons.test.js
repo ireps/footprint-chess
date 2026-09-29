@@ -268,6 +268,10 @@ test('every said id, every PRACTICE_LINES id and every APP_LINES id exists in LI
     assert.ok(L.LINES[id], `PROFILE_LINES: unknown line "${id}"`);
     used.add(id);
   }
+  for (const id of L.MORE_GAME_LINES) {
+    assert.ok(L.LINES[id], `MORE_GAME_LINES: unknown line "${id}"`);
+    used.add(id);
+  }
   for (const id of Object.keys(L.LINES)) {
     assert.ok(used.has(id), `LINES entry "${id}" is never used`);
   }

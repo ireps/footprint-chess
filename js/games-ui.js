@@ -1,10 +1,12 @@
 /*
- * Footprint Chess: games screens and flow (stage 3).
+ * Footprint Chess: games screens and flow (stages 3 and 6).
  *
- * Owns everything from the home screen's second "games" row through Team,
- * Mission, the game itself and Won/Break: the pieces met so far chase a
- * knight, race to the other side, or clear the other side's pawns (rules in
- * js/games.js, no DOM). Also owns the "juice" shared with capture rounds
+ * Owns everything from the home screen's Games button through the Games
+ * screen (one row per kind of game, js/game-list.js), Team, Mission, the
+ * game itself, the tip after a win and Won/Break: the pieces met so far
+ * chase a knight, race to the other side, clear the other side's pawns or
+ * capture a chain of them (rules in js/games.js, no DOM), or answer the
+ * footprints quiz (js/quiz.js). Also owns the "juice" shared with capture rounds
  * (js/app.js calls captureJuice/resetStreak/maybeGoldenIndex/markGolden),
  * the capture jar and session stickers, and the break reminder.
  *
@@ -12,8 +14,8 @@
  * than duplicating it, and js/board.js's rendering primitives (pieceSvg,
  * moveHero, showFootprints, team bars, ...) rather than touching the DOM
  * directly, the same way js/player.js and js/app.js already do. Depends on
- * FC.rules, FC.games, FC.lessons, FC.themes, FC.sound, FC.voice, FC.board
- * and FC.player (all loaded before this file); FC.app (js/app.js) is
+ * FC.rules, FC.games, FC.quiz, FC.gameList, FC.lessons, FC.themes,
+ * FC.sound, FC.voice, FC.board and FC.player (all loaded before this file); FC.app (js/app.js) is
  * referenced only inside functions that run after user interaction, since
  * js/app.js itself loads after this file - see index.html's script order.
  *
@@ -26,6 +28,8 @@
   var FC = window.FC;
   var R = FC.rules;
   var G = FC.games;
+  var Q = FC.quiz;
+  var GL = FC.gameList;
   var LS = FC.lessons;
   var S = FC.sound;
   var V = FC.voice;
@@ -35,6 +39,9 @@
   var IDLE_MS = 5000;
   var GOLDEN_CHANCE = 0.2;
   var JAR_MAX = 10;
+  // The quiz's footprints are all one colour, so their colour never gives
+  // the answer away (every theme but Classic colours footprints per piece).
+  var QUIZ_PRINT = '#7a8699';
 
   /*
    * Test hooks, both harmless and off by default:
@@ -74,6 +81,9 @@
 
   var dom = {
     homeGames: byId('home-games'),
+    gameScreen: byId('gamescreen'),
+    gameRows: byId('game-rows'),
+    gamesHome: byId('games-home'),
     stickerRow: byId('sticker-row'),
     jarFill: byId('game-jar-fill'),
     toolSkip: byId('tool-skip')
@@ -82,10 +92,15 @@
   /* ---------- module state ---------- */
 
   var active = false;        // true from a game card tap until Home
-  var gameId = null;         // 'catch' | 'race' | 'battle'
-  var gmode = 'none';        // 'turns' | 'team' | 'mission' | 'play' | 'won' | 'break'
+  var gameId = null;         // an id from js/game-list.js
+  var gmode = 'none';        // 'turns' | 'team' | 'mission' | 'play' | 'quiz' | 'tip' | 'won' | 'break'
   var childSide = null;      // 'a' | 'b': the team the child is playing (set at the Team card, kept for Again / next game)
-  var gstate = null;         // FC.games state
+  var gstate = null;         // FC.games state (board games)
+  var qstate = null;         // FC.quiz state (the footprints quiz)
+  var quizMisses = 0;        // wrong taps on the current quiz question
+  var wrongTaps = {};        // piece type -> taps on a square it cannot reach, this game (for the tip)
+  var chainType = null;      // the piece of the last Capture chain; each new one uses the next piece
+  var tipDone = null;        // ends the tip that is playing (Skip), or null
   var pieceNodes = {};       // "r,c" -> DOM node, every piece currently on the board
   var selected = null;       // [r, c] or null
   var moves = [];
@@ -108,19 +123,14 @@
   var activeSince = null;    // timestamp the current away-from-Home stretch began, or null
   var pausedByHide = false;  // the running stretch was paused because the page was hidden
 
-  var GAMES = [
-    { id: 'catch', line: 'game-catch' },
-    { id: 'race', line: 'game-race' },
-    { id: 'battle', line: 'game-battle' }
-  ];
-
   /* ---------- text ---------- */
 
   // No dedicated short name line exists for a game (only its longer
   // mission line), so the card caption is that line's first clause (every
-  // mission line reads "<Name>! <rest>" in every language) - a strict
-  // substring of the owner-approved text, not a new translation. The current
-  // language's text, else the next language in its fallback chain.
+  // mission line reads "<Name>! <rest>" or "<Name>? <rest>" in every
+  // language) - a strict substring of the owner-approved text, not a new
+  // translation; a question keeps its "?". The current language's text,
+  // else the next language in its fallback chain.
   function shortCaption(lineId) {
     var line = LS.LINES[lineId];
     if (!line) return '';
@@ -129,8 +139,9 @@
     for (var i = 0; i < chain.length; i++) {
       if (line[chain[i]]) { text = line[chain[i]]; break; }
     }
-    var idx = text.indexOf('!');
-    return (idx === -1 ? text : text.slice(0, idx)).trim();
+    var m = /[!?]/.exec(text);
+    if (!m) return text.trim();
+    return text.slice(0, m[0] === '?' ? m.index + 1 : m.index).trim();
   }
 
   function modeTextPlay() { return LS.UI_TEXT.turn[V.getLang()]; }
@@ -174,6 +185,22 @@
       row.appendChild(B.pieceSvg('p', 'foe'));
       stack.appendChild(row);
       pic.appendChild(stack);
+    } else if (id === 'chain') {
+      // One piece, then pawns linked by footprint dots: capture after capture.
+      pic.classList.add('game-pic-3');
+      pic.classList.add('game-pic-chain');
+      pic.appendChild(B.pieceSvg('q', 'me'));
+      pic.appendChild(el('span', 'chain-dot'));
+      pic.appendChild(B.pieceSvg('p', 'foe'));
+      pic.appendChild(el('span', 'chain-dot'));
+      pic.appendChild(B.pieceSvg('p', 'foe'));
+    } else if (id === 'whose') {
+      pic.appendChild(buildWhoseMark());
+      pic.appendChild(B.pieceSvg('n', 'me'));
+    } else if (id === 'games') {
+      // Home's Games button: the three rows' marks side by side.
+      pic.classList.add('game-pic-entry');
+      GL.ROWS.forEach(function (row) { pic.appendChild(buildRowMark(row)); });
     } else {
       pic.classList.add('game-pic-3');
       pic.appendChild(B.pieceSvg('r', 'me'));
@@ -183,19 +210,102 @@
     return pic;
   }
 
+  // Two footprints and a question mark: the footprints quiz, and the mark of
+  // the thinking row.
+  function buildWhoseMark() {
+    var mark = el('div', 'whose-mark');
+    var feet = el('div', 'whose-feet');
+    feet.appendChild(el('span'));
+    feet.appendChild(el('span'));
+    mark.appendChild(feet);
+    mark.appendChild(textEl('div', 'whose-q', '?'));
+    return mark;
+  }
+
+  // The picture at the start of each row of the Games screen (no words):
+  // a pawn being captured, the finish flag, footprints with a question mark.
+  function buildRowMark(row) {
+    var mark = el('div', 'row-mark row-mark-' + row);
+    if (row === 'capture') {
+      mark.appendChild(el('div', 'row-burst'));
+      mark.appendChild(B.pieceSvg('p', 'foe'));
+    } else if (row === 'reach') {
+      mark.appendChild(el('div', 'finish-flag'));
+      mark.appendChild(B.pieceSvg('p', 'me'));
+    } else {
+      mark.appendChild(buildWhoseMark());
+    }
+    return mark;
+  }
+
+  // Home: one Games button (the pictures of the three rows, no words).
   function renderHomeGames() {
     if (!dom.homeGames) return;
     clear(dom.homeGames);
-    GAMES.forEach(function (g) {
-      var card = el('button', 'game-card');
-      card.type = 'button';
-      card.appendChild(buildGamePic(g.id));
-      var name = shortCaption(g.line);
-      card.appendChild(textEl('div', 'game-name', name));
-      card.setAttribute('aria-label', name);
-      card.addEventListener('click', function () { onGameCardTap(g.id); });
-      dom.homeGames.appendChild(card);
+    var card = el('button', 'game-card games-entry');
+    card.type = 'button';
+    card.appendChild(buildGamePic('games'));
+    card.setAttribute('aria-label', 'Games');
+    card.addEventListener('click', showGamesScreen);
+    dom.homeGames.appendChild(card);
+  }
+
+  /* =====================================================================
+   * The Games screen: one row per kind of game (js/game-list.js ROWS)
+   * ===================================================================*/
+
+  function wonHere(id) {
+    var p = progress();
+    return !!(p && p.wins[B.getTheme() + ':' + id]);
+  }
+
+  // Every game can be tapped. The first game not yet won in this theme
+  // glows (the suggestion); a won game has a small green tick.
+  function renderGamesScreen() {
+    if (!dom.gameRows) return;
+    clear(dom.gameRows);
+    var suggested = null;
+    GL.GAMES.forEach(function (g) { if (!suggested && !wonHere(g.id)) suggested = g.id; });
+    GL.ROWS.forEach(function (row) {
+      var rowEl = el('div', 'game-row');
+      rowEl.appendChild(buildRowMark(row));
+      GL.inRow(row).forEach(function (g) {
+        var card = el('button', 'game-card' + (g.id === suggested ? ' suggested' : ''));
+        card.type = 'button';
+        card.appendChild(buildGamePic(g.id));
+        var name = shortCaption(g.mission);
+        card.appendChild(textEl('div', 'game-name', name));
+        card.setAttribute('aria-label', name);
+        if (wonHere(g.id)) {
+          var tick = el('div', 'home-card-tick');
+          tick.appendChild(B.svgUse('ic-check'));
+          card.appendChild(tick);
+        }
+        card.addEventListener('click', function () { onGameCardTap(g.id); });
+        rowEl.appendChild(card);
+      });
+      dom.gameRows.appendChild(rowEl);
     });
+  }
+
+  function gamesScreenVisible() {
+    return !!dom.gameScreen && !dom.gameScreen.hidden;
+  }
+
+  function showGamesScreen() {
+    S.unlock();
+    // A capture round may still be running behind the home screen.
+    if (FC.app && FC.app.stopRound) FC.app.stopRound();
+    byId('homescreen').hidden = true;
+    byId('theme-row').hidden = true;
+    byId('lang-row').hidden = true;
+    renderGamesScreen();
+    dom.gameScreen.hidden = false;
+    V.say('games-pick', function () {});
+  }
+
+  function hideGamesScreen() {
+    if (dom.gameScreen) dom.gameScreen.hidden = true;
   }
 
   // The shelf on Home: up to four stickers (earned this page load first,
@@ -244,15 +354,27 @@
     byId('homescreen').hidden = true;
     byId('theme-row').hidden = true;
     byId('lang-row').hidden = true;
+    hideGamesScreen();
     onLeaveHome();
     P.stop();
     gameId = id;
     active = true;
     prepared = false;
-    // The Team card always shows when a game is entered from Home; the
-    // remembered team is only ringed on it. Play again and the next game
-    // (on the Won card) skip it and keep childSide.
+    // The Team card always shows when a team game is entered from the Games
+    // screen; the remembered team is only ringed on it. Play again and the
+    // next game (on the Won card) skip it and keep childSide.
     childSide = null;
+    enterGame();
+  }
+
+  // Team games start with the "Taking turns" lesson (once per child) and
+  // the Team card, unless a team is already chosen; solo games (Capture
+  // chain, the quiz) go straight to their Mission card.
+  function enterGame() {
+    if (!GL.get(gameId).teams || childSide) {
+      showMissionCard();
+      return;
+    }
     var p = progress();
     if (!(p && p.seen.turns)) {
       if (store) store.markSeen('turns');
@@ -318,8 +440,6 @@
     showMissionCard();
   }
 
-  var MISSION_LINE = { catch: 'game-catch', race: 'game-race', battle: 'game-battle' };
-
   function showMissionCard() {
     gmode = 'mission';
     B.setMode('none');
@@ -328,7 +448,7 @@
     // behind it matches the game about to start.
     prepareGame();
     if (dom.toolSkip) dom.toolSkip.hidden = true;
-    var lineId = MISSION_LINE[gameId];
+    var lineId = GL.get(gameId).mission;
     function build() {
       var frag = document.createDocumentFragment();
       frag.appendChild(buildGamePic(gameId));
@@ -347,8 +467,19 @@
    * The game itself
    * ===================================================================*/
 
+  function lastNonPawn() {
+    return (FC.app && FC.app.lastNonPawnType) ? FC.app.lastNonPawnType() : 'r';
+  }
+
   function gameOptions(id) {
-    if (id === 'catch') return { type: (FC.app && FC.app.lastNonPawnType) ? FC.app.lastNonPawnType() : 'r' };
+    if (id === 'catch') return { type: lastNonPawn() };
+    if (id === 'chain') {
+      // The first chain uses the last piece chosen on Home; each new chain
+      // (Play again included) the next piece, so every piece gets a turn.
+      var types = G.CHAIN_TYPES;
+      chainType = chainType ? types[(types.indexOf(chainType) + 1) % types.length] : lastNonPawn();
+      return { type: chainType };
+    }
     if (id === 'battle') {
       var extra = (FC.app && FC.app.seenNonPawnTypes) ? FC.app.seenNonPawnTypes() : [];
       return { types: ['r'].concat(extra.slice(0, 2)) };
@@ -388,6 +519,11 @@
   }
 
   function showGameTeamBars() {
+    // Solo games have no other team taking turns: no team bars.
+    if (!childSide || !GL.get(gameId).teams) {
+      B.hideTeamBars();
+      return;
+    }
     var theme = B.getTheme();
     var otherSide = childSide === 'a' ? 'b' : 'a';
     B.showTeamBars({
@@ -405,6 +541,11 @@
   var prepared = false;   // a starting position is already on the board (Mission card)
 
   function prepareGame() {
+    wrongTaps = {};
+    if (GL.get(gameId).kind === 'quiz') {
+      prepareQuiz();
+      return;
+    }
     gameToken += 1;
     window.clearTimeout(botTimer);
     botTimer = null;
@@ -428,6 +569,10 @@
   }
 
   function startGame() {
+    if (GL.get(gameId).kind === 'quiz') {
+      startQuiz();
+      return;
+    }
     gmode = 'play';
     if (dom.toolSkip) dom.toolSkip.hidden = true;
     setPanel(gameId);
@@ -457,11 +602,22 @@
     idleTimer = window.setTimeout(onIdle, IDLE_MS);
   }
   function onIdle() {
+    if (gmode === 'quiz') {
+      if (!busy && qstate && !qstate.over) {
+        B.pulseFootprints();
+        V.say('quiz-ask', function () {});
+      }
+      armIdle();
+      return;
+    }
     if (gmode !== 'play' || !gstate || gstate.turn !== 'me' || busy) return;
     if (selected) {
       B.pulseFootprints();
     } else {
       S.play('nudge');
+      // Capture chain: the next pawn of the chain glows.
+      var next = G.nextInChain(gstate);
+      if (next) B.glow([next]);
     }
     armIdle();
   }
@@ -490,12 +646,15 @@
 
   function handleTap(r, c) {
     if (gmode === 'turns') { P.handleTap(r, c); return; }
+    if (gmode === 'quiz') { onQuizTap(r, c); return; }
+    if (gmode === 'tip') { B.nudgeMode(); return; }
     if (gmode !== 'play' || !gstate || gstate.over) return;
     if (gstate.turn !== 'me' || busy) {
       B.nudgeMode();
       return;
     }
     armIdle();
+    B.glow([]);
     var piece = gstate.board[r][c];
     if (piece && piece.team === 'me') {
       selectPiece(r, c);
@@ -509,6 +668,8 @@
     if (mv) {
       doChildMove(selected, mv);
     } else {
+      var t = gstate.board[selected[0]][selected[1]].type;
+      wrongTaps[t] = (wrongTaps[t] || 0) + 1;
       B.pulseFootprints();
       S.play('bonk');
     }
@@ -637,19 +798,21 @@
     clearIdle();
     resetStreak();
     B.hideFootprints(pieceNodes);
+    B.hideHand();
+    B.glow([]);
     selected = null;
     S.play('win');
     B.confetti(28);
-    var lineId = gstate.id === 'catch' ? 'caught' : gstate.id === 'race' ? 'race-won' : 'won';
+    var lineId = GL.get(gameId).win;
     var myToken = gameToken;
     function toWon() {
       if (myToken !== gameToken) return;
-      showGameWonOrBreak();
+      afterWin();
     }
-    // Winning all three games in a theme for the first time also earns the
-    // golden king: its pop and the sticker line come before the Won card.
-    // markWin is true exactly once per child and theme.
-    var goldenKing = !!store && store.markWin(B.getTheme(), gstate.id);
+    // Winning three different games in a theme for the first time also
+    // earns the golden king: its pop and the sticker line come before the
+    // Won card. markWin is true exactly once per child and theme.
+    var goldenKing = !!store && store.markWin(B.getTheme(), gameId);
     if (goldenKing) {
       V.sayAfter(lineId);
       awardSticker('golden-k', toWon);
@@ -657,6 +820,24 @@
       // Queued behind any sticker/golden line that is still playing.
       V.sayAfter(lineId, toWon);
     }
+  }
+
+  // After the win line: a tip on the board when one is due (js/game-list.js
+  // pickTip), then the Won card (or the Break card).
+  function afterWin() {
+    var p = progress();
+    var misses = gmodeIsQuiz() ? qstate.misses : wrongTaps;
+    var tip = GL.pickTip(gameId, misses, !!(p && p.seen['tip-' + gameId]));
+    if (!tip) {
+      showGameWonOrBreak();
+      return;
+    }
+    if (tip.kind === 'strategy' && store) store.markSeen('tip-' + gameId);
+    playTip(tip, showGameWonOrBreak);
+  }
+
+  function gmodeIsQuiz() {
+    return GL.get(gameId).kind === 'quiz' && !!qstate;
   }
 
   function showGameWonOrBreak() {
@@ -668,8 +849,7 @@
   }
 
   function nextGameId() {
-    var ids = GAMES.map(function (g) { return g.id; });
-    return GAMES[(ids.indexOf(gameId) + 1) % GAMES.length].id;
+    return GL.next(gameId);
   }
 
   function showGameWon() {
@@ -704,10 +884,24 @@
       next.addEventListener('click', function (e) {
         e.stopPropagation();
         S.unlock();
+        FC.app.hideCard();
         gameId = nextId;
-        showMissionCard();
+        enterGame();
       });
       row.appendChild(next);
+
+      // The game's tip, on the board, whenever the child wants it again.
+      var tipBtn = el('button', 'rbtn rbtn-tip');
+      tipBtn.type = 'button';
+      tipBtn.setAttribute('aria-label', 'Tip');
+      tipBtn.appendChild(B.svgUse('ic-bulb'));
+      tipBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        S.unlock();
+        FC.app.hideCard();
+        playTip({ kind: 'strategy', line: GL.get(gameId).tip }, showGameWon);
+      });
+      row.appendChild(tipBtn);
 
       var home = el('button', 'rbtn rbtn-home');
       home.type = 'button';
@@ -722,6 +916,356 @@
     FC.app.showCustomCard(build, null);
     B.screenConfetti(40);
   }
+
+  /* =====================================================================
+   * The footprints quiz ("Whose footprints?", js/quiz.js)
+   * ===================================================================*/
+
+  function asMoves(list) {
+    return list.map(function (sq) { return { r: sq[0], c: sq[1], capture: false }; });
+  }
+
+  function showQuizPrints() {
+    var q = Q.current(qstate);
+    if (q) B.showFootprints(q.answer, q.square, asMoves(q.footprints), {}, QUIZ_PRINT);
+  }
+
+  // The question on the board: the empty square glows, one-colour
+  // footprints around it, and the three choices on the child's side.
+  function renderQuestion() {
+    B.clearAll();
+    pieceNodes = {};
+    var q = Q.current(qstate);
+    B.glow([q.square]);
+    q.choices.forEach(function (ch) {
+      pieceNodes[key(ch.at[0], ch.at[1])] = B.addPiece(ch.type, ch.at[0], ch.at[1], childPieceSide());
+    });
+    showQuizPrints();
+  }
+
+  function prepareQuiz() {
+    gameToken += 1;
+    clearIdle();
+    busy = false;
+    quizMisses = 0;
+    qstate = Q.create({}, Math.random);
+    B.hideTeamBars();
+    renderQuestion();
+    prepared = true;
+  }
+
+  function startQuiz() {
+    gmode = 'quiz';
+    if (dom.toolSkip) dom.toolSkip.hidden = true;
+    setPanel(gameId);
+    if (!prepared) prepareQuiz();
+    prepared = false;
+    askQuestion(false);
+  }
+
+  // Watch while the question is asked, then the child's turn.
+  function askQuestion(redraw) {
+    quizMisses = 0;
+    busy = true;
+    if (redraw) renderQuestion();
+    B.setMode('watch', modeTextWatch());
+    var myToken = gameToken;
+    V.say('quiz-ask', function () {
+      if (myToken !== gameToken) return;
+      busy = false;
+      B.setMode('play', modeTextPlay());
+      S.play('your-turn');
+      armIdle();
+    });
+  }
+
+  function onQuizTap(r, c) {
+    if (!qstate || qstate.over || busy) {
+      B.nudgeMode();
+      return;
+    }
+    armIdle();
+    var q = Q.current(qstate);
+    var choice = null;
+    q.choices.forEach(function (ch) { if (ch.at[0] === r && ch.at[1] === c) choice = ch; });
+    if (!choice) {
+      S.play('nudge');
+      return;
+    }
+    S.play('pick', choice.type);
+    var node = pieceNodes[key(r, c)];
+    var res = Q.answer(qstate, choice.type);
+    if (res.correct) quizRight(node, choice, q, res.over);
+    else quizWrong(node, choice, q);
+  }
+
+  // The right piece steps onto the empty square, its footprints light up in
+  // its own colour and its rule is said (the rule line names the piece).
+  function quizRight(node, choice, q, over) {
+    busy = true;
+    clearIdle();
+    B.hideHand();
+    B.glow([]);
+    B.setMode('watch', modeTextWatch());
+    B.place(node, q.square[0], q.square[1]);
+    B.replay(node, 'enter');
+    B.sparkle(q.square[0], q.square[1], 0);
+    S.play('star');
+    B.showFootprints(choice.type, q.square, asMoves(q.footprints), {});
+    var myToken = gameToken;
+    V.say(GL.RULE_LINES[choice.type], function () {
+      if (myToken !== gameToken) return;
+      // Pacing between questions, which reduced motion must not shorten.
+      B.wait(function () {
+        if (myToken !== gameToken) return;
+        if (over) onGameOver();
+        else askQuestion(true);
+      }, 500);
+    });
+  }
+
+  // No fail state: the tapped piece wiggles and shows its own footprints
+  // from the same square for a moment, then the question's footprints come
+  // back. After two wrong taps the ghost hand rests on the answer.
+  function quizWrong(node, choice, q) {
+    busy = true;
+    quizMisses += 1;
+    B.replay(node, 'wiggle');
+    S.play('bonk');
+    B.showFootprints(choice.type, q.square, asMoves(Q.footprints(choice.type, q.square)), {});
+    var myToken = gameToken;
+    V.say('quiz-again', function () {
+      if (myToken !== gameToken) return;
+      showQuizPrints();
+      busy = false;
+      if (quizMisses >= 2) {
+        q.choices.forEach(function (ch) { if (ch.type === q.answer) B.handRest(ch.at[0], ch.at[1]); });
+      }
+      armIdle();
+    });
+  }
+
+  /* =====================================================================
+   * Tips after a game: a short "watch" on the board (js/game-list.js
+   * pickTip chooses which). A rule tip shows one piece's footprints and
+   * says its rule; a strategy tip plays the game's own little scene. Skip
+   * ends it at once.
+   * ===================================================================*/
+
+  function playTip(tip, done) {
+    gmode = 'tip';
+    clearIdle();
+    busy = false;
+    selected = null;
+    V.stop();
+    B.hideTeamBars();
+    B.hideHand();
+    B.clearAll();
+    B.glow([]);
+    pieceNodes = {};
+    B.setMode('watch', modeTextWatch());
+    S.play('watch');
+    if (dom.toolSkip) dom.toolSkip.hidden = false;
+    gameToken += 1;
+    var myToken = gameToken;
+    var finished = false;
+    function alive() { return !finished && myToken === gameToken; }
+    function finish() {
+      if (finished) return;
+      finished = true;
+      tipDone = null;
+      gameToken += 1;
+      V.stop();
+      B.hideFootprints({});
+      B.glow([]);
+      B.clearAll();
+      B.setMode('none');
+      if (dom.toolSkip) dom.toolSkip.hidden = true;
+      done();
+    }
+    tipDone = finish;
+    var ctx = {
+      alive: alive,
+      // Runs fn after ms, unless the tip was skipped or ended. Pacing, so
+      // reduced motion must not shorten it.
+      after: function (ms, fn) { B.wait(function () { if (alive()) fn(); }, ms); },
+      end: function () { ctx.after(700, finish); }
+    };
+    V.say('tip-look', function () {
+      if (!alive()) return;
+      if (tip.kind === 'rule') ruleTip(ctx, tip.type, tip.line);
+      else (STRATEGY_TIPS[gameId] || ruleTipFallback)(ctx, tip.line);
+    });
+  }
+
+  function ruleTipFallback(ctx) { ctx.end(); }
+
+  // Calls fn once both the line and the scene are done.
+  function join(count, fn) {
+    var left = count;
+    return function () {
+      left -= 1;
+      if (left === 0) fn();
+    };
+  }
+
+  function tipPiece(type, r, c) {
+    var node = B.addPiece(type, r, c, childPieceSide());
+    B.replay(node, 'enter');
+    return node;
+  }
+  function tipFoe(type, r, c) {
+    return B.addItem(r, c, type, foePieceSide());
+  }
+
+  // Shows the footprints of the piece standing on `at` on `board`, with
+  // `items` (foe nodes by "r,c") ringed where it could capture.
+  function tipPrints(board, at, items) {
+    var p = board[at[0]][at[1]];
+    B.showFootprints(p.type, at, R.movesFor(board, at[0], at[1]), items || {});
+  }
+
+  // Moves a piece on the tip's board and in the picture; a captured foe
+  // piece poofs. Calls done when it lands.
+  function tipMove(ctx, board, node, from, to, items, done) {
+    B.hideFootprints(items || {});
+    var type = board[from[0]][from[1]].type;
+    B.moveHero(node, type, from, to, function () {
+      if (!ctx.alive()) return;
+      var k = key(to[0], to[1]);
+      if (items && items[k]) {
+        B.poof(items[k]);
+        delete items[k];
+        B.sparkle(to[0], to[1], 0);
+      }
+      board[to[0]][to[1]] = board[from[0]][from[1]];
+      board[from[0]][from[1]] = null;
+      done();
+    });
+  }
+
+  function ruleTip(ctx, type, line) {
+    var at = type === 'p' ? [6, 3] : [4, 3];
+    var board = R.emptyBoard();
+    board[at[0]][at[1]] = { type: type, team: 'me' };
+    var node = tipPiece(type, at[0], at[1]);
+    node.classList.add('selected');
+    tipPrints(board, at, {});
+    V.say(line, function () {
+      if (!ctx.alive()) return;
+      // Then it walks to the footprint nearest the other side.
+      var moves = R.movesFor(board, at[0], at[1]).sort(function (a, b) { return a.r - b.r || a.c - b.c; });
+      node.classList.remove('selected');
+      tipMove(ctx, board, node, at, [moves[0].r, moves[0].c], null, ctx.end);
+    });
+  }
+
+  var STRATEGY_TIPS = {
+    // The piece comes closer, then the knight's own footprints show where
+    // it can hop.
+    catch: function (ctx, line) {
+      var board = R.emptyBoard();
+      board[7][1] = { type: 'r', team: 'me' };
+      board[3][4] = { type: 'n', team: 'foe' };
+      var rook = tipPiece('r', 7, 1);
+      tipFoe('n', 3, 4);
+      var done = join(2, ctx.end);
+      V.say(line, function () { if (ctx.alive()) done(); });
+      ctx.after(600, function () {
+        tipMove(ctx, board, rook, [7, 1], [5, 1], null, function () {
+          ctx.after(300, function () {
+            B.showFootprints('n', [3, 4], R.movesFor(board, 3, 4), {});
+            ctx.after(1500, done);
+          });
+        });
+      });
+    },
+    // The pawn's first step: two squares.
+    race: function (ctx, line) {
+      var board = R.emptyBoard();
+      board[6][3] = { type: 'p', team: 'me' };
+      board[1][5] = { type: 'p', team: 'foe' };
+      var pawn = tipPiece('p', 6, 3);
+      tipFoe('p', 1, 5);
+      var done = join(2, ctx.end);
+      V.say(line, function () { if (ctx.alive()) done(); });
+      pawn.classList.add('selected');
+      tipPrints(board, [6, 3], {});
+      ctx.after(1800, function () {
+        pawn.classList.remove('selected');
+        tipMove(ctx, board, pawn, [6, 3], [4, 3], null, done);
+      });
+    },
+    // Two pieces, each with its own footprints.
+    battle: function (ctx, line) {
+      var board = R.emptyBoard();
+      board[7][1] = { type: 'r', team: 'me' };
+      board[7][5] = { type: 'b', team: 'me' };
+      board[3][1] = { type: 'p', team: 'foe' };
+      board[4][2] = { type: 'p', team: 'foe' };
+      var items = {};
+      var rook = tipPiece('r', 7, 1);
+      var bishop = tipPiece('b', 7, 5);
+      items['3,1'] = tipFoe('p', 3, 1);
+      items['4,2'] = tipFoe('p', 4, 2);
+      var done = join(2, ctx.end);
+      V.say(line, function () { if (ctx.alive()) done(); });
+      rook.classList.add('selected');
+      tipPrints(board, [7, 1], items);
+      ctx.after(1600, function () {
+        rook.classList.remove('selected');
+        bishop.classList.add('selected');
+        tipPrints(board, [7, 5], items);
+        ctx.after(1600, function () {
+          bishop.classList.remove('selected');
+          tipMove(ctx, board, bishop, [7, 5], [4, 2], items, done);
+        });
+      });
+    },
+    // Capture, then the next pawn is already one move away.
+    chain: function (ctx, line) {
+      var board = R.emptyBoard();
+      board[7][2] = { type: 'r', team: 'me' };
+      board[3][2] = { type: 'p', team: 'foe' };
+      board[3][6] = { type: 'p', team: 'foe' };
+      var items = {};
+      var rook = tipPiece('r', 7, 2);
+      items['3,2'] = tipFoe('p', 3, 2);
+      items['3,6'] = tipFoe('p', 3, 6);
+      var done = join(2, ctx.end);
+      V.say(line, function () { if (ctx.alive()) done(); });
+      tipPrints(board, [7, 2], items);
+      ctx.after(1000, function () {
+        tipMove(ctx, board, rook, [7, 2], [3, 2], items, function () {
+          ctx.after(300, function () {
+            tipPrints(board, [3, 2], items);
+            ctx.after(1000, function () {
+              tipMove(ctx, board, rook, [3, 2], [3, 6], items, done);
+            });
+          });
+        });
+      });
+    },
+    // Rook, bishop, queen in turn on the same square, each with its own
+    // footprints, in time with the line.
+    whose: function (ctx, line) {
+      var at = [3, 3];
+      var step = Math.max(1500, Math.round(LS.LINES[line].ms / 3));
+      var done = join(2, ctx.end);
+      V.say(line, function () { if (ctx.alive()) done(); });
+      var types = ['r', 'b', 'q'];
+      function show(i) {
+        if (i >= types.length) { done(); return; }
+        B.clearAll();
+        var board = R.emptyBoard();
+        board[at[0]][at[1]] = { type: types[i], team: 'me' };
+        tipPiece(types[i], at[0], at[1]);
+        tipPrints(board, at, {});
+        ctx.after(step, function () { show(i + 1); });
+      }
+      show(0);
+    }
+  };
 
   /* ---------- break reminder ---------- */
 
@@ -878,7 +1422,8 @@
   // race) or the rook (Little battle); in a capture round it is that
   // round's piece.
   function pieceStickerType() {
-    if (active && gameId === 'catch') return (FC.app && FC.app.lastNonPawnType) ? FC.app.lastNonPawnType() : 'r';
+    if (active && gameId === 'catch') return lastNonPawn();
+    if (active && gameId === 'chain') return gstate ? gstate.heroType : 'r';
     if (active && gameId === 'race') return 'p';
     if (active && gameId === 'battle') return 'r';
     return (FC.app && FC.app.roundType) ? FC.app.roundType() : 'p';
@@ -920,6 +1465,9 @@
     gmode = 'none';
     gameId = null;
     gstate = null;
+    qstate = null;
+    tipDone = null;
+    B.glow([]);
     pieceNodes = {};
     selected = null;
     busy = false;
@@ -929,9 +1477,11 @@
 
   function onLangChange() {
     renderHomeGames();
+    if (gamesScreenVisible()) renderGamesScreen();
     refreshTeamBarLabels();
   }
   function onThemeChange() {
+    if (gamesScreenVisible()) renderGamesScreen();
     refreshTeamBarLabels();
   }
 
@@ -940,11 +1490,14 @@
       P.stop();
       if (dom.toolSkip) dom.toolSkip.hidden = true;
       showTeamCard();
+    } else if (gmode === 'tip' && tipDone) {
+      tipDone();
     }
   }
 
   function onReplay() {
     if (gmode === 'turns') startTurnsLesson();
+    else if (gmode === 'quiz' && !busy) V.say('quiz-ask', function () {});
   }
 
   // A different child is now playing (or everything was replaced): the
@@ -961,6 +1514,10 @@
   function init(theStore) {
     store = theStore;
     document.addEventListener('visibilitychange', onVisibilityChange);
+    if (dom.gamesHome) {
+      dom.gamesHome.appendChild(B.svgUse('house'));
+      dom.gamesHome.addEventListener('click', function () { S.unlock(); FC.app.goHome(); });
+    }
     renderHomeGames();
     onProfileChange();
   }
@@ -976,6 +1533,7 @@
     onLeaveHome: onLeaveHome,
     onEnterHome: onEnterHome,
     onProfileChange: onProfileChange,
+    hideGamesScreen: hideGamesScreen,
     stop: stop,
     captureJuice: captureJuice,
     resetStreak: resetStreak,

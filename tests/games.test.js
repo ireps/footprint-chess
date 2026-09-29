@@ -428,3 +428,63 @@ test('guarantee "battle": a random-but-greedy child (default rook) wins within 6
   }
   assert.ok(max <= 60, `battle: worst case ${max} moves`);
 });
+
+// ---- chain (stage 6) ----------------------------------------------------
+
+test('create "chain": hero on row 7, four foe pawns on rows 1..6 forming a legal capture chain', () => {
+  for (const type of G.CHAIN_TYPES) {
+    for (let seed = 1; seed <= SEEDS; seed++) {
+      const state = G.create('chain', { type }, seeded(seed));
+      assert.equal(state.hero[0], 7);
+      assert.equal(state.chain.length, 4);
+      const pawns = boardPieces(state.board).filter(p => p.piece.team === 'foe');
+      assert.equal(pawns.length, 4);
+      pawns.forEach(p => assert.ok(p.r >= 1 && p.r <= 6 && p.piece.type === 'p'));
+      // Following the chain captures every pawn, one move each.
+      let cur = state.hero;
+      for (const sq of state.chain) {
+        const mv = G.legalMoves(state, cur[0], cur[1]).find(m => m.r === sq[0] && m.c === sq[1]);
+        assert.ok(mv && mv.capture, `${type} seed ${seed}: chain link ${sq} is not a capture from ${cur}`);
+        G.applyMove(state, cur, sq);
+        cur = sq;
+      }
+      assert.ok(state.over && state.winner === 'me');
+    }
+  }
+});
+
+test('create "chain": usually only the first pawn can be captured at the start', () => {
+  let strict = 0;
+  for (let seed = 1; seed <= SEEDS; seed++) {
+    const state = G.create('chain', { type: 'q' }, seeded(seed));
+    const caps = G.legalMoves(state, state.hero[0], state.hero[1]).filter(m => m.capture);
+    if (caps.length === 1) strict++;
+  }
+  assert.ok(strict >= SEEDS * 0.9, `only ${strict} of ${SEEDS} start with a single capture`);
+});
+
+test('applyMove "chain": the turn stays with the child, nextInChain follows the captures, "chain-won" ends it', () => {
+  const state = G.create('chain', { type: 'n' }, seeded(7));
+  assert.deepEqual(G.nextInChain(state), state.chain[0]);
+  // A move that captures nothing keeps the child's turn.
+  const quiet = G.legalMoves(state, state.hero[0], state.hero[1]).find(m => !m.capture);
+  G.applyMove(state, state.hero, [quiet.r, quiet.c]);
+  assert.equal(state.turn, 'me');
+  assert.equal(G.botMove(state), null);
+  assert.deepEqual(state.hero, [quiet.r, quiet.c]);
+  assert.equal(G.goalOf('chain').count, 4);
+});
+
+test('guarantee "chain": a random-but-greedy child captures every pawn within 60 moves', () => {
+  for (const type of G.CHAIN_TYPES) {
+    for (let seed = 1; seed <= 100; seed++) {
+      const out = playGreedy('chain', { type }, seed, 60);
+      assert.ok(out.state.over, `${type} seed ${seed}: not finished in 60 moves`);
+      assert.ok(out.events.includes('chain-won'));
+    }
+  }
+});
+
+test('create "chain": an unknown piece type falls back to the rook', () => {
+  assert.equal(G.create('chain', { type: 'p' }, seeded(1)).heroType, 'r');
+});

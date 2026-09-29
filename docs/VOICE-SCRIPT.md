@@ -113,6 +113,18 @@ naming a direction.
 | sticker | You got a sticker! | నీకు ఒక స్టిక్కర్ వచ్చింది! | Big and celebratory; said when the capture jar fills. |
 | break | Great playing! Time for a little break? | బాగా ఆడావు! కొంచెం విశ్రాంతి తీసుకుందామా? | Warm and gentle, never scolding; offered, not required. |
 | who | Who's playing? | ఎవరు ఆడుతున్నారు? | Warm and curious, like asking a friend; said on the Who's playing screen, and shown there as its heading. |
+| games-pick | Pick a game! | ఒక ఆట ఎంచుకో! | Warm and inviting; said when the Games screen opens. |
+| game-chain | Capture chain! Capture every pawn, one after another. | గొలుసు ఆట! శత్రువు భటులను ఒకరి తర్వాత ఒకరిని పట్టుకో! | Playful and energetic; states the goal on the Mission card. |
+| game-whose | Whose footprints? Tap the piece that made them! | ఎవరి అడుగులు? ఆ అడుగులు వేసిన పావుని నొక్కు! | Curious, like starting a guessing game; states the goal on the Mission card. |
+| quiz-ask | Whose footprints are these? | ఈ అడుగుల గుర్తులు ఎవరివి? | Curious and gentle, a real question; said as each quiz question appears. |
+| quiz-again | Its footprints look different. Try again! | దాని అడుగులు వేరేలా ఉంటాయి. మళ్ళీ చూడు! | Kind and encouraging, never "wrong"; said after the child taps a piece that is not the answer. |
+| quiz-won | You know your pieces so well! | నీకు పావులన్నీ బాగా తెలుసు! | Big and celebratory; the quiz's win line. |
+| tip-look | Here is a little tip! | ఇదిగో, ఒక చిన్న చిట్కా! | Friendly, like sharing a secret; said before a tip plays on the board after a game. |
+| tip-catch | Get close to the knight, then watch where it can hop! | గుర్రం దగ్గరికి వెళ్ళు, అది ఎక్కడికి దూకగలదో చూడు! | Calm and clear, a tip rather than an instruction. |
+| tip-race | A pawn's first step can be two squares. Zoom ahead! | భటుడి మొదటి అడుగు రెండు గడులు కావచ్చు. ముందుకు దూసుకుపో! | Calm, then bright on the last words. |
+| tip-battle | Use all your pieces. Each one moves its own way! | నీ పావులన్నిటినీ వాడు. ఒక్కొక్కటి ఒక్కోలా కదులుతుంది! | Calm and clear, a tip rather than an instruction. |
+| tip-chain | Before you capture, look for the next pawn! | పట్టుకునే ముందు, తర్వాతి భటుడు ఎక్కడున్నాడో చూడు! | Calm and clear, a tip rather than an instruction. |
+| tip-whose | Straight lines, the rook. Slanty lines, the bishop. Both, the queen! | తిన్నగా అయితే ఏనుగు. వాలుగా అయితే ఒంటె. రెండూ అయితే మంత్రి! | Rhythmic, three short beats, like a rhyme to remember. |
 
 ## How the owner makes the clips
 

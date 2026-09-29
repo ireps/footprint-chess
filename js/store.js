@@ -25,6 +25,7 @@
 
   var isNode = typeof module !== 'undefined' && module.exports;
   var TH = isNode ? require('./themes.js') : root.FC.themes;
+  var GL = isNode ? require('./game-list.js') : root.FC.gameList;
 
   var VERSION = 1;
   var STORAGE_KEY = 'footprint-chess';
@@ -36,7 +37,8 @@
 
   var TYPES = ['r', 'b', 'q', 'k', 'n', 'p'];
   var STICKER_KINDS = TYPES.concat(['golden-p', 'golden-k']);
-  var GAME_IDS = ['catch', 'race', 'battle'];
+  // Every game in js/game-list.js; a win is kept per theme and game.
+  var GAME_IDS = GL.ids();
   // Ring colours for a child's picture. Purple and bright green are left
   // out on purpose: they are the Watch and Your turn colours.
   var RINGS = ['#36c2ce', '#f59e2e', '#ec5f99', '#f5d23b', '#4d8fe0', '#e0604d', '#a0703c', '#5a6488'];
@@ -477,8 +479,9 @@
         p.teams[theme] = side;
         changed();
       },
-      // True exactly when this call completes all three games in the theme
-      // for the first time (the caller then awards the golden king).
+      // True exactly when this call makes the number of different games
+      // won in the theme reach GOLDEN_KING_GAMES (three) for the first time
+      // (the caller then awards the golden king).
       markWin: function (theme, gameId) {
         var p = cur();
         if (!p || !isTheme(theme) || GAME_IDS.indexOf(gameId) === -1) return false;
@@ -486,7 +489,8 @@
         if (p.wins[k]) return false;
         p.wins[k] = true;
         changed();
-        return GAME_IDS.every(function (g) { return p.wins[theme + ':' + g] === true; });
+        var won = GAME_IDS.filter(function (g) { return p.wins[theme + ':' + g] === true; }).length;
+        return won === GL.GOLDEN_KING_GAMES;
       },
       setLang: function (id) {
         var p = cur();

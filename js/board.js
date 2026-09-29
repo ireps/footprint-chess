@@ -278,13 +278,16 @@
 
   /* ---------- footprints ---------- */
 
-  function showFootprints(type, hero, moves, itemsByKey) {
+  // colorOverride (optional): one colour for every footprint, used by the
+  // footprints quiz (js/games-ui.js), whose footprints must not give the
+  // answer away by their colour.
+  function showFootprints(type, hero, moves, itemsByKey, colorOverride) {
     hideFootprints(itemsByKey);
     // Every theme but Classic keeps today's per-type footprint colours,
     // matching the child's per-type piece colours (css/app.css); Classic
     // uses its own single footprint colour (--fp) instead, the same token
     // its panel portraits/tiles/home cards use.
-    var color = THEME === 'classic' ? 'var(--fp)' : TYPES[type].color;
+    var color = colorOverride || (THEME === 'classic' ? 'var(--fp)' : TYPES[type].color);
     moves.forEach(function (m) {
       var dist = Math.max(Math.abs(m.r - hero[0]), Math.abs(m.c - hero[1]));
       var delay = (reduceMotion ? 0 : Math.min(dist * 55, 330)) + 'ms';

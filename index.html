@@ -194,6 +194,8 @@
     </symbol>
     <symbol id="ic-check" viewBox="0 0 100 100"><path d="M20 53 L42 75 L82 27" stroke="currentColor" stroke-width="14" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
     <symbol id="ic-lock" viewBox="0 0 100 100"><rect x="22" y="44" width="56" height="42" rx="8" fill="none" stroke="currentColor" stroke-width="6"/><path d="M34 44 V32 a16 16 0 0 1 32 0 V44" fill="none" stroke="currentColor" stroke-width="6"/></symbol>
+    <!-- Stage 6: the tip button on a game's Won card (a light bulb). -->
+    <symbol id="ic-bulb" viewBox="0 0 100 100"><path d="M50 10 C31 10 18 24 18 41 C18 53 25 61 32 68 C35 71 36 74 36 78 H64 C64 74 65 71 68 68 C75 61 82 53 82 41 C82 24 69 10 50 10 Z" fill="#ffe066" stroke="currentColor" stroke-width="6" stroke-linejoin="round"/><path d="M38 86 H62 M42 94 H58" stroke="currentColor" stroke-width="6" stroke-linecap="round"/><path d="M40 44 Q50 34 60 44" stroke="currentColor" stroke-width="5" fill="none" stroke-linecap="round"/></symbol>
     <symbol id="ic-close" viewBox="0 0 100 100"><path d="M24 24 L76 76 M76 24 L24 76" stroke="currentColor" stroke-width="9" stroke-linecap="round" fill="none"/></symbol>
   </defs>
 </svg>
@@ -302,11 +304,19 @@
     <h1>Footprint Chess</h1>
   </div>
   <div class="home-cards" id="home-cards"></div>
-  <!-- Games (stage 3): a second row of three big game cards, filled in by
-       js/games-ui.js. Session-only stickers earned this page load show
-       underneath once there are any. -->
+  <!-- Games (stage 6): one Games button, filled in by js/games-ui.js,
+       which opens the Games screen. The sticker shelf shows underneath once
+       there are any stickers. -->
   <div class="home-cards home-games" id="home-games"></div>
   <div class="sticker-row" id="sticker-row" hidden></div>
+</div>
+
+<!-- Games screen (stage 6; js/games-ui.js): one row per kind of game
+     (capture, reach the other side, thinking), each marked with a picture,
+     never a word. Every game can be tapped. -->
+<div class="gamescreen" id="gamescreen" hidden>
+  <button class="tool games-home" id="games-home" type="button" aria-label="Home"></button>
+  <div class="game-rows" id="game-rows"></div>
 </div>
 
 <!-- Who's playing (stage 5; js/profile-ui.js): full screen like the home
@@ -344,6 +354,8 @@
 <script src="js/rules.js"></script>
 <script src="js/levels.js"></script>
 <script src="js/games.js"></script>
+<script src="js/quiz.js"></script>
+<script src="js/game-list.js"></script>
 <script src="js/lessons.js"></script>
 <script src="js/themes.js"></script>
 <script src="js/store.js"></script>

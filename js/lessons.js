@@ -165,7 +165,21 @@
     'break': { en: 'Great playing! Time for a little break?', te: 'బాగా ఆడావు! కొంచెం విశ్రాంతి తీసుకుందామా?' },
 
     /* profiles (stage 5): said on the Who's playing screen, and shown there as its heading */
-    'who': { en: "Who's playing?", te: 'ఎవరు ఆడుతున్నారు?' }
+    'who': { en: "Who's playing?", te: 'ఎవరు ఆడుతున్నారు?' },
+
+    /* more games (stage 6): the Games screen, two new games, the quiz and the tips after a game */
+    'games-pick': { en: 'Pick a game!', te: 'ఒక ఆట ఎంచుకో!' },
+    'game-chain': { en: 'Capture chain! Capture every pawn, one after another.', te: 'గొలుసు ఆట! శత్రువు భటులను ఒకరి తర్వాత ఒకరిని పట్టుకో!' },
+    'game-whose': { en: 'Whose footprints? Tap the piece that made them!', te: 'ఎవరి అడుగులు? ఆ అడుగులు వేసిన పావుని నొక్కు!' },
+    'quiz-ask': { en: 'Whose footprints are these?', te: 'ఈ అడుగుల గుర్తులు ఎవరివి?' },
+    'quiz-again': { en: 'Its footprints look different. Try again!', te: 'దాని అడుగులు వేరేలా ఉంటాయి. మళ్ళీ చూడు!' },
+    'quiz-won': { en: 'You know your pieces so well!', te: 'నీకు పావులన్నీ బాగా తెలుసు!' },
+    'tip-look': { en: 'Here is a little tip!', te: 'ఇదిగో, ఒక చిన్న చిట్కా!' },
+    'tip-catch': { en: 'Get close to the knight, then watch where it can hop!', te: 'గుర్రం దగ్గరికి వెళ్ళు, అది ఎక్కడికి దూకగలదో చూడు!' },
+    'tip-race': { en: "A pawn's first step can be two squares. Zoom ahead!", te: 'భటుడి మొదటి అడుగు రెండు గడులు కావచ్చు. ముందుకు దూసుకుపో!' },
+    'tip-battle': { en: 'Use all your pieces. Each one moves its own way!', te: 'నీ పావులన్నిటినీ వాడు. ఒక్కొక్కటి ఒక్కోలా కదులుతుంది!' },
+    'tip-chain': { en: 'Before you capture, look for the next pawn!', te: 'పట్టుకునే ముందు, తర్వాతి భటుడు ఎక్కడున్నాడో చూడు!' },
+    'tip-whose': { en: 'Straight lines, the rook. Slanty lines, the bishop. Both, the queen!', te: 'తిన్నగా అయితే ఏనుగు. వాలుగా అయితే ఒంటె. రెండూ అయితే మంత్రి!' }
   };
 
   /*
@@ -237,6 +251,18 @@
    * heading text. Included in tests/lessons.test.js's line-coverage test.
    */
   var PROFILE_LINES = ['who'];
+
+  /*
+   * More games (stage 6): ids of lines said by js/games-ui.js - the Games
+   * screen's prompt, the new games' mission lines, the quiz, and the tips
+   * after a game (js/game-list.js names which tip belongs to which game).
+   * Included in tests/lessons.test.js's line-coverage test.
+   */
+  var MORE_GAME_LINES = [
+    'games-pick', 'game-chain', 'game-whose',
+    'quiz-ask', 'quiz-again', 'quiz-won',
+    'tip-look', 'tip-catch', 'tip-race', 'tip-battle', 'tip-chain', 'tip-whose'
+  ];
 
   var LESSONS = [
     {
@@ -662,6 +688,7 @@
     APP_LINES: APP_LINES,
     GAME_LINES: GAME_LINES,
     PROFILE_LINES: PROFILE_LINES,
+    MORE_GAME_LINES: MORE_GAME_LINES,
     LESSONS: LESSONS,
     get: get,
     boardFor: boardFor,

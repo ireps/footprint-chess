@@ -1,10 +1,15 @@
 /*
  * Footprint Chess: mini-games (stage 3).
  *
- * Pure game logic, no DOM. Three gentle games built on top of js/rules.js:
+ * Pure game logic, no DOM. Gentle games built on top of js/rules.js:
  *   'catch'  - Catch the knight: the child's piece chases a foe knight.
  *   'race'   - Pawn race: three child pawns race three foe pawns to the far edge.
  *   'battle' - Little battle: the child's piece(s) clear four foe pawns.
+ *   'chain'  - Capture chain (stage 6): one piece and four still foe pawns,
+ *              placed so each capture lands where the next pawn is one move
+ *              away. A solo game: the turn never passes to the other side.
+ * The list of games shown to the child (names, rows, pictures) lives in
+ * js/game-list.js; the footprints quiz is in js/quiz.js.
  *
  * The bot never plays to win. Every game design keeps a "no fail state"
  * guarantee (see docs/DESIGN.md): the child always finishes, the bot never
@@ -30,6 +35,8 @@
   var RACE_PAWNS = 3;
   var BATTLE_PAWNS = 4;
   var TIRED_AFTER = 6;
+  var CHAIN_PAWNS = 4;
+  var CHAIN_TYPES = ['r', 'b', 'q', 'k', 'n'];
 
   function randInt(rng, n) {
     return Math.floor(rng() * n);
@@ -343,6 +350,98 @@
     return { from: chosen.from, to: chosen.to, captured: captured || null, events: events };
   }
 
+  // ---- chain: Capture chain -----------------------------------------------
+
+  /* Replays the chain on a copy of the board: from the hero's square, each
+   * pawn in order must be a legal capture from where the previous capture
+   * landed. */
+  function chainWorks(board, hero, pawns) {
+    var work = R.cloneBoard(board);
+    var cur = hero;
+    for (var i = 0; i < pawns.length; i++) {
+      var next = pawns[i];
+      var ok = R.movesFor(work, cur[0], cur[1]).some(function (m) {
+        return m.capture && m.r === next[0] && m.c === next[1];
+      });
+      if (!ok) return false;
+      work[next[0]][next[1]] = work[cur[0]][cur[1]];
+      work[cur[0]][cur[1]] = null;
+      cur = next;
+    }
+    return true;
+  }
+
+  function capturableCount(board, hero) {
+    return R.movesFor(board, hero[0], hero[1]).filter(function (m) { return m.capture; }).length;
+  }
+
+  /* One attempt at a chain: each next pawn goes on a square the piece could
+   * move to from the previous square (rows 1 to 6, not next to the square it
+   * came from unless the piece is the king), with every pawn in place. */
+  function tryChain(type, rng, strict) {
+    var board = R.emptyBoard();
+    var hero = [7, randInt(rng, 8)];
+    board[hero[0]][hero[1]] = { type: type, team: 'me' };
+    var pawns = [];
+    var cur = hero;
+    for (var i = 0; i < CHAIN_PAWNS; i++) {
+      var work = R.cloneBoard(board);
+      pawns.forEach(function (p) { work[p[0]][p[1]] = null; });
+      work[hero[0]][hero[1]] = null;
+      work[cur[0]][cur[1]] = { type: type, team: 'me' };
+      var from = cur;
+      var options = R.movesFor(work, from[0], from[1]).filter(function (m) {
+        if (m.capture || m.r < 1 || m.r > 6) return false;
+        if (board[m.r][m.c]) return false;
+        if (type !== 'k' && Math.max(Math.abs(m.r - from[0]), Math.abs(m.c - from[1])) < 2) return false;
+        return true;
+      });
+      if (!options.length) return null;
+      var pick = options[randInt(rng, options.length)];
+      pawns.push([pick.r, pick.c]);
+      board[pick.r][pick.c] = { type: 'p', team: 'foe' };
+      cur = [pick.r, pick.c];
+    }
+    if (!chainWorks(board, hero, pawns)) return null;
+    // Strict: at the start only the first pawn of the chain can be
+    // captured, so the chain is the obvious way through.
+    if (strict && capturableCount(board, hero) !== 1) return null;
+    return { board: board, hero: hero, pawns: pawns };
+  }
+
+  function createChain(options, rng) {
+    var type = (options && CHAIN_TYPES.indexOf(options.type) !== -1) ? options.type : 'r';
+    var made = null;
+    for (var attempt = 0; attempt < MAX_ATTEMPTS * 4 && !made; attempt++) {
+      made = tryChain(type, rng, attempt < MAX_ATTEMPTS * 3);
+    }
+    if (!made) throw new Error('chain: could not build a chain for ' + type);
+    return {
+      id: 'chain',
+      board: made.board,
+      turn: 'me',
+      moveCount: 0,
+      over: false,
+      winner: null,
+      heroType: type,
+      hero: made.hero,
+      chain: made.pawns,
+      foePawns: CHAIN_PAWNS,
+      solo: true
+    };
+  }
+
+  /* The next pawn of the chain still on the board, or null. */
+  function nextInChain(state) {
+    if (!state.chain) return null;
+    for (var i = 0; i < state.chain.length; i++) {
+      var sq = state.chain[i];
+      var p = state.board[sq[0]][sq[1]];
+      if (p && p.team === 'foe') return sq.slice();
+    }
+    return null;
+  }
+
   // ---- shared API ------------------------------------------------------
 
   function create(id, options, rng) {
@@ -350,6 +449,7 @@
     if (id === 'catch') return createCatch(options, rng);
     if (id === 'race') return createRace(options, rng);
     if (id === 'battle') return createBattle(options, rng);
+    if (id === 'chain') return createChain(options, rng);
     throw new Error('Unknown game id: ' + id);
   }
 
@@ -403,9 +503,20 @@
           events.push('battle-won');
         }
       }
+    } else if (state.id === 'chain') {
+      state.hero = [to[0], to[1]];
+      if (captured && captured.type === 'p') {
+        state.foePawns--;
+        if (state.foePawns === 0) {
+          state.over = true;
+          state.winner = 'me';
+          events.push('chain-won');
+        }
+      }
     }
 
-    state.turn = state.over ? state.turn : 'foe';
+    // A solo game ('chain') never hands the turn to the other side.
+    state.turn = (state.over || state.solo) ? state.turn : 'foe';
     return { captured: captured || null, events: events };
   }
 
@@ -422,6 +533,7 @@
     if (id === 'catch') return { kind: 'capture', target: 'n' };
     if (id === 'race') return { kind: 'reach-row', row: 0 };
     if (id === 'battle') return { kind: 'capture-all', target: 'p', count: BATTLE_PAWNS };
+    if (id === 'chain') return { kind: 'capture-all', target: 'p', count: CHAIN_PAWNS };
     return null;
   }
 
@@ -430,7 +542,9 @@
     legalMoves: legalMoves,
     applyMove: applyMove,
     botMove: botMove,
-    goalOf: goalOf
+    goalOf: goalOf,
+    nextInChain: nextInChain,
+    CHAIN_TYPES: CHAIN_TYPES
   };
 
   if (isNode) {

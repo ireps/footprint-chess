@@ -10,7 +10,7 @@ Live site: https://ireps.github.io/footprint-chess/
 - The board never rotates. The child's side is always at the bottom ("your side"); the opponent's side is always at the top ("the other side").
 - Each piece is drawn as a robot character whose movement animation matches its rule, but every piece is always named and shown with its real chess shape; the robot theme is decoration, not vocabulary.
 - Short rounds: capture three opponent pawns. Instant feedback, no fail states, no locked levels.
-- Three short games against a gentle opponent (catch the knight, pawn race, little battle), with two named teams per theme, a "taking turns" lesson, a capture jar that earns stickers, and an optional break reminder. See "Games" in [docs/DESIGN.md](docs/DESIGN.md).
+- A Games screen with five short games in three picture-marked rows: catch the knight, little battle and capture chain; pawn race; and "Whose footprints?", a voice quiz about how each piece moves. The team games are against a gentle opponent, with two named teams per theme and a "taking turns" lesson. After a win the board can show a short tip, and a capture jar earns stickers; there is an optional break reminder. See "Games" in [docs/DESIGN.md](docs/DESIGN.md).
 - Picture profiles for up to four children, a sticker book, and a grown-ups' corner. No login, no tracking, and nothing is sent anywhere: progress is saved only in this browser, on this device.
 
 Details are in [docs/DESIGN.md](docs/DESIGN.md).
@@ -46,17 +46,17 @@ and the language a child chooses are saved for that child (see Profiles).
 
 Each child has a picture profile (a piece in a theme's artwork with a coloured ring, and an optional name), saved in this browser's local storage on this device, under the key `footprint-chess`. A first-time child goes straight to the home screen; with two or more children the app starts on "Who's playing?". The child's picture at the top left of Home opens that screen. For each child the app remembers lessons seen, pieces played (a green tick on their Home card), stickers, the capture jar, the team picked in each theme, games won, language and theme.
 
-The book button on Home opens the sticker book: a tab per theme, and two pages of four slots (rook, bishop, queen, king; knight, pawn, golden pawn, golden king). A full jar earns a sticker of the piece being played, a golden pawn earns a golden pawn, and winning all three games in a theme for the first time earns its golden king. No numbers are shown anywhere.
+The book button on Home opens the sticker book: a tab per theme, and two pages of four slots (rook, bishop, queen, king; knight, pawn, golden pawn, golden king). A full jar earns a sticker of the piece being played, a golden pawn earns a golden pawn, and winning three different games in a theme for the first time earns its golden king. No numbers are shown anywhere.
 
 Holding the "?" button on Home for two seconds opens the grown-ups' corner (a tap still opens `help.html`; `index.html#grownups` opens it too, from a link on the help page): calm mode, the break reminder and its length, the children (pictures, names, adding and removing), a backup code to move progress to another device, and clearing everything. It is in English. All progress goes through `js/store.js`, which treats stored data and backup codes as untrusted. See [PRIVACY.md](PRIVACY.md).
 
 ## Status
 
-Stages 1 to 5 of 6 are complete (stages 3 and 5, the games and the profiles, await tablet testing): a home screen, board, tap-to-move, footprints for all six pieces, five themes (Robots, Classic, Space, Dinosaurs, Pirate; decoration only, every piece is always named and shown with its real chess shape), capture rounds (capture three opponent pawns), sound effects (with per-theme sounds for tapping a piece, a capture and a win), a device check page (`check.html`), a lesson player with a "watch, then do" lesson and a capturing lesson for every piece, three games with teams, turn-taking, a capture jar and stickers, and a break reminder (see below), a grown-ups guide (`help.html`), and lesson text in English and Telugu with a language switch button. Every voice line has a clip in both languages (see [docs/VOICE-SCRIPT.md](docs/VOICE-SCRIPT.md)); if a clip is missing, the app falls back to the device's speech synthesis, or to silence. The roadmap is in [docs/DESIGN.md](docs/DESIGN.md#roadmap).
+Stages 1 to 5 are complete (stages 3 and 5, the games and the profiles, await tablet testing), and stage 6 (more games, a quiz and tips) is in progress: a home screen, board, tap-to-move, footprints for all six pieces, five themes (Robots, Classic, Space, Dinosaurs, Pirate; decoration only, every piece is always named and shown with its real chess shape), capture rounds (capture three opponent pawns), sound effects (with per-theme sounds for tapping a piece, a capture and a win), a device check page (`check.html`), a lesson player with a "watch, then do" lesson and a capturing lesson for every piece, five games with teams, turn-taking, a footprints quiz, tips after a game, a capture jar and stickers, and a break reminder (see below), a grown-ups guide (`help.html`), and lesson text in English and Telugu with a language switch button. Every voice line has a clip in both languages (see [docs/VOICE-SCRIPT.md](docs/VOICE-SCRIPT.md)); if a clip is missing, the app falls back to the device's speech synthesis, or to silence. The roadmap is in [docs/DESIGN.md](docs/DESIGN.md#roadmap).
 
 ## Games
 
-The home screen has a second row of three games: catch the knight, pawn race and little battle. Each theme has two teams; the child picks one, and the picked team always plays from the bottom. The first game after a page load starts with a "Taking turns" lesson. Stickers go in the child's sticker book. The Team card always shows when a game is started from Home, with the team chosen last time in that theme ringed; "play again" and the next game skip it.
+The Games button on the home screen opens the Games screen: three rows, each marked with a picture (capture games, reach-the-other-side games, thinking games). The games are catch the knight, little battle, capture chain (capture four still pawns, each capture landing one move from the next), pawn race, and "Whose footprints?" (a quiz: tap the piece that makes the footprints shown). In the team games each theme has two teams; the child picks one, and the picked team always plays from the bottom. The first team game a child plays starts with a "Taking turns" lesson. The Team card always shows when a team game is started from the Games screen, with the team chosen last time in that theme ringed; "play again" and the next game skip it. After a win the board can show a short tip: a piece's rule again if the child kept tapping squares it cannot reach, otherwise the game's own tip the first time it is won (the light bulb on the finished-game card replays it). Stickers go in the child's sticker book.
 
 Query parameters, all read once at page load:
 
@@ -83,7 +83,7 @@ Requires Node.js 18 or later. There is nothing to install.
 node --test
 ```
 
-The tests cover the movement rules (`js/rules.js`), capture round generation (`js/levels.js`), the games and their opponent (`js/games.js`), the lesson scripts (`js/lessons.js`), the theme registry (`js/themes.js`), the language registry (`js/langs.js`), the progress store and backup code (`js/store.js`), the sound effects (`js/sound.js`) and the voice clip generator (`tools/make-voice.js`): every move is legal, timings fit, every line uses real chess terms and never a robot name, left, right or a square name in either language, every theme has a sprite symbol for every piece type and a colour rule in `css/app.css`, and the clip-generating tool's SSML, argument parsing and file indexing behave correctly (its Azure network call is never exercised by the tests).
+The tests cover the movement rules (`js/rules.js`), capture round generation (`js/levels.js`), the games and their opponent (`js/games.js`), the footprints quiz (`js/quiz.js`), the game list and its tip choice (`js/game-list.js`), the lesson scripts (`js/lessons.js`), the theme registry (`js/themes.js`), the language registry (`js/langs.js`), the progress store and backup code (`js/store.js`), the sound effects (`js/sound.js`) and the voice clip generator (`tools/make-voice.js`): every move is legal, timings fit, every line uses real chess terms and never a robot name, left, right or a square name in either language, every theme has a sprite symbol for every piece type and a colour rule in `css/app.css`, and the clip-generating tool's SSML, argument parsing and file indexing behave correctly (its Azure network call is never exercised by the tests).
 
 ## Deploy
 
@@ -100,7 +100,9 @@ css/help.css      Help page styles.
 css/check.css     Device check page styles.
 js/rules.js       Movement rules. No DOM access. Tested.
 js/levels.js      Capture round generation. No DOM access. Tested.
-js/games.js       Rules for the three games and the gentle opponent. No DOM access. Tested.
+js/games.js       Rules for the board games and the gentle opponent. No DOM access. Tested.
+js/quiz.js        The footprints quiz ("Whose footprints?"). No DOM access. Tested.
+js/game-list.js   The list of games: rows, lines, teams, and the tip after a win. No DOM access. Tested.
 js/langs.js       Language registry: ids, names, glyphs, speech and voice settings, fallback chain, turn wording. No DOM access. Tested.
 js/lessons.js     Lesson scripts, piece names and voice line text (English and Telugu). No DOM access. Tested.
 js/themes.js      Theme ids, English names (for aria-labels) and team names. No DOM access. Tested.
@@ -109,7 +111,7 @@ js/voice-clips.js Ids of the voice lines that have a recorded clip, per language
 js/voice.js       Plays voice clips, with per-language speech and silent fallbacks.
 js/board.js       Board view: pieces, footprints, animations, ghost hand.
 js/player.js      Lesson player: runs a lesson's watch and practice parts.
-js/games-ui.js     Games screens and flow (home games row, team card, games, break card), capture juice, jar and stickers.
+js/games-ui.js    Games screens and flow (Games button and screen, team card, games, quiz, tips, break card), capture juice, jar and stickers.
 js/store.js       The progress store: children, progress, stickers, settings, backup code. Sanitizes everything it loads. No DOM access. Tested.
 js/stickers.js    Sticker art (a gold-rimmed badge in a theme's artwork), the Home shelf, stickers earned this visit.
 js/profile-ui.js  A child's picture, and the Who's playing screen.
