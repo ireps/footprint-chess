@@ -79,16 +79,16 @@ naming a direction.
 | hint-pawn | Follow the footprints to a pawn. | అడుగుల గుర్తుల దారిలో భటుడి దగ్గరికి వెళ్ళు. | Plain hint, used if the child is idle mid-round with a piece selected. |
 | won | You captured them all! | అందరినీ పట్టేశావు! | Big and celebratory; the round's win line. |
 | next | Play again, or pick the next piece. | మళ్ళీ ఆడు, లేదా తర్వాతి పావుని ఎంచుకో. | Warm, inviting the child to choose what happens next. |
-| team-robots-a | Humanoids! | హ్యూమనాయిడ్లు! | Bright and proud, said the moment the child picks this team. |
-| team-robots-b | Androids! | ఆండ్రాయిడ్లు! | Bright and proud, said the moment the child picks this team. |
-| team-classic-a | White! | తెల్లవి! | Bright and proud, said the moment the child picks this team. |
-| team-classic-b | Black! | నల్లవి! | Bright and proud, said the moment the child picks this team. |
-| team-space-a | Astronauts! | వ్యోమగాములు! | Bright and proud, said the moment the child picks this team. |
-| team-space-b | Cosmonauts! | కాస్మోనాట్లు! | Bright and proud, said the moment the child picks this team. |
-| team-dinos-a | Theropods! | థెరోపాడ్లు! | Bright and proud, said the moment the child picks this team. |
-| team-dinos-b | Sauropods! | సారోపాడ్లు! | Bright and proud, said the moment the child picks this team. |
-| team-pirate-a | Buccaneers! | బకనీర్లు! | Bright and proud, said the moment the child picks this team. |
-| team-pirate-b | Corsairs! | కోర్సెయిర్లు! | Bright and proud, said the moment the child picks this team. |
+| team-robots-a | Humanoids! | మెరుపులు! | Bright and proud, said the moment the child picks this team. |
+| team-robots-b | Androids! | పిడుగులు! | Bright and proud, said the moment the child picks this team. |
+| team-classic-a | White! | తెల్ల పావులు! | Bright and proud, said the moment the child picks this team. |
+| team-classic-b | Black! | నల్ల పావులు! | Bright and proud, said the moment the child picks this team. |
+| team-space-a | Astronauts! | సూర్య జట్టు! | Bright and proud, said the moment the child picks this team. |
+| team-space-b | Cosmonauts! | చంద్ర జట్టు! | Bright and proud, said the moment the child picks this team. |
+| team-dinos-a | Theropods! | కొండ జట్టు! | Bright and proud, said the moment the child picks this team. |
+| team-dinos-b | Sauropods! | అడవి జట్టు! | Bright and proud, said the moment the child picks this team. |
+| team-pirate-a | Buccaneers! | సొరచేపలు! | Bright and proud, said the moment the child picks this team. |
+| team-pirate-b | Corsairs! | తిమింగలాలు! | Bright and proud, said the moment the child picks this team. |
 | pick-team | Pick your team! | నీ జట్టుని ఎంచుకో! | Warm and inviting, said once, on the Team card before a game. |
 | turn-me | Your turn! | నీ వంతు! | Short and bright, said whenever control passes back to the child in a game or the turns lesson. |
 | turn-foe | Their turn. | వాళ్ళ వంతు. | Calm and matter-of-fact, said whenever the other team's turn begins. |

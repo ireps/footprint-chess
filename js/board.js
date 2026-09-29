@@ -527,8 +527,19 @@
   // The mode badge's text while a team bar's foe side has the turn (see
   // js/player.js and js/games-ui.js): "<name>'s turn" in English,
   // "<name> వంతు" in Telugu.
+  // Telugu uses the team's teOf form (మెరుపుల వంతు, not మెరుపులు వంతు);
+  // English plural names ending in s take a bare apostrophe (Androids’ turn).
   function turnBadgeText(name) {
-    return V.getLang() === 'te' ? (name + ' వంతు') : (name + '’s turn');
+    if (V.getLang() === 'te') {
+      var teams = T.TEAMS || {};
+      for (var id in teams) {
+        for (var side in teams[id]) {
+          if (teams[id][side].te === name && teams[id][side].teOf) return teams[id][side].teOf + ' వంతు';
+        }
+      }
+      return name + ' వంతు';
+    }
+    return /s$/.test(name) ? (name + '’ turn') : (name + '’s turn');
   }
 
   function buildTeamBar(container, name, pawnSide) {

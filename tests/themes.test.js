@@ -47,6 +47,7 @@ test('TEAMS has a and b team names, in English and Telugu, for every theme, and 
       assert.ok(t && typeof t.en === 'string' && t.en.trim().length > 0, `TEAMS.${theme.id}.${side}.en missing`);
       assert.ok(t && typeof t.te === 'string' && t.te.trim().length > 0, `TEAMS.${theme.id}.${side}.te missing`);
       assert.match(t.te, /[ఀ-౿]/, `TEAMS.${theme.id}.${side}.te should be Telugu script`);
+      assert.ok(typeof t.teOf === 'string' && /[ఀ-౿]/.test(t.teOf), `TEAMS.${theme.id}.${side}.teOf missing`);
     }
     assert.notEqual(teams.a.en, teams.b.en, `${theme.id}: team a and b should have different English names`);
   }
@@ -59,11 +60,11 @@ test('DEFAULT_TEAM is "a", team a of every theme is the White (moves-first) side
 
 test('TEAMS matches the agreed group names exactly', () => {
   assert.deepEqual(TH.TEAMS, {
-    robots: { a: { en: 'Humanoids', te: 'హ్యూమనాయిడ్లు' }, b: { en: 'Androids', te: 'ఆండ్రాయిడ్లు' } },
-    classic: { a: { en: 'White', te: 'తెల్లవి' }, b: { en: 'Black', te: 'నల్లవి' } },
-    space: { a: { en: 'Astronauts', te: 'వ్యోమగాములు' }, b: { en: 'Cosmonauts', te: 'కాస్మోనాట్లు' } },
-    dinos: { a: { en: 'Theropods', te: 'థెరోపాడ్లు' }, b: { en: 'Sauropods', te: 'సారోపాడ్లు' } },
-    pirate: { a: { en: 'Buccaneers', te: 'బకనీర్లు' }, b: { en: 'Corsairs', te: 'కోర్సెయిర్లు' } }
+    robots: { a: { en: 'Humanoids', te: 'మెరుపులు', teOf: 'మెరుపుల' }, b: { en: 'Androids', te: 'పిడుగులు', teOf: 'పిడుగుల' } },
+    classic: { a: { en: 'White', te: 'తెల్ల పావులు', teOf: 'తెల్ల పావుల' }, b: { en: 'Black', te: 'నల్ల పావులు', teOf: 'నల్ల పావుల' } },
+    space: { a: { en: 'Astronauts', te: 'సూర్య జట్టు', teOf: 'సూర్య జట్టు' }, b: { en: 'Cosmonauts', te: 'చంద్ర జట్టు', teOf: 'చంద్ర జట్టు' } },
+    dinos: { a: { en: 'Theropods', te: 'కొండ జట్టు', teOf: 'కొండ జట్టు' }, b: { en: 'Sauropods', te: 'అడవి జట్టు', teOf: 'అడవి జట్టు' } },
+    pirate: { a: { en: 'Buccaneers', te: 'సొరచేపలు', teOf: 'సొరచేపల' }, b: { en: 'Corsairs', te: 'తిమింగలాలు', teOf: 'తిమింగలాల' } }
   });
 });
 

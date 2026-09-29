@@ -120,16 +120,16 @@
      * js/themes.js TEAMS for the same names without the "!", used on the
      * team bars). Real group names per theme, never "bot"/"robot".
      */
-    'team-robots-a': { en: 'Humanoids!', te: 'హ్యూమనాయిడ్లు!' },
-    'team-robots-b': { en: 'Androids!', te: 'ఆండ్రాయిడ్లు!' },
-    'team-classic-a': { en: 'White!', te: 'తెల్లవి!' },
-    'team-classic-b': { en: 'Black!', te: 'నల్లవి!' },
-    'team-space-a': { en: 'Astronauts!', te: 'వ్యోమగాములు!' },
-    'team-space-b': { en: 'Cosmonauts!', te: 'కాస్మోనాట్లు!' },
-    'team-dinos-a': { en: 'Theropods!', te: 'థెరోపాడ్లు!' },
-    'team-dinos-b': { en: 'Sauropods!', te: 'సారోపాడ్లు!' },
-    'team-pirate-a': { en: 'Buccaneers!', te: 'బకనీర్లు!' },
-    'team-pirate-b': { en: 'Corsairs!', te: 'కోర్సెయిర్లు!' },
+    'team-robots-a': { en: 'Humanoids!', te: 'మెరుపులు!' },
+    'team-robots-b': { en: 'Androids!', te: 'పిడుగులు!' },
+    'team-classic-a': { en: 'White!', te: 'తెల్ల పావులు!' },
+    'team-classic-b': { en: 'Black!', te: 'నల్ల పావులు!' },
+    'team-space-a': { en: 'Astronauts!', te: 'సూర్య జట్టు!' },
+    'team-space-b': { en: 'Cosmonauts!', te: 'చంద్ర జట్టు!' },
+    'team-dinos-a': { en: 'Theropods!', te: 'కొండ జట్టు!' },
+    'team-dinos-b': { en: 'Sauropods!', te: 'అడవి జట్టు!' },
+    'team-pirate-a': { en: 'Buccaneers!', te: 'సొరచేపలు!' },
+    'team-pirate-b': { en: 'Corsairs!', te: 'తిమింగలాలు!' },
     'pick-team': { en: 'Pick your team!', te: 'నీ జట్టుని ఎంచుకో!' },
 
     /*
