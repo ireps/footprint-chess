@@ -33,6 +33,9 @@
  *   'escape' - Get out of check (stage 7, solo): five small puzzles, each
  *              with the child's king in check; any legal move ends the
  *              check (step away, block the line, or capture the attacker).
+ *   'army1'.. - The growing battle (stage 8): whole armies, a few kinds of
+ *              piece at a time; its rules and gentle opponent are in
+ *              js/army.js, and every call here hands those games to it.
  * The list of games shown to the child (names, rows, pictures) lives in
  * js/game-list.js; the footprints quiz is in js/quiz.js.
  *
@@ -55,6 +58,8 @@
 
   var isNode = typeof module !== 'undefined' && module.exports;
   var R = isNode ? require('./rules.js') : root.FC.rules;
+  // The growing battle (stage 8) has its own rules file.
+  var A = isNode ? require('./army.js') : root.FC.army;
 
   var MAX_ATTEMPTS = 50;
   var RACE_PAWNS = 3;
@@ -684,6 +689,7 @@
   /* selected (optional): the square of the piece the child has selected;
    * Checkmate in one then hints that piece's mating square. */
   function hint(state, selected) {
+    if (state.army) return A.hint(state, selected);
     if (state.over) return null;
     if (state.id === 'catch') return catchHint(state);
     if (state.id === 'escape') return state.solved ? null : escapeHint(state);
@@ -1012,6 +1018,7 @@
 
   function create(id, options, rng) {
     rng = rng || Math.random;
+    if (A.isArmy(id)) return A.create(id, options, rng);
     if (id === 'catch') return createCatch(options, rng);
     if (id === 'race') return createRace(options, rng);
     if (id === 'battle') return createBattle(options, rng);
@@ -1027,6 +1034,7 @@
   }
 
   function legalMoves(state, r, c) {
+    if (state.army) return A.legalMoves(state, r, c);
     if (state.over || state.turn !== 'me') return [];
     var piece = state.board[r][c];
     if (!piece || piece.team !== 'me') return [];
@@ -1048,6 +1056,7 @@
   }
 
   function applyMove(state, from, to) {
+    if (state.army) return A.applyMove(state, from, to);
     if (state.over) throw new Error('applyMove: game is already over');
     if (state.turn !== 'me') throw new Error('applyMove: not the child\'s turn');
     var moves = legalMoves(state, from[0], from[1]);
@@ -1147,6 +1156,7 @@
 
   function botMove(state, rng) {
     rng = rng || Math.random;
+    if (state.army) return A.botMove(state, rng);
     if (state.over || state.turn !== 'foe') return null;
     if (state.id === 'catch') return botCatch(state, rng);
     if (state.id === 'race') return botRace(state, rng);
@@ -1157,6 +1167,7 @@
   }
 
   function goalOf(id) {
+    if (A.isArmy(id)) return A.goalOf(id);
     if (id === 'catch') return { kind: 'capture', target: 'n' };
     if (id === 'race') return { kind: 'reach-row', row: 0 };
     if (id === 'battle') return { kind: 'capture-all', target: 'p', count: BATTLE_PAWNS };

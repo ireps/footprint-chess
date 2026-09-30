@@ -8,8 +8,12 @@
  * game is an entry here, its rules and tests, its picture and its lines in
  * js/lessons.js and docs/VOICE-SCRIPT.md.
  *
- * The Games screen has three rows, each marked with a picture rather than
- * a word: capture games, "reach the other side" games and thinking games.
+ * The Games screen has one row per kind of game, each marked with a
+ * picture rather than a word: capture games, "reach the other side"
+ * games, thinking games, the other side's view (the pond), the king's
+ * games, and the growing battle (stage 8, 'army': a ladder of whole-army
+ * battles, a few more kinds of piece at each step, drawn as a ladder of
+ * its own beside the rows).
  * The order here is also the order of the Won card's "next game" button.
  *
  * Each game has a "watch how to play" scene (js/games-ui.js), played
@@ -26,7 +30,7 @@
 
   var isNode = typeof module !== 'undefined' && module.exports;
 
-  var ROWS = ['capture', 'reach', 'think', 'pond', 'king'];
+  var ROWS = ['capture', 'reach', 'think', 'pond', 'king', 'army'];
 
   /*
    * id:      the game id (js/games.js or js/quiz.js; stored in a child's wins)
@@ -59,7 +63,10 @@
     { id: 'stop', row: 'think', mission: 'game-stop', win: 'won', tip: 'tip-stop', teams: true, kind: 'board' },
     { id: 'safe', row: 'king', mission: 'game-safe', win: 'reach-won', tip: 'tip-safe', teams: false, kind: 'board' },
     { id: 'escape', row: 'king', mission: 'game-escape', win: 'escape-won', tip: 'tip-escape', teams: false, kind: 'board', lesson: 'check' },
-    { id: 'mate', row: 'king', mission: 'game-mate', win: 'mate-won', tip: 'tip-mate', teams: false, kind: 'board', lesson: 'checkmate' }
+    { id: 'mate', row: 'king', mission: 'game-mate', win: 'mate-won', tip: 'tip-mate', teams: false, kind: 'board', lesson: 'checkmate' },
+    { id: 'army1', row: 'army', mission: 'game-army1', win: 'army-won', tip: 'tip-army1', teams: true, kind: 'board' },
+    { id: 'army2', row: 'army', mission: 'game-army2', win: 'army-won', tip: 'tip-army2', teams: true, kind: 'board' },
+    { id: 'army3', row: 'army', mission: 'game-army3', win: 'army-won', tip: 'tip-army3', teams: true, kind: 'board' }
   ];
 
   // Winning this many different games in a theme, for the first time,

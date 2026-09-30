@@ -240,7 +240,17 @@
     'tip-hop': { en: 'Pick the footprints closest to the other side!', te: 'అవతలి వైపుకి దగ్గరగా ఉన్న అడుగు గుర్తుని ఎంచుకో!' },
     'tip-way': { en: 'Your own pieces block the way. Go around them!', te: 'నీ పావులే దారికి అడ్డం. వాటి చుట్టూ తిరిగి వెళ్ళు!' },
     'tip-stop': { en: 'A pawn cannot walk through you. Stand in front of it!', te: 'శత్రువు భటుడు నిన్ను దాటి నడవలేడు. అతని ముందు నిలబడు!' },
-    'tip-safe': { en: 'The king never steps where the other side could capture him.', te: 'శత్రువు పట్టుకోగలిగే గడిలోకి రాజు ఎప్పుడూ అడుగు పెట్టడు.' }
+    'tip-safe': { en: 'The king never steps where the other side could capture him.', te: 'శత్రువు పట్టుకోగలిగే గడిలోకి రాజు ఎప్పుడూ అడుగు పెట్టడు.' },
+
+    /* the growing battle (stage 8), js/army.js */
+    'game-army1': { en: 'Pawn battle! Get one of your pawns to the other side.', te: 'భటుల యుద్ధం! నీ భటుల్లో ఒకరిని అవతలి వైపుకి చేర్చు.' },
+    'game-army2': { en: 'Pawns and rooks! Capture all their pawns, or reach the other side.', te: 'భటులు, ఏనుగులు! శత్రువు భటులందరినీ పట్టుకో, లేదా అవతలి వైపుకి చేరు.' },
+    'game-army3': { en: 'Pawns, rooks and bishops! Capture all their pawns, or reach the other side.', te: 'భటులు, ఏనుగులు, ఒంటెలు! శత్రువు భటులందరినీ పట్టుకో, లేదా అవతలి వైపుకి చేరు.' },
+    'army-won': { en: 'You won the battle!', te: 'యుద్ధంలో నువ్వు గెలిచావు!' },
+    'army-danger': { en: 'Careful! One of your pieces could be captured.', te: 'జాగ్రత్త! శత్రువు నీ పావుల్లో ఒకదాన్ని పట్టుకోగలదు.' },
+    'tip-army1': { en: 'Pawns keep each other safe. If one is captured, the other captures back!', te: 'భటులు ఒకరినొకరు కాపాడుకుంటారు. ఒకరిని పట్టుకుంటే, ఇంకొకరు తిరిగి పట్టుకుంటారు!' },
+    'tip-army2': { en: 'Find a pawn that nobody protects, and capture it with your rook!', te: 'ఎవరూ కాపు కాయని భటుడిని వెతికి, నీ ఏనుగుతో పట్టుకో!' },
+    'tip-army3': { en: 'Your bishop is stuck behind the pawns. Move a pawn, and out it comes!', te: 'నీ ఒంటె భటుల వెనక ఇరుక్కుపోయింది. ఒక భటుడిని కదుపు, అది బయటకు వస్తుంది!' }
   };
 
   /*
@@ -332,6 +342,16 @@
     'game-danger', 'danger-ask', 'danger-yes', 'danger-safe', 'danger-won', 'tip-danger',
     'game-hands', 'hands-left', 'hands-right', 'hands-yes-left', 'hands-yes-right',
     'hands-not-left', 'hands-not-right', 'hands-won', 'tip-hands'
+  ];
+
+  /*
+   * The growing battle (stage 8): ids of lines said by js/games-ui.js for
+   * the whole-army battles (js/army.js). Included in tests/lessons.test.js's
+   * line-coverage test.
+   */
+  var ARMY_LINES = [
+    'game-army1', 'game-army2', 'game-army3', 'army-won', 'army-danger',
+    'tip-army1', 'tip-army2', 'tip-army3'
   ];
 
   /*
@@ -913,6 +933,7 @@
     PROFILE_LINES: PROFILE_LINES,
     MORE_GAME_LINES: MORE_GAME_LINES,
     HAND_LINES: HAND_LINES,
+    ARMY_LINES: ARMY_LINES,
     LESSONS: LESSONS,
     get: get,
     boardFor: boardFor,

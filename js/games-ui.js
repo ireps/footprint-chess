@@ -28,6 +28,7 @@
   var FC = window.FC;
   var R = FC.rules;
   var G = FC.games;
+  var A = FC.army;
   var Q = FC.quiz;
   var PD = FC.pond;
   var HD = FC.hands;
@@ -48,6 +49,8 @@
   var DANGER = '#e0604d';
   // The other side's footprints (Mirror Pond games), and a "safe" ring.
   var FOE_PRINT = '#3b4a5a';
+  // The other side's last move in the growing battle.
+  var LAST_MOVE = '#8a9bb0';
   var SAFE = '#3dc46b';
 
   /*
@@ -90,6 +93,7 @@
     homeGames: byId('home-games'),
     gameScreen: byId('gamescreen'),
     gameRows: byId('game-rows'),
+    armyLadder: byId('army-ladder'),
     gamesHome: byId('games-home'),
     stickerRow: byId('sticker-row'),
     jarFill: byId('game-jar-fill'),
@@ -268,6 +272,13 @@
       stack4.appendChild(el('div', 'check-line'));
       stack4.appendChild(B.pieceSvg('k', 'me'));
       pic.appendChild(stack4);
+    } else if (A.isArmy(id)) {
+      // The growing battle: the kinds of piece in that battle, the newest
+      // one first.
+      var types = A.level(id).types.slice().reverse();
+      if (types.length === 1) types = ['p', 'p', 'p'];
+      pic.classList.add('game-pic-3');
+      types.forEach(function (t) { pic.appendChild(B.pieceSvg(t, 'me')); });
     } else if (id === 'whose') {
       pic.appendChild(buildWhoseMark());
       pic.appendChild(B.pieceSvg('n', 'me'));
@@ -316,6 +327,15 @@
       var ring = el('div', 'king-ring');
       ring.appendChild(B.pieceSvg('k', 'me'));
       mark.appendChild(ring);
+    } else if (row === 'army') {
+      // The growing battle: a whole army, pawns in front of their pieces.
+      mark.classList.add('row-mark-army');
+      var back = el('div', 'army-mark-row');
+      ['r', 'k', 'b'].forEach(function (t) { back.appendChild(B.pieceSvg(t, 'me')); });
+      var front = el('div', 'army-mark-row');
+      ['p', 'p', 'p'].forEach(function (t) { front.appendChild(B.pieceSvg(t, 'me')); });
+      mark.appendChild(front);
+      mark.appendChild(back);
     } else if (row === 'reach') {
       mark.appendChild(el('div', 'finish-flag'));
       mark.appendChild(B.pieceSvg('p', 'me'));
@@ -348,13 +368,19 @@
 
   // Every game can be tapped. The first game not yet won in this theme
   // glows (the suggestion); a won game has a small green tick.
+  // The growing battle's row is drawn as a ladder of its own (#army-ladder):
+  // beside the rows in landscape, the first battle at the bottom; below
+  // them in portrait, the first battle next to the row's picture.
   function renderGamesScreen() {
     if (!dom.gameRows) return;
     clear(dom.gameRows);
+    if (dom.armyLadder) clear(dom.armyLadder);
     var suggested = null;
     GL.GAMES.forEach(function (g) { if (!suggested && !wonHere(g.id)) suggested = g.id; });
     GL.ROWS.forEach(function (row) {
-      var rowEl = el('div', 'game-row');
+      var ladder = row === 'army';
+      if (ladder && !dom.armyLadder) return;
+      var rowEl = ladder ? dom.armyLadder : el('div', 'game-row');
       rowEl.appendChild(buildRowMark(row));
       GL.inRow(row).forEach(function (g) {
         var card = el('button', 'game-card' + (g.id === suggested ? ' suggested' : ''));
@@ -371,7 +397,7 @@
         card.addEventListener('click', function () { onGameCardTap(g.id); });
         rowEl.appendChild(card);
       });
-      dom.gameRows.appendChild(rowEl);
+      if (!ladder) dom.gameRows.appendChild(rowEl);
     });
   }
 
@@ -720,6 +746,7 @@
     moves = [];
     botTurnCount = 0;
     gstate = G.create(gameId, gameOptions(gameId), Math.random);
+    armyDangerKeys = {};
     // "The opponent moves first" when the child's chosen team is b: team a
     // always moves first (js/themes.js TEAMS), and js/games.js's own 'me'
     // is really just "the bottom of the board", not a literal team - so
@@ -802,9 +829,22 @@
     if (gmode !== 'play' || !gstate || gstate.turn !== 'me' || busy) return;
     if (selected) {
       B.pulseFootprints();
-      // Checkmate in one: with the right piece selected, its square glows.
-      var target = gameId === 'mate' ? G.hint(gstate, selected) : null;
-      if (target && (target[0] !== selected[0] || target[1] !== selected[1])) B.glow([target]);
+      // Checkmate in one and the growing battle: with a piece selected,
+      // its best square glows.
+      var target = (gameId === 'mate' || gstate.army) ? G.hint(gstate, selected) : null;
+      if (target && gstate.army) {
+        B.glow([]);
+        armyHelp();
+        B.glowAdd([target]);
+      } else if (target && (target[0] !== selected[0] || target[1] !== selected[1])) B.glow([target]);
+    } else if (gstate.army) {
+      // The growing battle: the piece of a good move glows, beside the
+      // other side's last move and any piece in danger.
+      S.play('nudge');
+      var piece = G.hint(gstate);
+      B.glow([]);
+      armyHelp();
+      if (piece) B.glowAdd([piece]);
     } else {
       S.play('nudge');
       // A hint square glows: the next pawn of a capture chain, the next step
@@ -836,6 +876,7 @@
     B.showFootprints(gstate.board[r][c].type, [r, c], moves, pieceNodes);
     // Keep the king safe: the squares he may not step to glow red.
     B.glow(G.dangerSquares(gstate, r, c), DANGER);
+    if (gstate.army) armyHelp();
     S.play('pick', gstate.board[r][c].type);
   }
 
@@ -857,6 +898,7 @@
     }
     armIdle();
     B.glow([]);
+    if (gstate.army) armyHelp();
     var piece = gstate.board[r][c];
     if (piece && piece.team === 'me') {
       if (gstate.heroOnly && !G.legalMoves(gstate, r, c).length) {
@@ -889,6 +931,7 @@
       wrongTaps[t] = (wrongTaps[t] || 0) + 1;
       // The king's red squares stay while he is selected.
       B.glow(G.dangerSquares(gstate, selected[0], selected[1]), DANGER);
+      if (gstate.army) armyHelp();
       B.pulseFootprints();
       S.play('bonk');
     }
@@ -970,7 +1013,7 @@
     }
     pieceNodes[tk] = node;
 
-    if (res.captured) {
+    if (res.captured && res.captured.team === 'foe') {
       captureJuice(to[0], to[1], { isPawn: res.captured.type === 'p', golden: goldenCaptured, node: node });
     } else if (isChild) {
       resetStreak();
@@ -995,8 +1038,32 @@
       B.setMode('play', modeTextPlay());
       S.play('your-turn');
       V.sayAfter('turn-me');
+      if (gstate.army) {
+        // A piece newly in danger: its red ring, and the warning once.
+        var before = armyDangerKeys;
+        B.glow([]);
+        armyHelp();
+        var fresh = Object.keys(armyDangerKeys).some(function (k) { return !before[k]; });
+        if (fresh) V.sayAfter('army-danger');
+      }
       armIdle();
     }
+  }
+
+  /* ---------- the growing battle: help while playing ---------- */
+
+  var armyDangerKeys = {};   // "r,c" of the child's pieces in danger, as last shown
+
+  // The other side's last move (where it came from and where it went)
+  // glows softly, and the child's pieces the other side could capture get
+  // a red ring. Added to whatever else glows.
+  function armyHelp() {
+    if (!gstate || !gstate.army) return;
+    if (gstate.lastFoe) B.glowAdd([gstate.lastFoe.from, gstate.lastFoe.to], LAST_MOVE);
+    var danger = A.inDanger(gstate.board, 'me');
+    armyDangerKeys = {};
+    danger.forEach(function (sq) { armyDangerKeys[key(sq[0], sq[1])] = true; });
+    B.glowAdd(danger, DANGER);
   }
 
   /* ---------- Get out of check: one puzzle after another ---------- */
@@ -1951,6 +2018,115 @@
         });
       });
     },
+    // Pawn battle: a pawn protected by another pawn is captured, and the
+    // other pawn captures back.
+    army1: function (ctx, line) {
+      var board = R.emptyBoard();
+      [[5, 3], [6, 4], [6, 1], [6, 6]].forEach(function (sq) { board[sq[0]][sq[1]] = { type: 'p', team: 'me' }; });
+      board[4][2] = { type: 'p', team: 'foe' };
+      board[1][5] = { type: 'p', team: 'foe' };
+      var mine = {};
+      [[5, 3], [6, 4], [6, 1], [6, 6]].forEach(function (sq) { mine[key(sq[0], sq[1])] = tipPiece('p', sq[0], sq[1]); });
+      var foe = tipFoe('p', 4, 2);
+      tipFoe('p', 1, 5);
+      var done = join(2, ctx.end);
+      V.say(line, function () { if (ctx.alive()) done(); });
+      // The pawn behind watches over the one in front.
+      B.glow([[5, 3]], SAFE);
+      ctx.after(2200, function () {
+        B.glow([]);
+        B.moveHero(foe, 'p', [4, 2], [5, 3], function () {
+          if (!ctx.alive()) return;
+          B.poof(mine['5,3']);
+          board[5][3] = board[4][2];
+          board[4][2] = null;
+          var items = { '5,3': foe };
+          ctx.after(600, function () {
+            var back = mine['6,4'];
+            back.classList.add('selected');
+            tipPrints(board, [6, 4], items);
+            ctx.after(900, function () {
+              back.classList.remove('selected');
+              tipMove(ctx, board, back, [6, 4], [5, 3], items, done);
+            });
+          });
+        });
+      });
+    },
+    // Pawns and rooks: one pawn is protected (red), the other is not
+    // (gold), and the rook captures the free one.
+    army2: function (ctx, line) {
+      var board = R.emptyBoard();
+      board[7][0] = { type: 'r', team: 'me' };
+      board[7][7] = { type: 'r', team: 'me' };
+      [1, 2, 5, 6].forEach(function (c) { board[6][c] = { type: 'p', team: 'me' }; });
+      [[3, 0], [2, 1], [3, 7], [1, 4]].forEach(function (sq) { board[sq[0]][sq[1]] = { type: 'p', team: 'foe' }; });
+      var rookA = tipPiece('r', 7, 0);
+      var rookB = tipPiece('r', 7, 7);
+      [1, 2, 5, 6].forEach(function (c) { tipPiece('p', 6, c); });
+      var items = {};
+      [[3, 0], [2, 1], [3, 7], [1, 4]].forEach(function (sq) { items[key(sq[0], sq[1])] = tipFoe('p', sq[0], sq[1]); });
+      var done = join(2, ctx.end);
+      V.say(line, function () { if (ctx.alive()) done(); });
+      rookA.classList.add('selected');
+      tipPrints(board, [7, 0], items);
+      ctx.after(1400, function () {
+        // That pawn is protected: the pawn beside it could capture back.
+        B.glow([[3, 0], [2, 1]], DANGER);
+        ctx.after(1600, function () {
+          rookA.classList.remove('selected');
+          rookB.classList.add('selected');
+          tipPrints(board, [7, 7], items);
+          B.glow([[3, 7]]);
+          ctx.after(1600, function () {
+            B.glow([]);
+            rookB.classList.remove('selected');
+            tipMove(ctx, board, rookB, [7, 7], [3, 7], items, done);
+          });
+        });
+      });
+    },
+    // Pawns, rooks and bishops: the bishop starts shut in behind its pawns;
+    // a pawn steps out of the way and the bishop comes out.
+    army3: function (ctx, line) {
+      var board = R.emptyBoard();
+      board[7][2] = { type: 'b', team: 'me' };
+      board[7][0] = { type: 'r', team: 'me' };
+      var pawns = {};
+      for (var c = 0; c < 8; c++) {
+        board[6][c] = { type: 'p', team: 'me' };
+        board[1][c] = { type: 'p', team: 'foe' };
+      }
+      var bishop = tipPiece('b', 7, 2);
+      tipPiece('r', 7, 0);
+      for (var c2 = 0; c2 < 8; c2++) {
+        pawns[c2] = tipPiece('p', 6, c2);
+        tipFoe('p', 1, c2);
+      }
+      var done = join(2, ctx.end);
+      V.say(line, function () { if (ctx.alive()) done(); });
+      // Stuck: no footprints at all.
+      bishop.classList.add('selected');
+      B.replay(bishop, 'wiggle');
+      B.glow([[6, 1], [6, 3]], DANGER);
+      ctx.after(2000, function () {
+        bishop.classList.remove('selected');
+        B.glow([]);
+        pawns[3].classList.add('selected');
+        tipPrints(board, [6, 3], {});
+        ctx.after(1000, function () {
+          pawns[3].classList.remove('selected');
+          tipMove(ctx, board, pawns[3], [6, 3], [4, 3], null, function () {
+            bishop.classList.add('selected');
+            tipPrints(board, [7, 2], {});
+            ctx.after(1200, function () {
+              bishop.classList.remove('selected');
+              tipMove(ctx, board, bishop, [7, 2], [4, 5], null, done);
+            });
+          });
+        });
+      });
+    },
     // The pawn's first step: two squares.
     race: function (ctx, line) {
       var board = R.emptyBoard();
@@ -2439,6 +2615,8 @@
   // round's piece.
   function pieceStickerType() {
     if (active && gstate && gstate.heroType) return gstate.heroType;
+    // The growing battle: the newest kind of piece in that battle.
+    if (active && gstate && gstate.army) return A.level(gstate.id).types.slice(-1)[0];
     if (active && gameId === 'race') return 'p';
     if (active && gameId === 'battle') return 'r';
     return (FC.app && FC.app.roundType) ? FC.app.roundType() : 'p';
