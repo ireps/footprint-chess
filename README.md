@@ -48,7 +48,7 @@ Each child has a picture profile (a piece in a theme's artwork with a coloured r
 
 The book button on Home opens the sticker book: a tab per theme, and two pages of four slots (rook, bishop, queen, king; knight, pawn, golden pawn, golden king). A full jar earns a sticker of the piece being played, a golden pawn earns a golden pawn, and winning three different games in a theme for the first time earns its golden king. No numbers are shown anywhere.
 
-Holding the "?" button on Home for two seconds opens the grown-ups' corner (a tap still opens `help.html`; `index.html#grownups` opens it too, from a link on the help page): calm mode, the break reminder and its length, the children (pictures, names, adding and removing), a backup code to move progress to another device, and clearing everything. It is in English. All progress goes through `js/store.js`, which treats stored data and backup codes as untrusted. See [PRIVACY.md](PRIVACY.md).
+Holding the "?" button on Home for two seconds opens the grown-ups' corner (a tap still opens `help.html`; `index.html#grownups` opens it too, from a link on the help page): calm mode, the break reminder and its length, the children (pictures, names, adding and removing), what each child has done (lessons started, games won, a game to try next), a backup code to move progress to another device, and clearing everything. It is in English. All progress goes through `js/store.js`, which treats stored data and backup codes as untrusted. See [PRIVACY.md](PRIVACY.md).
 
 ## Status
 

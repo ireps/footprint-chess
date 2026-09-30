@@ -15,7 +15,8 @@
  *   - the pawn battle played to its Won card (the child follows the app's
  *     own hints; js/army.js decides the moves from what is on the board);
  *   - Checkmate in two played to its Won card, with one wrong first move
- *     taken back.
+ *     taken back;
+ *   - the grown-ups' corner listing a child's stored progress.
  *
  * Needs Playwright, which is not a dependency of the app:
  *   npm install --no-save playwright@1.56.1 && npx playwright install chromium
@@ -257,6 +258,30 @@ async function testMateInTwo() {
   await done(page, name);
 }
 
+/* The grown-ups' corner lists what each child has done, from the stored
+ * progress: a won game shows up, and the next game to try is another. */
+async function testCorner() {
+  const name = 'grown-ups corner progress';
+  const context = await browser.newContext({ viewport: LANDSCAPE, hasTouch: true, serviceWorkers: 'block' });
+  const doc = {
+    v: 1, settings: { calm: false, breakOn: true, breakMins: 15 }, current: 'pa',
+    profiles: [{ id: 'pa', name: 'Test', pic: { theme: 'robots', type: 'q', ring: '#36c2ce' } }],
+    progress: { pa: { seen: { hello: true }, met: {}, stickers: {}, jar: 0, teams: {}, wins: { 'robots:catch': true }, lang: null, theme: null } }
+  };
+  await context.addInitScript(d => { try { localStorage.setItem('footprint-chess', d); } catch (e) { /* storage blocked */ } }, JSON.stringify(doc));
+  const page = await context.newPage();
+  page.errors = [];
+  page.on('console', m => { if (m.type() === 'error' || /Content Security Policy/.test(m.text())) page.errors.push(m.text()); });
+  page.on('pageerror', e => page.errors.push('page error: ' + e.message));
+  await page.goto(base + '/index.html?break=off#grownups');
+  await page.waitForSelector('.gu-prog-kid');
+  const lines = await page.$$eval('.gu-prog', ns => ns.map(n => n.textContent));
+  if (!lines.some(l => /^Lessons started: Say hello$/.test(l))) await fail(page, name, 'lessons started: ' + lines.join(' | '));
+  if (!lines.some(l => /^Games won: Catch the knight$/.test(l))) await fail(page, name, 'games won: ' + lines.join(' | '));
+  if (!lines.some(l => /^A game to try next: /.test(l) && !/Catch the knight/.test(l))) await fail(page, name, 'next game: ' + lines.join(' | '));
+  await done(page, name);
+}
+
 async function main() {
   const server = await serve();
   base = 'http://127.0.0.1:' + server.address().port;
@@ -266,7 +291,8 @@ async function main() {
     const n = await testEveryGame();
     await testPawnBattle();
     await testMateInTwo();
-    console.log('Browser tests: home and Games screen at both sizes, ' + n + ' games through their scenes to the first turn, the pawn battle and Checkmate in two to their Won cards.');
+    await testCorner();
+    console.log('Browser tests: home and Games screen at both sizes, ' + n + ' games through their scenes to the first turn, the pawn battle and Checkmate in two to their Won cards, the grown-ups\' corner progress.');
   } finally {
     await browser.close();
     server.close();

@@ -2214,6 +2214,12 @@ body.theme-pirate {
 
 .gu-kid { display: flex; align-items: center; padding: 5px 0; }
 
+/* What each child has done: a picture and name, then short lists. */
+.gu-prog-kid { padding: 4px 0 10px; border-bottom: 1px solid #e6e9f5; }
+.gu-prog-name { font-size: 17px; }
+.gu-prog { margin: 4px 0; font-size: 15px; line-height: 1.4; }
+.gu-prog b { color: #5a6488; }
+
 .gu-kav {
   width: 52px;
   height: 52px;

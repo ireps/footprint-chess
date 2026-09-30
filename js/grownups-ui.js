@@ -16,6 +16,9 @@
  *     reminder with its length.
  *   - Children: each child's picture and optional name, a picture picker, and
  *     removing a child (asks first). Up to four children.
+ *   - What each child has done: the lessons started and not started yet,
+ *     the games won (in any theme) and a next game to try, from the
+ *     progress already stored (nothing new is stored).
  *   - Moving progress to another device: the backup code (FC.store
  *     exportCode) to copy, and a box to paste one and restore it (asks first).
  *   - Start over: clear everything (asks first).
@@ -27,7 +30,7 @@
  * the panel. Nothing is ever sent anywhere.
  *
  * Depends on FC.store, FC.board, FC.sound, FC.voice, FC.langs, FC.themes,
- * FC.lessons and FC.profileUI (loaded before this file). DOM is built with
+ * FC.lessons, FC.gameList and FC.profileUI (loaded before this file). DOM is built with
  * createElement/textContent only (see SECURITY.md).
  */
 (function () {
@@ -41,6 +44,7 @@
   var LS = FC.lessons;
   var ST = FC.store;
   var PU = FC.profileUI;
+  var GL = FC.gameList;
 
   var HOLD_MS = 2000;
   var BREAK_CHOICES = [10, 15, 20, 30];
@@ -78,6 +82,15 @@
       pickRing: 'Ring colour',
       done: 'Done',
       cancel: 'Cancel',
+      secProgress: 'What each child has done',
+      progressHelp: 'From what this device has saved. Lessons count once they have started; games count when won in any style.',
+      child: 'Child',
+      lessonsDone: 'Lessons started',
+      lessonsLeft: 'Not started yet',
+      gamesWon: 'Games won',
+      nextGame: 'A game to try next',
+      none: 'None yet',
+      allDone: 'All of them',
       secBackup: 'Move progress to another device',
       backupHelp: 'Copy this code, then paste it into the grown-ups corner on the other device. The code includes any names, so share it only between your own devices.',
       codeLabel: 'Backup code',
@@ -269,6 +282,7 @@
       function saveName() {
         store.updateProfile(p.id, { name: input.value });
         refreshCode();
+        renderProgress();
       }
       input.addEventListener('input', saveName);
       input.addEventListener('change', saveName);
@@ -289,6 +303,7 @@
       list.appendChild(row);
     });
     ui.add.hidden = profiles.length >= ST.MAX_PROFILES;
+    renderProgress();
   }
 
   function buildChildren() {
@@ -300,6 +315,73 @@
     box.appendChild(ui.add);
     renderChildren();
     return box;
+  }
+
+  /* ---------- what each child has done ---------- */
+
+  // A game's English name: the first clause of its mission line (the same
+  // words as the caption on its card).
+  function gameName(g) {
+    var line = LS.LINES[g.mission];
+    var text = (line && line.en) || g.id;
+    var m = /[!?]/.exec(text);
+    return m ? text.slice(0, m[0] === '?' ? m.index + 1 : m.index).trim() : text.trim();
+  }
+
+  function listLine(label, items, empty) {
+    var row = el('p', 'gu-prog');
+    row.appendChild(textEl('b', null, label + ': '));
+    row.appendChild(document.createTextNode(items.length ? items.join(', ') : empty));
+    return row;
+  }
+
+  function buildProgress() {
+    var box = el('div', 'gu-block');
+    box.appendChild(section(t('secProgress')));
+    box.appendChild(textEl('p', 'gu-tx', t('progressHelp')));
+    ui.progress = el('div', 'gu-prog-list');
+    box.appendChild(ui.progress);
+    renderProgress();
+    return box;
+  }
+
+  // Rebuilt whenever the children change (a name, a picture, one removed).
+  function renderProgress() {
+    if (!ui || !ui.progress) return;
+    var list = ui.progress;
+    clear(list);
+    store.profiles().forEach(function (p, i) {
+      var prog = store.progressOf(p.id);
+      if (!prog) return;
+      var kid = el('div', 'gu-prog-kid');
+      var head = el('div', 'gu-kid');
+      var av = PU.avatar(p.pic);
+      av.classList.add('gu-kav');
+      head.appendChild(av);
+      head.appendChild(textEl('b', 'gu-prog-name', p.name || (t('child') + ' ' + (i + 1))));
+      kid.appendChild(head);
+
+      var started = [];
+      var left = [];
+      LS.LESSONS.forEach(function (lesson) {
+        (prog.seen[lesson.id] ? started : left).push(lesson.title);
+      });
+      var won = {};
+      Object.keys(prog.wins).forEach(function (k) { won[k.split(':')[1]] = true; });
+      var wonNames = [];
+      var next = null;
+      GL.ROWS.forEach(function (row) {
+        GL.inRow(row).forEach(function (g) {
+          if (won[g.id]) wonNames.push(gameName(g));
+          else if (!next) next = gameName(g);
+        });
+      });
+      kid.appendChild(listLine(t('lessonsDone'), started, t('none')));
+      kid.appendChild(listLine(t('lessonsLeft'), left, t('allDone')));
+      kid.appendChild(listLine(t('gamesWon'), wonNames, t('none')));
+      kid.appendChild(listLine(t('nextGame'), next ? [next] : [], t('allDone')));
+      list.appendChild(kid);
+    });
   }
 
   /* ---------- picture picker ---------- */
@@ -587,6 +669,7 @@
     left.appendChild(buildPlay());
     left.appendChild(buildChildren());
     var right = el('div', 'gu-col');
+    right.appendChild(buildProgress());
     right.appendChild(buildBackup());
     right.appendChild(buildReset());
     cols.appendChild(left);
