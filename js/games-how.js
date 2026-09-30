@@ -799,6 +799,56 @@
         });
       });
     },
+    // From the start of a game: a middle pawn two squares, a knight and a
+    // bishop out, then the king castles with the rook.
+    opening: function (ctx, line) {
+      var board = R.emptyBoard();
+      var nodes = {};
+      var back = ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'];
+      for (var c = 0; c < 8; c++) {
+        board[6][c] = { type: 'p', team: 'me' };
+        board[7][c] = { type: back[c], team: 'me' };
+        board[1][c] = { type: 'p', team: 'foe' };
+        board[0][c] = { type: back[c], team: 'foe' };
+        nodes['6,' + c] = tipPiece('p', 6, c);
+        nodes['7,' + c] = tipPiece(back[c], 7, c);
+        tipFoe('p', 1, c);
+        tipFoe(back[c], 0, c);
+      }
+      var steps = [
+        [[6, 4], [4, 4]],
+        [[7, 6], [5, 5]],
+        [[7, 5], [4, 2]],
+        [[7, 4], [7, 6]]
+      ];
+      var done = join(2, ctx.end);
+      V.say(line, function () { if (ctx.alive()) done(); });
+      function play(i) {
+        if (i === steps.length) {
+          ctx.after(900, done);
+          return;
+        }
+        var from = steps[i][0];
+        var to = steps[i][1];
+        var node = nodes[key(from[0], from[1])];
+        delete nodes[key(from[0], from[1])];
+        nodes[key(to[0], to[1])] = node;
+        B.glow([from]);
+        ctx.after(500, function () {
+          B.glow([]);
+          tipMove(ctx, board, node, from, to, null, function () {
+            if (i === steps.length - 1) {
+              // Castling: the rook comes round beside the king.
+              var rook = nodes['7,7'];
+              tipMove(ctx, board, rook, [7, 7], [7, 5], null, function () { ctx.after(600, function () { play(i + 1); }); });
+            } else {
+              ctx.after(600, function () { play(i + 1); });
+            }
+          });
+        });
+      }
+      ctx.after(700, function () { play(0); });
+    },
     // Checkmate in two with two rooks: one rook checks, the king has to
     // step to the far row, and the other rook gives checkmate there.
     mate2: function (ctx, line) {
