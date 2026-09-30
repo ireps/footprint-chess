@@ -8,6 +8,8 @@ Footprint Chess: a chess-learning web app for a 6-year-old, and for young childr
 
 The public docs are README.md, SECURITY.md, PRIVACY.md, docs/DESIGN.md and docs/SETUP.md. Keep them accurate when behaviour changes.
 
+License: PolyForm Noncommercial 1.0.0 (owner's choice: credit required, no commercial use without permission; source-available, not open source). `LICENSE` holds the owner's `Required Notice:` lines followed by the official license text, unchanged; `NOTICE` explains credit, the unlicensed name "Footprint Chess", and that versions published before the change stay MIT. Never add code, art, fonts or audio whose own license conflicts with this (for example, anything that requires a more permissive or a copyleft license for the whole project), and never describe the project as "open source".
+
 ## Target platform facts (researched)
 
 - Silk on Fire OS 5 appears to top out at Silk 108 / Chromium 108. Older builds (Chromium 65 to 94) have been seen on the same model, so write code that degrades gracefully.

@@ -150,4 +150,6 @@ See [SECURITY.md](SECURITY.md) and [PRIVACY.md](PRIVACY.md).
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+Footprint Chess is source-available under the [PolyForm Noncommercial License 1.0.0](LICENSE). You may use, copy, change and share it for noncommercial purposes (personal use, teaching, research, schools, charities and public bodies), keeping the "Required Notice" lines in [LICENSE](LICENSE) and crediting "Footprint Chess by ireps" with a link to this repository. Commercial use needs separate written permission. The name "Footprint Chess" is not licensed. Versions published before this change were released under the MIT License, and copies of those keep it. See [NOTICE](NOTICE).
+
+Contributions are welcome. By opening a pull request you agree that your contribution may be distributed under this license and under any other license the copyright holder chooses for the project in future, including a commercial one.
