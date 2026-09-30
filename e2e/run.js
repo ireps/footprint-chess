@@ -16,6 +16,8 @@
  *     own hints; js/army.js decides the moves from what is on the board);
  *   - Checkmate in two played to its Won card, with one wrong first move
  *     taken back;
+ *   - Which capture is best? played to its Won card (portrait), with one
+ *     smaller or guarded capture taken back;
  *   - the grown-ups' corner listing a child's stored progress.
  *
  * Needs Playwright, which is not a dependency of the app:
@@ -258,6 +260,45 @@ async function testMateInTwo() {
   await done(page, name);
 }
 
+/* Which capture is best?, played to its Won card: in the first puzzle a
+ * smaller or guarded capture is taken back, then every best capture. */
+async function testValue() {
+  const name = 'which capture is best to the Won card';
+  const page = await newPage(PORTRAIT);
+  await page.click('.games-entry');
+  await page.click('.game-card[aria-label="Which capture is best?"]');
+  if (!(await reachTurn(page, name))) { await done(page, name); return; }
+  let tried = false;
+  let solved = 0;
+  for (let step = 0; step < 30 && solved < 5; step++) {
+    for (let w = 0; w < 240 && (await modeText(page)) !== 'Your turn!' && !(await page.$('#card .rbtn-home')); w++) await page.waitForTimeout(250);
+    if (await page.$('#card .rbtn-home')) break;
+    await page.waitForTimeout(400);
+    const board = await readBoard(page);
+    const best = G.bestCapture(board);
+    if (!best) { await page.waitForTimeout(800); continue; } // between puzzles
+    if (!tried) {
+      tried = true;
+      const other = G.captureOptions(board).find(o => o.gain < best.gain);
+      if (other) {
+        await tapSquare(page, other.from[0], other.from[1]);
+        await page.waitForTimeout(250);
+        await tapSquare(page, other.to[0], other.to[1]);
+        await page.waitForTimeout(2500);
+        if (JSON.stringify(await readBoard(page)) !== JSON.stringify(board)) { await fail(page, name, 'a smaller capture stayed on the board'); break; }
+      }
+    }
+    await tapSquare(page, best.from[0], best.from[1]);
+    await page.waitForTimeout(250);
+    await tapSquare(page, best.to[0], best.to[1]);
+    solved++;
+    await page.waitForTimeout(2500);
+  }
+  for (let w = 0; w < 80 && !(await page.$('#card .rbtn-home')); w++) await page.waitForTimeout(250);
+  if (!(await page.$('#card .rbtn-home'))) await fail(page, name, 'the Won card never showed');
+  await done(page, name);
+}
+
 /* The grown-ups' corner lists what each child has done, from the stored
  * progress: a won game shows up, and the next game to try is another. */
 async function testCorner() {
@@ -291,8 +332,9 @@ async function main() {
     const n = await testEveryGame();
     await testPawnBattle();
     await testMateInTwo();
+    await testValue();
     await testCorner();
-    console.log('Browser tests: home and Games screen at both sizes, ' + n + ' games through their scenes to the first turn, the pawn battle and Checkmate in two to their Won cards, the grown-ups\' corner progress.');
+    console.log('Browser tests: home and Games screen at both sizes, ' + n + ' games through their scenes to the first turn, the pawn battle, Checkmate in two and Which capture is best? to their Won cards, the grown-ups\' corner progress.');
   } finally {
     await browser.close();
     server.close();

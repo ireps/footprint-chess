@@ -714,6 +714,50 @@
         });
       });
     },
+    // The other side's pieces line up from the smallest prize to the
+    // biggest; then a rook passes a guarded pawn and captures a free knight.
+    value: function (ctx, line) {
+      var row = ['p', 'n', 'b', 'r', 'q'];
+      // The capture starts once both the line and the line-up are done.
+      var next = join(2, function () {
+        B.glow([]);
+        B.clearAll();
+        var board = R.emptyBoard();
+        board[6][3] = { type: 'r', team: 'me' };
+        board[3][3] = { type: 'p', team: 'foe' };
+        board[2][2] = { type: 'p', team: 'foe' };
+        board[6][6] = { type: 'n', team: 'foe' };
+        var rook = tipPiece('r', 6, 3);
+        var items = {};
+        items['3,3'] = tipFoe('p', 3, 3);
+        items['2,2'] = tipFoe('p', 2, 2);
+        items['6,6'] = tipFoe('n', 6, 6);
+        var done = join(2, ctx.end);
+        V.say(line, function () { if (ctx.alive()) done(); });
+        ctx.after(600, function () {
+          tipPrints(board, [6, 3], items);
+          ctx.after(1400, function () {
+            // The pawn is guarded: its partner could capture the rook there.
+            B.glow([[3, 3], [2, 2]], DANGER);
+            ctx.after(1600, function () {
+              B.glow([[6, 6]]);
+              tipMove(ctx, board, rook, [6, 3], [6, 6], items, function () {
+                B.glow([]);
+                ctx.after(1200, done);
+              });
+            });
+          });
+        });
+      });
+      V.say('how-value-1', function () { if (ctx.alive()) next(); });
+      row.forEach(function (type, i) {
+        ctx.after(300 + i * 450, function () { tipFoe(type, 3, 1 + i); });
+      });
+      ctx.after(300 + row.length * 450, function () {
+        B.glow([[3, 5]]);
+        ctx.after(900, next);
+      });
+    },
     // Checkmate in two with two rooks: one rook checks, the king has to
     // step to the far row, and the other rook gives checkmate there.
     mate2: function (ctx, line) {

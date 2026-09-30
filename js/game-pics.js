@@ -108,6 +108,15 @@
       cage.appendChild(B.pieceSvg('k', 'foe'));
       pic.appendChild(cage);
       pic.appendChild(B.pieceSvg('q', 'me'));
+    } else if (id === 'value') {
+      // The child's rook, footprint dots, and the other side's queen in a
+      // gold ring: the biggest prize.
+      pic.classList.add('game-pic-value');
+      pic.appendChild(B.pieceSvg('r', 'me'));
+      pic.appendChild(el('span', 'chain-dot'));
+      var prize = el('div', 'prize-ring');
+      prize.appendChild(B.pieceSvg('q', 'foe'));
+      pic.appendChild(prize);
     } else if (id === 'mate2') {
       // The opponent king in a red ring, a rook and the queen beside him.
       pic.classList.add('game-pic-mate2');

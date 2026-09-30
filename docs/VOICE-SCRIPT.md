@@ -161,6 +161,15 @@ naming a direction.
 | mate2-nearly | Nearly! Find the check that traps him next move. | దాదాపు! తర్వాతి ఎత్తులో రాజుని బంధించే చెక్ కనుక్కో. | Warm and encouraging, never "wrong"; said when a first move is taken back. |
 | mate2-won | You found every checkmate in two! | రెండు ఎత్తుల్లో చెక్‌మేట్లు అన్నీ కనుక్కున్నావు! | Big and celebratory; the Checkmate in two win line. |
 | tip-mate2 | Give check so the king must move. Then checkmate him! | రాజు కదలక తప్పని చెక్ పెట్టు. తర్వాత చెక్‌మేట్ పెట్టు! | Calm and clear, the idea of checkmate in two in one line. |
+| game-value | Which capture is best? Take the biggest prize you can keep. | ఏది పట్టుకుంటే మంచిది? నువ్వు ఉంచుకోగలిగే పెద్ద బహుమతిని పట్టుకో. | Curious, a treasure hunt; states the goal on the Mission card. |
+| value-ask | Which capture is best? | ఏది పట్టుకుంటే మంచిది? | Inviting; said as each Which capture is best? puzzle appears. |
+| value-find | Find a capture! | పట్టుకోగలిగేది కనుక్కో! | Gentle; said when a move that captures nothing is taken back. |
+| value-bigger | A bigger prize is waiting! | ఇంకా పెద్ద బహుమతి ఎదురు చూస్తోంది! | Warm and teasing, never "wrong"; said when a smaller capture is taken back. |
+| value-back | Careful! They could capture it back. | జాగ్రత్త! శత్రువు దాన్ని తిరిగి పట్టుకోగలదు. | Gentle and protective; the pieces that could capture it back glow red. |
+| value-yes | Great capture! | భలే పట్టావు! | Proud and bright; said after each solved puzzle. |
+| value-won | You found every best capture! | ప్రతిసారీ మంచి పట్టు కనుక్కున్నావు! | Big and celebratory; the Which capture is best? win line. |
+| tip-value | Take the biggest prize they cannot capture back! | శత్రువు తిరిగి పట్టుకోలేని పెద్ద బహుమతిని పట్టుకో! | Calm and clear, the whole idea in one line. |
+| how-value-1 | A pawn is a small prize. The queen is the biggest! | భటుడు చిన్న బహుమతి. మంత్రి అన్నిటికంటే పెద్దది! | Playful, as the pieces line up from small to big. |
 | game-run | Run away! Stay where the other piece cannot capture you. | పారిపో! శత్రువు పావు పట్టుకోలేని చోట ఉండు. | Playful and a little breathless; states the goal on the Mission card. |
 | run-danger | Not there! It could capture you there. | అక్కడ వద్దు! అక్కడ అది నిన్ను పట్టుకోగలదు. | Gentle and protective, never scolding; said when the child taps a square the chaser watches. |
 | run-won | You got away safely! | సురక్షితంగా తప్పించుకున్నావు! | Big and relieved; the Run away win line. |
