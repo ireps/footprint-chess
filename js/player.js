@@ -47,13 +47,14 @@
   /* ---------- helpers ---------- */
 
   function key(r, c) { return r + ',' + c; }
+  var DANGER = '#e0604d';
   function heroColor() { return B.TYPES[current.type].color; }
 
   function placeSetup(lesson, animateEnter) {
     heroNode = B.addPiece(lesson.type, lesson.setup.hero[0], lesson.setup.hero[1]);
     foeNodes = {};
-    (lesson.setup.foes || []).forEach(function (sq) {
-      foeNodes[key(sq[0], sq[1])] = B.addItem(sq[0], sq[1]);
+    LS.foesOf(lesson).forEach(function (f) {
+      foeNodes[key(f.at[0], f.at[1])] = B.addItem(f.at[0], f.at[1], f.type);
     });
     if (animateEnter) B.replay(heroNode, 'enter');
   }
@@ -224,7 +225,7 @@
     }
     if (step.select) {
       var hero = local.hero;
-      var wmoves = R.movesFor(local.board, hero[0], hero[1]);
+      var wmoves = R.legalMoves(local.board, hero[0], hero[1]);
       heroNode.classList.add('selected');
       B.replay(heroNode, 'bounce');
       B.showFootprints(lesson.type, hero, wmoves, foeNodes);
@@ -265,7 +266,8 @@
       return;
     }
     if (step.glow) {
-      B.glow(step.glow, heroColor());
+      // color 'danger': the red of squares a king may not step to.
+      B.glow(step.glow, step.color === 'danger' ? DANGER : heroColor());
       next();
       return;
     }
@@ -328,7 +330,7 @@
   function selectPractice(myToken) {
     var hero = local.hero;
     selected = true;
-    moves = R.movesFor(local.board, hero[0], hero[1]);
+    moves = R.legalMoves(local.board, hero[0], hero[1]);
     heroNode.classList.add('selected');
     B.replay(heroNode, 'bounce');
     B.showFootprints(current.type, hero, moves, foeNodes);

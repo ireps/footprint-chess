@@ -26,7 +26,7 @@
 
   var isNode = typeof module !== 'undefined' && module.exports;
 
-  var ROWS = ['capture', 'reach', 'think'];
+  var ROWS = ['capture', 'reach', 'think', 'king'];
 
   /*
    * id:      the game id (js/games.js or js/quiz.js; stored in a child's wins)
@@ -38,6 +38,9 @@
    * teams:   true when the child plays against the other side, taking
    *          turns (the Team card shows first); false for a solo game
    * kind:    'board' (js/games.js) or 'quiz' (js/quiz.js)
+   * lesson:  (optional) a lesson (js/lessons.js) played before the child's
+   *          first game of it, like the "Taking turns" lesson before team
+   *          games
    */
   var GAMES = [
     { id: 'catch', row: 'capture', mission: 'game-catch', win: 'caught', tip: 'how-catch-2', teams: true, kind: 'board' },
@@ -48,7 +51,8 @@
     { id: 'way', row: 'reach', mission: 'game-way', win: 'reach-won', tip: 'tip-way', teams: false, kind: 'board' },
     { id: 'whose', row: 'think', mission: 'game-whose', win: 'quiz-won', tip: 'tip-whose', teams: false, kind: 'quiz' },
     { id: 'stop', row: 'think', mission: 'game-stop', win: 'won', tip: 'tip-stop', teams: true, kind: 'board' },
-    { id: 'safe', row: 'think', mission: 'game-safe', win: 'reach-won', tip: 'tip-safe', teams: false, kind: 'board' }
+    { id: 'safe', row: 'king', mission: 'game-safe', win: 'reach-won', tip: 'tip-safe', teams: false, kind: 'board' },
+    { id: 'escape', row: 'king', mission: 'game-escape', win: 'escape-won', tip: 'tip-escape', teams: false, kind: 'board', lesson: 'check' }
   ];
 
   // Winning this many different games in a theme, for the first time,

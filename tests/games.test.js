@@ -731,3 +731,58 @@ test('guarantee "catch": following the hint catches the knight within 12 moves',
     }
   }
 });
+
+// ---- escape: Get out of check (stage 7) ----------------------------------
+
+test('escape puzzles: the king is in check, a way out exists, and block/capture puzzles allow only that way', () => {
+  for (const kind of Object.keys(G.ESCAPE_PUZZLES)) {
+    G.ESCAPE_PUZZLES[kind].forEach((list, n) => {
+      for (const mirror of [false, true]) {
+        const board = G.puzzleBoard(list, mirror);
+        const tag = `${kind} ${n}${mirror ? ' mirrored' : ''}`;
+        assert.ok(R.inCheck(board, 'me'), `${tag}: not in check`);
+        const moves = [];
+        for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+          const p = board[r][c];
+          if (p && p.team === 'me') R.legalMoves(board, r, c).forEach(m => moves.push({ p, m }));
+        }
+        assert.ok(moves.length, `${tag}: no way out`);
+        if (kind === 'step') assert.ok(moves.some(x => x.p.type === 'k' && !x.m.capture), `${tag}: the king cannot step away`);
+        if (kind === 'block') moves.forEach(x => assert.ok(x.p.type !== 'k' && !x.m.capture, `${tag}: a move that is not a block`));
+        if (kind === 'capture') moves.forEach(x => assert.ok(x.m.capture, `${tag}: a move that is not a capture`));
+        assert.equal(R.isCheckmate(board, 'me'), false);
+      }
+    });
+  }
+});
+
+test('escape: five puzzles (two step, a block, two captures), no repeats; any legal move solves one; the fifth wins', () => {
+  for (let seed = 1; seed <= 100; seed++) {
+    const rng = seeded(seed);
+    const state = G.create('escape', {}, rng);
+    assert.deepEqual(state.puzzles.map(p => p.kind), ['step', 'step', 'block', 'capture', 'capture']);
+    const ids = state.puzzles.map(p => p.kind + p.n);
+    assert.equal(new Set(ids).size, ids.length, `seed ${seed}: a puzzle repeats`);
+    for (let i = 0; i < 5; i++) {
+      assert.ok(R.inCheck(state.board, 'me'));
+      const h = G.hint(state);
+      const moves = G.legalMoves(state, h[0], h[1]);
+      assert.ok(moves.length, `seed ${seed}: the hint piece cannot move`);
+      const res = G.applyMove(state, h, [moves[0].r, moves[0].c]);
+      assert.ok(res.events.includes('escaped'));
+      assert.equal(R.inCheck(state.board, 'me'), false);
+      assert.deepEqual(G.legalMoves(state, state.hero[0], state.hero[1]), [], 'nothing moves until the next puzzle');
+      if (i < 4) { assert.ok(!state.over); assert.ok(G.nextPuzzle(state)); }
+    }
+    assert.ok(state.over && state.winner === 'me');
+    assert.equal(G.nextPuzzle(state), false);
+  }
+});
+
+test('escape: a king step into check is never legal, and dangerSquares names it', () => {
+  const state = G.create('escape', {}, seeded(3));
+  const [kr, kc] = state.hero;
+  const legal = G.legalMoves(state, kr, kc).map(m => m.r + ',' + m.c);
+  const danger = G.dangerSquares(state, kr, kc).map(sq => sq.join(','));
+  danger.forEach(d => assert.ok(!legal.includes(d)));
+});

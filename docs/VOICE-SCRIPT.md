@@ -114,6 +114,13 @@ naming a direction.
 | break | Great playing! Time for a little break? | బాగా ఆడావు! కొంచెం విశ్రాంతి తీసుకుందామా? | Warm and gentle, never scolding; offered, not required. |
 | who | Who's playing? | ఎవరు ఆడుతున్నారు? | Warm and curious, like asking a friend; said on the Who's playing screen, and shown there as its heading. |
 | games-pick | Pick a game! | ఒక ఆట ఎంచుకో! | Warm and inviting; said when the Games screen opens. |
+| check-1 | Check! The rook could capture your king. | చెక్! ఏనుగు నీ రాజుని పట్టుకోగలదు. | Clear and a little urgent, not scary; the red line on the board shows the danger. |
+| check-2 | Move your king out of danger! | నీ రాజుని ప్రమాదం నుంచి తప్పించు! | Calm instruction; the king then steps out of the line. |
+| check-3 | Your king is safe now! | ఇప్పుడు నీ రాజు క్షేమంగా ఉన్నాడు! | Relieved and warm; also said after each solved Get out of check puzzle. |
+| game-escape | Get out of check! Save your king every time. | చెక్ నుంచి తప్పించుకో! ప్రతిసారీ నీ రాజుని కాపాడు. | Brave and energetic; states the goal on the Mission card. |
+| escape-ask | Check! Save your king. | చెక్! నీ రాజుని కాపాడు. | Clear, a little urgent; said as each Get out of check puzzle appears. |
+| escape-won | You kept your king safe every time! | ప్రతిసారీ నీ రాజుని కాపాడావు! | Big and celebratory; the Get out of check win line. |
+| tip-escape | Step away, block the line, or capture the attacker! | పక్కకి తప్పుకో, దారికి అడ్డం పెట్టు, లేదా దాడి చేసే పావుని పట్టుకో! | Three clear beats, one per way out, in time with the scene. |
 | game-chain | Capture chain! Capture every pawn, one after another. | గొలుసు ఆట! శత్రువు భటులను ఒకరి తర్వాత ఒకరిని పట్టుకో! | Playful and energetic; states the goal on the Mission card. |
 | game-whose | Whose footprints? Tap the piece that made them! | ఎవరి అడుగులు? ఆ అడుగులు వేసిన పావుని నొక్కు! | Curious, like starting a guessing game; states the goal on the Mission card. |
 | quiz-ask | Whose footprints are these? | ఈ అడుగుల గుర్తులు ఎవరివి? | Curious and gentle, a real question; said as each quiz question appears. |

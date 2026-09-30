@@ -20,6 +20,9 @@
  *   'safe'   - Keep the king safe (stage 6, solo): the king walks to the
  *              other side past a still rook and bishop; it can never step
  *              onto a square either of them could capture on.
+ *   'escape' - Get out of check (stage 7, solo): five small puzzles, each
+ *              with the child's king in check; any legal move ends the
+ *              check (step away, block the line, or capture the attacker).
  * The list of games shown to the child (names, rows, pictures) lives in
  * js/game-list.js; the footprints quiz is in js/quiz.js.
  *
@@ -671,6 +674,7 @@
   function hint(state) {
     if (state.over) return null;
     if (state.id === 'catch') return catchHint(state);
+    if (state.id === 'escape') return state.solved ? null : escapeHint(state);
     if (state.id === 'chain') {
       // The next pawn of the chain when it is one move away; otherwise
       // (the child left the chain) the first step toward the nearest pawn.
@@ -698,10 +702,103 @@
 
   /* 'safe' only: the squares next to the king it may not step to. */
   function dangerSquares(state, r, c) {
-    if (state.id !== 'safe') return [];
+    if (state.id !== 'safe' && state.id !== 'escape') return [];
     var p = state.board[r][c];
     if (!p || p.type !== 'k' || p.team !== 'me') return [];
     return kingDanger(state.board, r, c).map(function (m) { return [m.r, m.c]; });
+  }
+
+  // ---- escape: Get out of check -------------------------------------------
+
+  /*
+   * Hand-made puzzles, each [kind, pieces]: the child's king ('K'), the
+   * child's other pieces (lower case r/b/q/n/p) and the opponent's (upper
+   * case after 'x', for example 'xR'). kind names the one way out that
+   * works: 'step' (the king steps away), 'block' (a piece steps into the
+   * line) or 'capture' (the checking piece is captured). Every puzzle is
+   * checked by tests/games.test.js: the king is in check, and for 'block'
+   * and 'capture' every legal move is of that kind.
+   */
+  var ESCAPE_PUZZLES = {
+    step: [
+      [[7, 4, 'K'], [2, 4, 'xR']],
+      [[6, 3, 'K'], [3, 6, 'xB']],
+      [[7, 6, 'K'], [5, 5, 'xN']]
+    ],
+    block: [
+      [[7, 7, 'K'], [6, 6, 'p'], [6, 7, 'p'], [3, 2, 'r'], [7, 0, 'xR']],
+      [[7, 6, 'K'], [6, 5, 'p'], [6, 6, 'p'], [6, 7, 'p'], [4, 0, 'b'], [7, 0, 'xR']]
+    ],
+    capture: [
+      [[7, 7, 'K'], [6, 6, 'p'], [6, 7, 'p'], [2, 1, 'r'], [7, 1, 'xR']],
+      [[7, 4, 'K'], [6, 4, 'xQ']],
+      [[7, 7, 'K'], [6, 6, 'p'], [6, 7, 'p'], [7, 6, 'r'], [5, 6, 'xN'], [3, 4, 'b']]
+    ]
+  };
+  var ESCAPE_KINDS = ['step', 'step', 'block', 'capture', 'capture'];
+
+  function puzzleBoard(list, mirror) {
+    var board = R.emptyBoard();
+    list.forEach(function (p) {
+      var c = mirror ? 7 - p[1] : p[1];
+      var foe = p[2].charAt(0) === 'x';
+      var letter = foe ? p[2].charAt(1) : p[2];
+      board[p[0]][c] = { type: letter.toLowerCase(), team: foe ? 'foe' : 'me' };
+    });
+    return board;
+  }
+
+  function loadEscape(state) {
+    var p = state.puzzles[state.index];
+    state.board = puzzleBoard(ESCAPE_PUZZLES[p.kind][p.n], p.mirror);
+    state.hero = R.findKing(state.board, 'me');
+    state.kind = p.kind;
+    state.turn = 'me';
+  }
+
+  function createEscape(options, rng) {
+    // One puzzle per slot in ESCAPE_KINDS, never the same one twice, each
+    // shown as drawn or mirrored side to side.
+    var used = {};
+    var puzzles = ESCAPE_KINDS.map(function (kind) {
+      var n;
+      do { n = randInt(rng, ESCAPE_PUZZLES[kind].length); } while (used[kind + n] && Object.keys(used).length < 8);
+      used[kind + n] = true;
+      return { kind: kind, n: n, mirror: rng() < 0.5 };
+    });
+    var state = {
+      id: 'escape', board: null, turn: 'me', moveCount: 0, over: false, winner: null,
+      heroType: 'k', hero: null, solo: true, checkRules: true, puzzles: puzzles, index: 0, kind: null, solved: false
+    };
+    loadEscape(state);
+    return state;
+  }
+
+  /* After a solved puzzle ('escaped' event), the next one. */
+  function nextPuzzle(state) {
+    if (state.id !== 'escape' || !state.solved || state.over) return false;
+    state.index++;
+    state.solved = false;
+    loadEscape(state);
+    return true;
+  }
+
+  // Escape hint: the piece to move for this puzzle's way out.
+  function escapeHint(state) {
+    var board = state.board;
+    for (var r = 0; r < R.SIZE; r++) {
+      for (var c = 0; c < R.SIZE; c++) {
+        var p = board[r][c];
+        if (!p || p.team !== 'me') continue;
+        var ok = R.legalMoves(board, r, c).some(function (m) {
+          if (state.kind === 'step') return p.type === 'k';
+          if (state.kind === 'capture') return m.capture;
+          return p.type !== 'k' && !m.capture;
+        });
+        if (ok) return [r, c];
+      }
+    }
+    return null;
   }
 
   // ---- shared API ------------------------------------------------------
@@ -716,6 +813,7 @@
     if (id === 'way') return createWay(options, rng);
     if (id === 'stop') return createStop(options, rng);
     if (id === 'safe') return createSafe(options, rng);
+    if (id === 'escape') return createEscape(options, rng);
     throw new Error('Unknown game id: ' + id);
   }
 
@@ -725,7 +823,11 @@
     if (!piece || piece.team !== 'me') return [];
     // Find the way: only the one piece moves; the child's pawns are in the way.
     if (state.heroOnly && (r !== state.hero[0] || c !== state.hero[1])) return [];
-    var moves = R.movesFor(state.board, r, c);
+    if (state.id === 'escape' && state.solved) return [];
+    // The check games use the full rule (never a move that leaves the
+    // child's own king in check); the earlier games keep plain moves, so a
+    // king there may still capture a protected pawn.
+    var moves = state.checkRules ? R.legalMoves(state.board, r, c) : R.movesFor(state.board, r, c);
     if (state.id === 'safe') {
       var danger = {};
       kingDanger(state.board, r, c).forEach(function (m) { danger[m.r + ',' + m.c] = true; });
@@ -784,6 +886,16 @@
         state.winner = 'me';
         events.push('reach-won');
       }
+    } else if (state.id === 'escape') {
+      if (piece.type === 'k') state.hero = [to[0], to[1]];
+      // Every legal move ends the check.
+      state.solved = true;
+      events.push('escaped');
+      if (state.index === state.puzzles.length - 1) {
+        state.over = true;
+        state.winner = 'me';
+        events.push('escape-won');
+      }
     } else if (state.id === 'chain' || state.id === 'stop') {
       state.hero = [to[0], to[1]];
       if (captured && captured.type === 'p') {
@@ -818,6 +930,7 @@
     if (id === 'chain') return { kind: 'capture-all', target: 'p', count: CHAIN_PAWNS };
     if (id === 'stop') return { kind: 'capture-all', target: 'p', count: STOP_PAWNS };
     if (id === 'hop' || id === 'way' || id === 'safe') return { kind: 'reach-row', row: 0 };
+    if (id === 'escape') return { kind: 'escape-check', count: ESCAPE_KINDS.length };
     return null;
   }
 
@@ -830,6 +943,9 @@
     nextInChain: nextInChain,
     hint: hint,
     dangerSquares: dangerSquares,
+    nextPuzzle: nextPuzzle,
+    ESCAPE_PUZZLES: ESCAPE_PUZZLES,
+    puzzleBoard: puzzleBoard,
     CHAIN_TYPES: CHAIN_TYPES,
     WAY_TYPES: WAY_TYPES,
     STOP_TYPES: STOP_TYPES

@@ -95,7 +95,7 @@
 
   var active = false;        // true from a game card tap until Home
   var gameId = null;         // an id from js/game-list.js
-  var gmode = 'none';        // 'turns' | 'team' | 'mission' | 'play' | 'quiz' | 'tip' | 'won' | 'break'
+  var gmode = 'none';        // 'lesson' | 'team' | 'mission' | 'play' | 'quiz' | 'tip' | 'won' | 'break'
   var childSide = null;      // 'a' | 'b': the team the child is playing (set at the Team card, kept for Again / next game)
   var gstate = null;         // FC.games state (board games)
   var qstate = null;         // FC.quiz state (the footprints quiz)
@@ -219,6 +219,13 @@
       king.appendChild(B.pieceSvg('k', 'me'));
       pic.appendChild(king);
       pic.appendChild(B.pieceSvg('r', 'foe'));
+    } else if (id === 'escape') {
+      // An opponent rook, a red line of danger, the child's king.
+      var stack4 = el('div', 'game-pic-stack game-pic-tight game-pic-check');
+      stack4.appendChild(B.pieceSvg('r', 'foe'));
+      stack4.appendChild(el('div', 'check-line'));
+      stack4.appendChild(B.pieceSvg('k', 'me'));
+      pic.appendChild(stack4);
     } else if (id === 'whose') {
       pic.appendChild(buildWhoseMark());
       pic.appendChild(B.pieceSvg('n', 'me'));
@@ -254,6 +261,11 @@
     if (row === 'capture') {
       mark.appendChild(el('div', 'row-burst'));
       mark.appendChild(B.pieceSvg('p', 'foe'));
+    } else if (row === 'king') {
+      // The king in a red ring: games about keeping him safe.
+      var ring = el('div', 'king-ring');
+      ring.appendChild(B.pieceSvg('k', 'me'));
+      mark.appendChild(ring);
     } else if (row === 'reach') {
       mark.appendChild(el('div', 'finish-flag'));
       mark.appendChild(B.pieceSvg('p', 'me'));
@@ -394,31 +406,44 @@
     enterGame();
   }
 
-  // Team games start with the "Taking turns" lesson (once per child) and
-  // the Team card, unless a team is already chosen; solo games (Capture
-  // chain, the quiz) go straight to their Mission card.
+  // A game with its own lesson (js/game-list.js `lesson`, the "check"
+  // lesson before Get out of check) plays it first, once per child. Team
+  // games then start with the "Taking turns" lesson (once per child) and
+  // the Team card, unless a team is already chosen; solo games go straight
+  // to their Mission card.
   function enterGame() {
-    if (!GL.get(gameId).teams || childSide) {
+    var game = GL.get(gameId);
+    var p = progress();
+    if (game.lesson && !(p && p.seen[game.lesson])) {
+      if (store) store.markSeen(game.lesson);
+      startGameLesson(game.lesson, enterGame);
+      return;
+    }
+    if (!game.teams || childSide) {
       showMissionCard();
       return;
     }
-    var p = progress();
     if (!(p && p.seen.turns)) {
       if (store) store.markSeen('turns');
-      startTurnsLesson();
+      startGameLesson('turns', showTeamCard);
     } else {
       showTeamCard();
     }
   }
 
-  function startTurnsLesson() {
-    gmode = 'turns';
-    setPanel('turns');
+  // Plays a lesson inside the games flow (Skip and Replay work as in any
+  // lesson), then calls next.
+  var lessonRun = null;      // { id, next } while a lesson plays in the games flow
+  function startGameLesson(id, next) {
+    gmode = 'lesson';
+    lessonRun = { id: id, next: next };
+    setPanel(id === 'turns' ? 'turns' : gameId);
     if (dom.toolSkip) dom.toolSkip.hidden = false;
-    P.start(LS.get('turns'), {
+    P.start(LS.get(id), {
       onDone: function () {
         if (dom.toolSkip) dom.toolSkip.hidden = true;
-        showTeamCard();
+        lessonRun = null;
+        next();
       }
     });
   }
@@ -658,6 +683,10 @@
     if (gstate.turn === 'me') {
       B.setMode('play', modeTextPlay());
       S.play('your-turn');
+      if (gameId === 'escape') {
+        showAttackers();
+        V.sayAfter('escape-ask');
+      }
       armIdle();
     } else {
       B.setMode('watch', modeTextWatch());
@@ -736,7 +765,7 @@
   }
 
   function handleTap(r, c) {
-    if (gmode === 'turns') { P.handleTap(r, c); return; }
+    if (gmode === 'lesson') { P.handleTap(r, c); return; }
     if (gmode === 'quiz') { onQuizTap(r, c); return; }
     if (gmode === 'tip') { B.nudgeMode(); return; }
     if (gmode !== 'play' || !gstate || gstate.over) return;
@@ -853,6 +882,10 @@
       onGameOver();
       return;
     }
+    if (gstate.id === 'escape' && gstate.solved) {
+      nextEscapePuzzle();
+      return;
+    }
     if (isChild) {
       armIdle();
       botTurn();
@@ -863,6 +896,46 @@
       V.sayAfter('turn-me');
       armIdle();
     }
+  }
+
+  /* ---------- Get out of check: one puzzle after another ---------- */
+
+  // The squares of the opponent pieces giving check glow red.
+  function showAttackers() {
+    var king = R.findKing(gstate.board, 'me');
+    if (!king) return;
+    var from = [];
+    for (var r = 0; r < 8; r++) {
+      for (var c = 0; c < 8; c++) {
+        var p = gstate.board[r][c];
+        if (!p || p.team !== 'foe') continue;
+        if (R.attacks(gstate.board, r, c).some(function (sq) { return sq[0] === king[0] && sq[1] === king[1]; })) from.push([r, c]);
+      }
+    }
+    B.glow(from, DANGER);
+  }
+
+  function nextEscapePuzzle() {
+    busy = true;
+    clearIdle();
+    B.setMode('watch', modeTextWatch());
+    var myToken = gameToken;
+    V.sayAfter('check-3', function () {
+      if (myToken !== gameToken || !gstate) return;
+      // Pacing between puzzles, which reduced motion must not shorten.
+      B.wait(function () {
+        if (myToken !== gameToken || !gstate) return;
+        G.nextPuzzle(gstate);
+        B.clearAll();
+        renderGame();
+        busy = false;
+        B.setMode('play', modeTextPlay());
+        S.play('your-turn');
+        showAttackers();
+        V.say('escape-ask', function () {});
+        armIdle();
+      }, 400);
+    });
   }
 
   /* ---------- the bot's turn ---------- */
@@ -1479,6 +1552,45 @@
         tipMove(ctx, board, king, [7, 4], [6, 5], null, done);
       });
     },
+    // Three ways out of check, one after another, in time with the line:
+    // step away, block the line, capture the attacker.
+    escape: function (ctx, line) {
+      var step = Math.max(1800, Math.round(LS.LINES[line].ms / 3));
+      var done = join(2, ctx.end);
+      V.say(line, function () { if (ctx.alive()) done(); });
+      var scenes = [
+        { list: G.ESCAPE_PUZZLES.step[0], from: [7, 4], to: [7, 5] },
+        { list: G.ESCAPE_PUZZLES.block[0], from: [3, 2], to: [7, 2] },
+        { list: G.ESCAPE_PUZZLES.capture[0], from: [2, 1], to: [7, 1] }
+      ];
+      function play(i) {
+        if (i >= scenes.length) { done(); return; }
+        var sc = scenes[i];
+        B.clearAll();
+        var board = G.puzzleBoard(sc.list, false);
+        var nodes = {};
+        var items = {};
+        for (var r = 0; r < 8; r++) {
+          for (var c = 0; c < 8; c++) {
+            var p = board[r][c];
+            if (!p) continue;
+            if (p.team === 'me') nodes[key(r, c)] = tipPiece(p.type, r, c);
+            else items[key(r, c)] = tipFoe(p.type, r, c);
+          }
+        }
+        var king = R.findKing(board, 'me');
+        B.glow(Object.keys(items).map(function (k) { return k.split(',').map(Number); }).filter(function (sq) {
+          return R.attacks(board, sq[0], sq[1]).some(function (a) { return a[0] === king[0] && a[1] === king[1]; });
+        }), DANGER);
+        ctx.after(600, function () {
+          B.glow([]);
+          tipMove(ctx, board, nodes[key(sc.from[0], sc.from[1])], sc.from, sc.to, items, function () {
+            ctx.after(Math.max(300, step - 1400), function () { play(i + 1); });
+          });
+        });
+      }
+      play(0);
+    },
     // Rook, bishop, queen in turn on the same square, each with its own
     // footprints, in time with the line.
     whose: function (ctx, line) {
@@ -1718,17 +1830,19 @@
   }
 
   function onSkip() {
-    if (gmode === 'turns') {
+    if (gmode === 'lesson' && lessonRun) {
+      var next = lessonRun.next;
+      lessonRun = null;
       P.stop();
       if (dom.toolSkip) dom.toolSkip.hidden = true;
-      showTeamCard();
+      next();
     } else if (gmode === 'tip' && tipDone) {
       tipDone();
     }
   }
 
   function onReplay() {
-    if (gmode === 'turns') startTurnsLesson();
+    if (gmode === 'lesson' && lessonRun) startGameLesson(lessonRun.id, lessonRun.next);
     else if (gmode === 'quiz' && !busy) V.say('quiz-ask', function () {});
   }
 

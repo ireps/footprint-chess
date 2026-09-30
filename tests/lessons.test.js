@@ -281,7 +281,7 @@ test('lesson order is hello, rook, bishop, queen, king, knight, pawn, a capture 
   assert.deepEqual(L.LESSONS.map(l => l.id), [
     'hello', 'rook', 'bishop', 'queen', 'king', 'knight', 'pawn',
     'capture-r', 'capture-b', 'capture-q', 'capture-k', 'capture-n', 'pawn-capture',
-    'turns'
+    'turns', 'check'
   ]);
 });
 
@@ -516,4 +516,15 @@ test('control badges (watch / your turn) have a label in every registry language
       assert.ok(typeof t[lang] === 'string' && t[lang].trim().length > 0, `UI_TEXT.${key}.${lang} needs text`);
     }
   }
+});
+
+test('check lesson: the king starts in check, every watch and practice move gets him out of it', () => {
+  const lesson = L.get('check');
+  const start = L.boardFor(lesson);
+  assert.ok(R.inCheck(start.board, 'me'));
+  for (const sq of [lesson.practice[0].to].concat(lesson.watch.filter(s => s.move).map(s => s.move))) {
+    const legal = R.legalMoves(start.board, start.hero[0], start.hero[1]).some(m => m.r === sq[0] && m.c === sq[1]);
+    assert.ok(legal, `${sq} is not a legal king move out of check`);
+  }
+  assert.deepEqual(L.foesOf(lesson), [{ at: [3, 4], type: 'r' }]);
 });

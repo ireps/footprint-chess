@@ -1291,12 +1291,12 @@ body {
 
 .games-home { position: absolute; left: 26px; top: 24px; }
 
-.game-rows { display: flex; flex-direction: column; gap: 22px; }
+.game-rows { display: flex; flex-direction: column; gap: 16px; }
 
 .game-row { display: flex; align-items: center; gap: 22px; }
 
-.game-row .game-card { height: 186px; position: relative; }
-.game-row .game-pic { height: 96px; }
+.game-row .game-card { height: 162px; position: relative; gap: 6px; }
+.game-row .game-pic { height: 84px; }
 
 .game-card.suggested {
   box-shadow: 0 8px 0 #9fd8d0, 0 0 0 6px var(--gold), 0 0 26px 6px rgba(255, 201, 60, 0.6);
@@ -1305,8 +1305,8 @@ body {
 /* The picture that starts each row, a rounded tile so it reads as a label
    and not as a button. */
 .row-mark {
-  width: 104px;
-  height: 104px;
+  width: 96px;
+  height: 96px;
   border-radius: 26px;
   background: rgba(255, 255, 255, 0.55);
   border: 4px dashed rgba(29, 43, 54, 0.25);
@@ -1359,6 +1359,17 @@ body {
 /* Keep the king safe: a shield ring round the king. */
 .safe-king { border: 4px solid #3dc46b; border-radius: 50%; padding: 4px; display: flex; }
 .safe-king svg.pc { width: 46px; height: 46px; }
+/* Get out of check: a red line of danger between the rook and the king. */
+.check-line { width: 8px; height: 18px; border-radius: 4px; background: #e0604d; margin: 2px 0; }
+.game-pic-mini .check-line { height: 10px; width: 6px; }
+.game-pic-check svg.pc { width: 38px; height: 38px; }
+.game-pic-mini .game-pic-check svg.pc { width: 28px; height: 28px; }
+.rbtn .game-pic-mini .game-pic-check svg.pc { width: 18px; height: 18px; }
+.rbtn .game-pic-mini .check-line { height: 6px; width: 4px; }
+/* The king row's mark: the king in a red ring. */
+.king-ring { border: 4px solid #e0604d; border-radius: 50%; padding: 4px; display: flex; }
+.king-ring svg.pc { width: 50px; height: 50px; }
+.game-pic-entry .king-ring svg.pc { width: 40px; height: 40px; }
 .game-pic-mini .safe-king { border-width: 3px; padding: 2px; }
 .game-pic-mini .safe-king svg.pc { width: 34px; height: 34px; }
 .rbtn .game-pic-mini .safe-king svg.pc { width: 22px; height: 22px; }
@@ -2375,7 +2386,7 @@ body.theme-pirate {
 .no-flexgap .game-pic-3 > * + * { margin-left: 0; }
 .no-flexgap .game-pic-mini > * + * { margin-left: 4px; }
 .no-flexgap .game-pic-mini .game-pic-stack > * + * { margin-top: 4px; }
-.no-flexgap .game-rows > * + * { margin-top: 22px; }
+.no-flexgap .game-rows > * + * { margin-top: 16px; }
 .no-flexgap .game-row > * + * { margin-left: 22px; }
 .no-flexgap .row-mark > * + * { margin-top: 4px; }
 .no-flexgap .game-pic-entry > * + * { margin-left: 18px; }
