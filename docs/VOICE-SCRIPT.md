@@ -184,6 +184,14 @@ naming a direction.
 | tip-way | Your own pieces block the way. Go around them! | నీ పావులే దారికి అడ్డం. వాటి చుట్టూ తిరిగి వెళ్ళు! | Calm and clear, a tip rather than an instruction. |
 | tip-stop | A pawn cannot walk through you. Stand in front of it! | శత్రువు భటుడు నిన్ను దాటి నడవలేడు. అతని ముందు నిలబడు! | Calm, with a little triumph at the end. |
 | tip-safe | The king never steps where the other side could capture him. | శత్రువు పట్టుకోగలిగే గడిలోకి రాజు ఎప్పుడూ అడుగు పెట్టడు. | Calm and serious, the one rule that matters most for the king. |
+| game-army1 | Pawn battle! Get one of your pawns to the other side. | భటుల యుద్ధం! నీ భటుల్లో ఒకరిని అవతలి వైపుకి చేర్చు. | Excited, a big game beginning; states the goal on the Mission card of the first battle. |
+| game-army2 | Pawns and rooks! Capture all their pawns, or reach the other side. | భటులు, ఏనుగులు! శత్రువు భటులందరినీ పట్టుకో, లేదా అవతలి వైపుకి చేరు. | Excited, a little bigger than the pawn battle; two ways to win, clearly apart. |
+| game-army3 | Pawns, rooks and bishops! Capture all their pawns, or reach the other side. | భటులు, ఏనుగులు, ఒంటెలు! శత్రువు భటులందరినీ పట్టుకో, లేదా అవతలి వైపుకి చేరు. | Excited, like the army growing; two ways to win, clearly apart. |
+| army-won | You won the battle! | యుద్ధంలో నువ్వు గెలిచావు! | Big and proud; the win line of every battle. |
+| army-danger | Careful! One of your pieces could be captured. | జాగ్రత్త! శత్రువు నీ పావుల్లో ఒకదాన్ని పట్టుకోగలదు. | Calm warning, never scary; the piece in danger has a red ring. |
+| tip-army1 | Pawns keep each other safe. If one is captured, the other captures back! | భటులు ఒకరినొకరు కాపాడుకుంటారు. ఒకరిని పట్టుకుంటే, ఇంకొకరు తిరిగి పట్టుకుంటారు! | Warm, like teamwork; in time with the capture and the capture back. |
+| tip-army2 | Find a pawn that nobody protects, and capture it with your rook! | ఎవరూ కాపు కాయని భటుడిని వెతికి, నీ ఏనుగుతో పట్టుకో! | Clever and playful; the protected pawn glows red, the free one gold. |
+| tip-army3 | Your bishop is stuck behind the pawns. Move a pawn, and out it comes! | నీ ఒంటె భటుల వెనక ఇరుక్కుపోయింది. ఒక భటుడిని కదుపు, అది బయటకు వస్తుంది! | A small "oh no" on stuck, then bright as the bishop comes out. |
 
 ## How the owner makes the clips
 

@@ -624,6 +624,12 @@
   // empty list clears them.
   function glow(squares, color) {
     clear(dom.marks);
+    glowAdd(squares, color);
+  }
+
+  // Like glow, but keeps the glows already showing (the growing battle
+  // shows the other side's last move and the pieces in danger together).
+  function glowAdd(squares, color) {
     (squares || []).forEach(function (sq) {
       var node = document.createElement('div');
       node.className = 'glow';
@@ -854,6 +860,7 @@
     setActiveTeamBar: setActiveTeamBar,
     hideTeamBars: hideTeamBars,
     glow: glow,
+    glowAdd: glowAdd,
     landmark: landmark,
     showHandPrints: showHandPrints,
     flashHandPrint: flashHandPrint,

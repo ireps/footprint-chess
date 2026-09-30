@@ -1270,9 +1270,10 @@ body {
 
 /* ---------- Games (stage 6): the Games button, the Games screen ---------- */
 
-/* Home: one wide Games button showing the three rows' marks, no words. */
-.game-card.games-entry { width: 330px; height: 150px; }
-.game-pic-entry { width: auto; height: auto; gap: 18px; }
+/* Home: one wide Games button showing every row's mark, no words; as wide
+   as its marks need. */
+.game-card.games-entry { width: auto; min-width: 330px; height: 150px; padding: 12px 24px; }
+.game-pic-entry { width: auto; height: auto; gap: 12px; flex: none; }
 
 .gamescreen {
   position: fixed;
@@ -1295,8 +1296,25 @@ body {
 
 .game-row { display: flex; align-items: center; gap: 22px; }
 
-.game-row .game-card { height: 138px; position: relative; gap: 4px; padding: 8px; }
-.game-row .game-pic { height: 74px; }
+.game-row .game-card, .army-ladder .game-card { height: 138px; position: relative; gap: 4px; padding: 8px; }
+.game-row .game-pic, .army-ladder .game-pic { height: 74px; }
+
+/* The growing battle (stage 8): a ladder beside the rows, the first battle
+   at the bottom and the row's picture under it; margins, not the gamescreen's
+   gap, so older browsers without flex gap lay it out the same. */
+.army-ladder {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 12px;
+  margin-left: 40px;
+}
+.army-ladder:empty { display: none; }
+
+/* A whole army: three pawns in front of three pieces. */
+.row-mark-army { gap: 0; }
+.army-mark-row { display: flex; justify-content: center; }
+.row-mark .army-mark-row svg.pc { width: 26px; height: 26px; }
 
 .game-card.suggested {
   box-shadow: 0 8px 0 #9fd8d0, 0 0 0 6px var(--gold), 0 0 26px 6px rgba(255, 201, 60, 0.6);
@@ -1334,8 +1352,10 @@ body {
 }
 .row-mark-capture svg.pc { position: relative; }
 
-.game-pic-entry .row-mark { width: 88px; height: 88px; }
-.game-pic-entry .row-mark svg.pc { width: 46px; height: 46px; }
+.game-pic-entry .row-mark { width: 72px; height: 72px; border-radius: 22px; border-width: 3px; }
+.game-pic-entry .row-mark svg.pc { width: 38px; height: 38px; }
+.game-pic-entry .row-mark .army-mark-row svg.pc { width: 20px; height: 20px; }
+.game-pic-entry .row-mark .finish-flag { width: 48px; height: 10px; }
 
 /* Footprints and a question mark: the footprints quiz. */
 .whose-mark { display: flex; align-items: center; gap: 6px; }
@@ -2391,8 +2411,18 @@ body.theme-pirate {
   .team-bar-name { font-size: 14px; }
   .team-bar-pawn { width: calc(var(--cell) * 0.4); height: calc(var(--cell) * 0.4); }
   .game-card { width: 150px; }
-  .game-card.games-entry { width: 330px; }
+  .game-card.games-entry { width: auto; }
+  /* Six row marks in the Games button, inside the portrait card width. */
+  .game-pic-entry { gap: 8px; }
+  .game-pic-entry .row-mark { width: 64px; height: 64px; }
+  .game-pic-entry .row-mark svg.pc { width: 34px; height: 34px; }
+  .game-pic-entry .row-mark .army-mark-row svg.pc { width: 18px; height: 18px; }
+  .game-pic-entry .whose-mark, .game-pic-entry .pond-mark { transform: scale(0.8); }
   .game-row .game-card { width: 140px; }
+  /* The growing battle's ladder: a row below the others. */
+  .gamescreen { flex-direction: column; }
+  .army-ladder { flex-direction: row; align-items: center; gap: 22px; margin-left: 0; margin-top: 24px; }
+  .army-ladder .game-card { width: 140px; }
   .row-mark { width: 88px; height: 88px; }
   /* flex-wrap, not a fixed-column grid: Skip only shows during a lesson,
      so the tools row has 4 or 5 buttons depending on mode. */
@@ -2499,15 +2529,20 @@ body.theme-pirate {
 .no-flexgap .game-rows > * + * { margin-top: 12px; }
 .no-flexgap .game-row > * + * { margin-left: 22px; }
 .no-flexgap .row-mark > * + * { margin-top: 4px; }
-.no-flexgap .game-pic-entry > * + * { margin-left: 18px; }
+.no-flexgap .game-pic-entry > * + * { margin-left: 12px; }
 .no-flexgap .whose-mark > * + * { margin-left: 6px; }
 .no-flexgap .whose-feet > * + * { margin-left: 5px; }
 .no-flexgap .game-pic-chain > * + * { margin-left: 2px; }
 .no-flexgap .game-pic-run > * + * { margin-left: 2px; }
 .no-flexgap .game-pic-tight > * + * { margin-top: 0; }
 
+.no-flexgap .army-ladder > * + * { margin-bottom: 12px; }
+.no-flexgap .row-mark-army > * + * { margin-top: 0; }
+
 @media (orientation: portrait) {
   .no-flexgap .app > * + * { margin-left: 0; margin-top: 12px; }
+  .no-flexgap .army-ladder > * + * { margin-bottom: 0; margin-left: 22px; }
+  .no-flexgap .game-pic-entry > * + * { margin-left: 8px; }
   /* Three cards a row: 3 x (150px + 22px of margin). */
   .no-flexgap .home-cards { max-width: 522px; }
   .no-flexgap .mission > * + * { margin-top: 0; margin-left: 8px; }
