@@ -118,3 +118,63 @@ test('attackedSquares: the union over a team, matching movesFor captures on ever
     }
   }
 });
+
+/* ---------- stage 7: check, checkmate, stalemate, legal moves ---------- */
+
+function place(list) {
+  const board = R.emptyBoard();
+  list.forEach(([r, c, type, team]) => { board[r][c] = { type, team }; });
+  return board;
+}
+const keys = moves => moves.map(m => m.r + ',' + m.c).sort();
+
+test('inCheck: a king on a square the other team attacks; no king, never in check', () => {
+  assert.equal(R.inCheck(place([[7, 4, 'k', 'me'], [0, 4, 'r', 'foe']]), 'me'), true);
+  assert.equal(R.inCheck(place([[7, 4, 'k', 'me'], [0, 4, 'r', 'foe'], [5, 4, 'p', 'me']]), 'me'), false, 'a piece in between blocks');
+  assert.equal(R.inCheck(place([[7, 4, 'k', 'me'], [5, 3, 'n', 'foe']]), 'me'), true);
+  assert.equal(R.inCheck(place([[7, 4, 'k', 'me'], [6, 3, 'p', 'foe']]), 'me'), true, 'a foe pawn attacks toward the child\'s side');
+  assert.equal(R.inCheck(place([[7, 4, 'k', 'me'], [6, 3, 'p', 'me']]), 'me'), false);
+  assert.equal(R.inCheck(place([[0, 4, 'k', 'foe'], [1, 3, 'p', 'me']]), 'foe'), true);
+  assert.equal(R.inCheck(place([[0, 0, 'r', 'foe']]), 'me'), false);
+  assert.deepEqual(R.findKing(place([[3, 5, 'k', 'foe']]), 'foe'), [3, 5]);
+  assert.equal(R.findKing(place([]), 'me'), null);
+});
+
+test('legalMoves: the king never steps into check, and a shielding piece stays on the line', () => {
+  const b = place([[7, 4, 'k', 'me'], [0, 3, 'r', 'foe']]);
+  assert.deepEqual(keys(R.legalMoves(b, 7, 4)), ['6,4', '6,5', '7,5']);
+  const pinned = place([[7, 4, 'k', 'me'], [5, 4, 'b', 'me'], [0, 4, 'r', 'foe']]);
+  assert.deepEqual(R.legalMoves(pinned, 5, 4), [], 'the bishop may not leave the rook\'s line');
+  const rookPin = place([[7, 4, 'k', 'me'], [5, 4, 'r', 'me'], [0, 4, 'r', 'foe']]);
+  assert.deepEqual(keys(R.legalMoves(rookPin, 5, 4)), ['0,4', '1,4', '2,4', '3,4', '4,4', '6,4'], 'it may move along the line, or capture');
+});
+
+test('legalMoves: in check, only moves that end the check (step away, block, capture)', () => {
+  const b = place([[7, 7, 'k', 'me'], [7, 0, 'r', 'foe'], [5, 3, 'r', 'me'], [6, 0, 'n', 'me']]);
+  assert.ok(R.inCheck(b, 'me'));
+  assert.deepEqual(keys(R.legalMoves(b, 5, 3)), ['7,3'], 'the rook can only block');
+  assert.deepEqual(keys(R.legalMoves(b, 6, 0)), ['7,2'], 'the knight can only block too');
+  assert.deepEqual(keys(R.legalMoves(b, 7, 7)), ['6,6', '6,7']);
+});
+
+test('legalMoves equals movesFor on a board without kings (every game before stage 7)', () => {
+  const b = place([[7, 3, 'q', 'me'], [2, 3, 'p', 'foe'], [4, 6, 'n', 'foe']]);
+  for (const [r, c] of [[7, 3], [2, 3], [4, 6]]) assert.deepEqual(R.legalMoves(b, r, c), R.movesFor(b, r, c));
+});
+
+test('isCheckmate and isStalemate', () => {
+  // Back-rank mate: the rook checks along row 7, the king's own pawns block its escape.
+  const mate = place([[7, 6, 'k', 'me'], [6, 5, 'p', 'me'], [6, 6, 'p', 'me'], [6, 7, 'p', 'me'], [7, 0, 'r', 'foe']]);
+  assert.equal(R.isCheckmate(mate, 'me'), true);
+  assert.equal(R.isStalemate(mate, 'me'), false);
+  // The same, but a rook of the child's can capture the checking rook: not mate.
+  const saved = place([[7, 6, 'k', 'me'], [6, 5, 'p', 'me'], [6, 6, 'p', 'me'], [6, 7, 'p', 'me'], [7, 0, 'r', 'foe'], [3, 0, 'r', 'me']]);
+  assert.equal(R.isCheckmate(saved, 'me'), false);
+  // Queen and king against a lone king in the corner.
+  assert.equal(R.isCheckmate(place([[0, 0, 'k', 'foe'], [1, 1, 'q', 'me'], [2, 2, 'k', 'me']]), 'foe'), true);
+  // Stalemate: the lone king is not in check and cannot move.
+  const stale = place([[0, 0, 'k', 'foe'], [2, 1, 'q', 'me'], [7, 7, 'k', 'me']]);
+  assert.equal(R.inCheck(stale, 'foe'), false);
+  assert.equal(R.isStalemate(stale, 'foe'), true);
+  assert.equal(R.isCheckmate(stale, 'foe'), false);
+});
