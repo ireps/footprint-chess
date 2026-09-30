@@ -24,7 +24,7 @@ These are changed by the repository owner on GitHub; nothing in the repository c
 
 - **Restrict deletions** and **Block force pushes**.
 - **Require a pull request before merging**, with 0 required approvals while there is one maintainer (GitHub does not let authors approve their own pull requests); raise it to 1 when there are co-maintainers. Turn on **Require review from Code Owners** at the same time.
-- **Require status checks to pass**, adding the check **test** (from the Tests workflow, `.github/workflows/test.yml`; it appears in the list after the workflow has run once).
+- **Require status checks to pass**, adding the checks **test** and **browser** (from the Tests workflow, `.github/workflows/test.yml`; each appears in the list after the workflow has run once).
 
 **Settings > Actions > General**
 

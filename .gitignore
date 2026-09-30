@@ -6,3 +6,6 @@ Thumbs.db
 # Local Claude Code settings (machine-specific; not part of the project)
 .claude/settings.local.json
 .claude/launch.json
+
+# Browser test failure screenshots (e2e/run.js)
+e2e/output/
