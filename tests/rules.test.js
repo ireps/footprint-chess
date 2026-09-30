@@ -87,3 +87,34 @@ test('reachable does not modify the board', () => {
   R.reachable(b, 7, 0);
   assert.equal(JSON.stringify(b), before);
 });
+
+test('attacks: rays stop at the first piece of either team (included); a pawn attacks only its forward slants', () => {
+  const board = R.emptyBoard();
+  board[4][4] = { type: 'r', team: 'foe' };
+  board[4][6] = { type: 'p', team: 'foe' };
+  board[2][4] = { type: 'k', team: 'me' };
+  const set = new Set(R.attacks(board, 4, 4).map(sq => sq.join(',')));
+  assert.ok(set.has('4,6'), 'protects its own pawn');
+  assert.ok(!set.has('4,7'));
+  assert.ok(set.has('2,4') && !set.has('1,4'));
+  assert.deepEqual(R.attacks(board, 4, 6).map(sq => sq.join(',')).sort(), ['5,5', '5,7']);
+  board[6][1] = { type: 'p', team: 'me' };
+  assert.deepEqual(R.attacks(board, 6, 1).map(sq => sq.join(',')).sort(), ['5,0', '5,2']);
+  assert.deepEqual(R.attacks(board, 0, 0), []);
+});
+
+test('attackedSquares: the union over a team, matching movesFor captures on every square', () => {
+  const board = R.emptyBoard();
+  board[3][3] = { type: 'q', team: 'foe' };
+  board[5][1] = { type: 'n', team: 'foe' };
+  const set = R.attackedSquares(board, 'foe');
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      if (board[r][c]) continue;
+      const probe = R.cloneBoard(board);
+      probe[r][c] = { type: 'p', team: 'me' };
+      const hit = [[3, 3], [5, 1]].some(([pr, pc]) => R.movesFor(probe, pr, pc).some(m => m.r === r && m.c === c && m.capture));
+      assert.equal(!!set[r + ',' + c], hit, `${r},${c}`);
+    }
+  }
+});

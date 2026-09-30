@@ -100,8 +100,9 @@
   var gstate = null;         // FC.games state (board games)
   var qstate = null;         // FC.quiz state (the footprints quiz)
   var quizMisses = 0;        // wrong taps on the current quiz question
+  var quizIdle = 0;          // idle hints given on the current quiz question
   var wrongTaps = {};        // piece type -> taps on a square it cannot reach, this game (for the tip)
-  var chainType = null;      // the piece of the last Capture chain; each new one uses the next piece
+  var rotated = {};          // game id -> the piece of its last game (Capture chain, Find the way)
   var tipDone = null;        // ends the tip that is playing (Skip), or null
   var pieceNodes = {};       // "r,c" -> DOM node, every piece currently on the board
   var selected = null;       // [r, c] or null
@@ -316,13 +317,19 @@
     return !!dom.gameScreen && !dom.gameScreen.hidden;
   }
 
-  function showGamesScreen() {
-    S.unlock();
-    // A capture round may still be running behind the home screen.
+  // Leaves Home (or the Games screen) for a screen of this file: a capture
+  // round may still be running behind the home screen, and the theme and
+  // language rows close with it.
+  function leaveHome() {
     if (FC.app && FC.app.stopRound) FC.app.stopRound();
     byId('homescreen').hidden = true;
     byId('theme-row').hidden = true;
     byId('lang-row').hidden = true;
+  }
+
+  function showGamesScreen() {
+    S.unlock();
+    leaveHome();
     renderGamesScreen();
     dom.gameScreen.hidden = false;
     V.say('games-pick', function () {});
@@ -373,11 +380,7 @@
 
   function onGameCardTap(id) {
     S.unlock();
-    // A capture round may still be running behind the home screen.
-    if (FC.app && FC.app.stopRound) FC.app.stopRound();
-    byId('homescreen').hidden = true;
-    byId('theme-row').hidden = true;
-    byId('lang-row').hidden = true;
+    leaveHome();
     hideGamesScreen();
     onLeaveHome();
     P.stop();
@@ -495,25 +498,29 @@
     return (FC.app && FC.app.lastNonPawnType) ? FC.app.lastNonPawnType() : 'r';
   }
 
-  var wayType = null;       // the piece of the last Find the way; each new one uses the next piece
+  // The last piece chosen on Home if `list` has it, else the rook.
+  function homePieceIn(list) {
+    return list.indexOf(lastNonPawn()) !== -1 ? lastNonPawn() : 'r';
+  }
+
+  // The piece after `prev` in `list`, or the Home piece the first time.
+  function rotate(list, prev) {
+    return prev ? list[(list.indexOf(prev) + 1) % list.length] : homePieceIn(list);
+  }
 
   function gameOptions(id) {
     if (id === 'catch') return { type: lastNonPawn() };
-    if (id === 'way') {
-      var wt = G.WAY_TYPES;
-      var start = wt.indexOf(lastNonPawn()) !== -1 ? lastNonPawn() : 'r';
-      wayType = wayType ? wt[(wt.indexOf(wayType) + 1) % wt.length] : start;
-      return { type: wayType };
-    }
-    if (id === 'stop') {
-      return { type: G.STOP_TYPES.indexOf(lastNonPawn()) !== -1 ? lastNonPawn() : 'r' };
-    }
+    if (id === 'stop') return { type: homePieceIn(G.STOP_TYPES) };
+    // Capture chain and Find the way: the first game uses the last piece
+    // chosen on Home; each new one (Play again included) the next piece,
+    // so every piece gets a turn.
     if (id === 'chain') {
-      // The first chain uses the last piece chosen on Home; each new chain
-      // (Play again included) the next piece, so every piece gets a turn.
-      var types = G.CHAIN_TYPES;
-      chainType = chainType ? types[(types.indexOf(chainType) + 1) % types.length] : lastNonPawn();
-      return { type: chainType };
+      rotated.chain = rotate(G.CHAIN_TYPES, rotated.chain);
+      return { type: rotated.chain };
+    }
+    if (id === 'way') {
+      rotated.way = rotate(G.WAY_TYPES, rotated.way);
+      return { type: rotated.way };
     }
     if (id === 'battle') {
       var extra = (FC.app && FC.app.seenNonPawnTypes) ? FC.app.seenNonPawnTypes() : [];
@@ -595,7 +602,7 @@
     // is really just "the bottom of the board", not a literal team - so
     // handing the very first turn to 'foe' here is enough; every rule in
     // js/games.js still works unchanged either way round.
-    if (childSide === 'b') gstate.turn = 'foe';
+    if (childSide === 'b' && GL.get(gameId).teams) gstate.turn = 'foe';
     goldenKey = pickGoldenKey();
     B.clearAll();
     renderGame();
@@ -638,11 +645,17 @@
   }
   function onIdle() {
     if (gmode === 'quiz') {
-      if (!busy && qstate && !qstate.over) {
-        B.pulseFootprints();
+      // Once per question the question is asked again; the next time the
+      // hand rests on the answer. Then nothing more until the child taps.
+      if (busy || !qstate || qstate.over) return;
+      quizIdle += 1;
+      B.pulseFootprints();
+      if (quizIdle === 1) {
         V.say('quiz-ask', function () {});
+        armIdle();
+      } else {
+        pointAtAnswer();
       }
-      armIdle();
       return;
     }
     if (gmode !== 'play' || !gstate || gstate.turn !== 'me' || busy) return;
@@ -728,6 +741,8 @@
     } else {
       var t = gstate.board[selected[0]][selected[1]].type;
       wrongTaps[t] = (wrongTaps[t] || 0) + 1;
+      // The king's red squares stay while he is selected.
+      B.glow(G.dangerSquares(gstate, selected[0], selected[1]), DANGER);
       B.pulseFootprints();
       S.play('bonk');
     }
@@ -1025,6 +1040,7 @@
   // Watch while the question is asked, then the child's turn.
   function askQuestion(redraw) {
     quizMisses = 0;
+    quizIdle = 0;
     busy = true;
     if (redraw) renderQuestion();
     B.setMode('watch', modeTextWatch());
@@ -1036,6 +1052,13 @@
       S.play('your-turn');
       armIdle();
     });
+  }
+
+  // The ghost hand rests on the right choice.
+  function pointAtAnswer() {
+    var q = Q.current(qstate);
+    if (!q) return;
+    q.choices.forEach(function (ch) { if (ch.type === q.answer) B.handRest(ch.at[0], ch.at[1]); });
   }
 
   function onQuizTap(r, c) {
@@ -1089,6 +1112,8 @@
   function quizWrong(node, choice, q) {
     busy = true;
     quizMisses += 1;
+    // The app is showing something: Watch until the child can try again.
+    B.setMode('watch', modeTextWatch());
     B.replay(node, 'wiggle');
     S.play('bonk');
     B.showFootprints(choice.type, q.square, asMoves(Q.footprints(choice.type, q.square)), {});
@@ -1097,9 +1122,8 @@
       if (myToken !== gameToken) return;
       showQuizPrints();
       busy = false;
-      if (quizMisses >= 2) {
-        q.choices.forEach(function (ch) { if (ch.type === q.answer) B.handRest(ch.at[0], ch.at[1]); });
-      }
+      B.setMode('play', modeTextPlay());
+      if (quizMisses >= 2) pointAtAnswer();
       armIdle();
     });
   }
@@ -1563,14 +1587,11 @@
   }
 
   // The piece a full jar earns a sticker of: the piece the child was
-  // playing. In a game that is the chasing piece (Catch), the pawn (Pawn
+  // playing. In a game that is its one piece (heroType), the pawn (Pawn
   // race) or the rook (Little battle); in a capture round it is that
   // round's piece.
   function pieceStickerType() {
-    if (active && gameId === 'catch') return lastNonPawn();
-    if (active && (gameId === 'chain' || gameId === 'way' || gameId === 'stop')) return gstate ? gstate.heroType : 'r';
-    if (active && gameId === 'hop') return 'n';
-    if (active && gameId === 'safe') return 'k';
+    if (active && gstate && gstate.heroType) return gstate.heroType;
     if (active && gameId === 'race') return 'p';
     if (active && gameId === 'battle') return 'r';
     return (FC.app && FC.app.roundType) ? FC.app.roundType() : 'p';

@@ -113,6 +113,56 @@
   }
 
   /*
+   * Squares the piece on (r, c) attacks: every square it could capture on
+   * if an opponent stood there, including squares its own team stands on
+   * (so a piece "protects" its neighbours). Same rays and steps as
+   * movesFor; a pawn attacks only its two forward slants. Returns [[r, c]].
+   */
+  function attacks(board, r, c) {
+    var piece = board[r][c];
+    var out = [];
+    if (!piece) return out;
+    if (piece.type === 'p') {
+      var r1 = r + (piece.team === 'me' ? -1 : 1);
+      [-1, 1].forEach(function (dc) {
+        if (onBoard(r1, c + dc)) out.push([r1, c + dc]);
+      });
+      return out;
+    }
+    var lines = LINES[piece.type];
+    if (lines) {
+      lines.forEach(function (d) {
+        var tr = r + d[0];
+        var tc = c + d[1];
+        while (onBoard(tr, tc)) {
+          out.push([tr, tc]);
+          if (board[tr][tc]) break;
+          tr += d[0];
+          tc += d[1];
+        }
+      });
+      return out;
+    }
+    (STEPS[piece.type] || []).forEach(function (d) {
+      if (onBoard(r + d[0], c + d[1])) out.push([r + d[0], c + d[1]]);
+    });
+    return out;
+  }
+
+  /* Every square any piece of `team` attacks, as a set of "r,c" keys. */
+  function attackedSquares(board, team) {
+    var set = {};
+    for (var r = 0; r < SIZE; r++) {
+      for (var c = 0; c < SIZE; c++) {
+        var p = board[r][c];
+        if (!p || p.team !== team) continue;
+        attacks(board, r, c).forEach(function (sq) { set[sq[0] + ',' + sq[1]] = true; });
+      }
+    }
+    return set;
+  }
+
+  /*
    * Squares the piece on (r, c) can reach in any number of moves, with every
    * other piece standing still. Captured pieces are only removed from the
    * square being stood on, so the result is a safe subset of what is reachable.
@@ -151,6 +201,8 @@
     cloneBoard: cloneBoard,
     isLightSquare: isLightSquare,
     movesFor: movesFor,
+    attacks: attacks,
+    attackedSquares: attackedSquares,
     reachable: reachable
   };
 

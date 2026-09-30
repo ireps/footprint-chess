@@ -498,44 +498,6 @@
 
   function isFarRow(r) { return r === 0; }
 
-  /* Every square a piece of `team` could capture on, including squares its
-   * own team stands on (so a piece "protects" its neighbours), with the
-   * board as it is. */
-  function attackedSet(board, team) {
-    var set = {};
-    var RAYS = { r: [[-1, 0], [1, 0], [0, -1], [0, 1]], b: [[-1, -1], [-1, 1], [1, -1], [1, 1]] };
-    RAYS.q = RAYS.r.concat(RAYS.b);
-    var STEPS = { n: KNIGHT_STEPS, k: RAYS.q };
-    for (var r = 0; r < R.SIZE; r++) {
-      for (var c = 0; c < R.SIZE; c++) {
-        var p = board[r][c];
-        if (!p || p.team !== team) continue;
-        if (RAYS[p.type]) {
-          RAYS[p.type].forEach(function (d) {
-            var tr = r + d[0];
-            var tc = c + d[1];
-            while (R.onBoard(tr, tc)) {
-              set[tr + ',' + tc] = true;
-              if (board[tr][tc]) break;
-              tr += d[0];
-              tc += d[1];
-            }
-          });
-        } else if (STEPS[p.type]) {
-          STEPS[p.type].forEach(function (d) {
-            if (R.onBoard(r + d[0], c + d[1])) set[(r + d[0]) + ',' + (c + d[1])] = true;
-          });
-        } else if (p.type === 'p') {
-          var dir = team === 'me' ? -1 : 1;
-          [-1, 1].forEach(function (dc) {
-            if (R.onBoard(r + dir, c + dc)) set[(r + dir) + ',' + (c + dc)] = true;
-          });
-        }
-      }
-    }
-    return set;
-  }
-
   /* The squares the king on (r, c) could step to that the other side could
    * capture on: computed with the king lifted off the board, so it cannot
    * hide behind itself along a line. */
@@ -543,7 +505,7 @@
     var work = R.cloneBoard(board);
     var king = work[r][c];
     work[r][c] = null;
-    var attacked = attackedSet(work, 'foe');
+    var attacked = R.attackedSquares(work, 'foe');
     work[r][c] = king;
     return R.movesFor(work, r, c).filter(function (m) { return attacked[m.r + ',' + m.c]; });
   }
@@ -645,7 +607,7 @@
       if (!placeAt(board, [1, 5], rng, 'r', 'foe') || !placeAt(board, [1, 5], rng, 'b', 'foe')) continue;
       var start = R.cloneBoard(board);
       start[hero[0]][hero[1]] = null;
-      if (attackedSet(start, 'foe')[key(hero)]) continue;
+      if (R.attackedSquares(start, 'foe')[key(hero)]) continue;
       var danger = kingDanger(board, hero[0], hero[1]);
       // Strict at first: the guards already watch at least two of the
       // king's first steps, so the idea shows at once.
@@ -666,17 +628,26 @@
     return function (work, cur, m) {
       var lifted = R.cloneBoard(work);
       lifted[cur[0]][cur[1]] = null;
-      return !attackedSet(lifted, 'foe')[m.r + ',' + m.c];
+      return !R.attackedSquares(lifted, 'foe')[m.r + ',' + m.c];
     };
   }
 
   /* A square to glow as a hint, or null: the next pawn of a capture chain,
-   * the first step toward the nearest pawn (Stop the pawns), or the next
+   * (else the first step toward the nearest pawn), the first step toward
+   * the nearest pawn (Stop the pawns), or the next
    * step of a shortest way to the other side. */
   function hint(state) {
     if (state.over) return null;
-    if (state.id === 'chain') return nextInChain(state);
-    if (state.id === 'stop') {
+    if (state.id === 'chain') {
+      // The next pawn of the chain when it is one move away; otherwise
+      // (the child left the chain) the first step toward the nearest pawn.
+      var next = nextInChain(state);
+      var here = state.hero;
+      if (next && R.movesFor(state.board, here[0], here[1]).some(function (m) {
+        return m.r === next[0] && m.c === next[1];
+      })) return next;
+    }
+    if (state.id === 'chain' || state.id === 'stop') {
       // The first step toward the nearest pawn to capture.
       var board = state.board;
       var toPawn = heroPath(board, state.hero, function (r, c) {

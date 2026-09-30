@@ -678,3 +678,21 @@ test('hint: null for games without one', () => {
   assert.equal(G.hint(G.create('race', {}, seeded(1))), null);
   assert.deepEqual(G.dangerSquares(G.create('race', {}, seeded(1)), 6, 0), []);
 });
+
+test('hint "chain" and "stop": always a square the piece can move to now, even after leaving the chain', () => {
+  for (const id of ['chain', 'stop']) {
+    for (let seed = 1; seed <= 100; seed++) {
+      const rng = seeded(seed);
+      const state = G.create(id, { type: 'r' }, rng);
+      for (let i = 0; i < 12 && !state.over; i++) {
+        const h = G.hint(state);
+        assert.ok(h, `${id} seed ${seed}: no hint`);
+        const ok = G.legalMoves(state, state.hero[0], state.hero[1]).some(m => m.r === h[0] && m.c === h[1]);
+        assert.ok(ok, `${id} seed ${seed}: hint ${h} is not a move from ${state.hero}`);
+        const mv = greedyChildMove(state, rng);
+        G.applyMove(state, mv.from, mv.to);
+        if (!state.over) G.botMove(state, rng);
+      }
+    }
+  }
+});
