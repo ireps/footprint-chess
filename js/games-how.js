@@ -758,6 +758,47 @@
         ctx.after(900, next);
       });
     },
+    // The queen steps close to the king: he has no move but is not in
+    // check (stalemate). She goes back and gives checkmate instead.
+    stale: function (ctx, line) {
+      var board = G.puzzleBoard(G.STALE_PUZZLES[0], false);
+      var nodes = {};
+      for (var r = 0; r < 8; r++) {
+        for (var c = 0; c < 8; c++) {
+          var p = board[r][c];
+          if (!p) continue;
+          nodes[key(r, c)] = p.team === 'me' ? tipPiece(p.type, r, c) : tipFoe(p.type, r, c);
+        }
+      }
+      var stale = G.staleMoves(board).filter(function (m) { return board[m.from[0]][m.from[1]].type === 'q'; })[0];
+      var mate = G.mateMoves(board)[0];
+      var queen = nodes[key(stale.from[0], stale.from[1])];
+      var king = R.findKing(board, 'foe');
+      V.say(line, function () {
+        if (!ctx.alive()) return;
+        tipMove(ctx, board, queen, stale.from, stale.to, null, function () {
+          B.glow([king], DANGER);
+          V.say('stale-oops', function () {
+            if (!ctx.alive()) return;
+            B.glow([]);
+            tipMove(ctx, board, queen, stale.to, stale.from, null, function () {
+              ctx.after(500, function () {
+                tipMove(ctx, board, queen, mate.from, mate.to, null, function () {
+                  var cage = [];
+                  for (var dr = -1; dr <= 1; dr++) {
+                    for (var dc = -1; dc <= 1; dc++) {
+                      if (R.onBoard(king[0] + dr, king[1] + dc)) cage.push([king[0] + dr, king[1] + dc]);
+                    }
+                  }
+                  B.glow(cage, DANGER);
+                  V.say('mate-3', function () { if (ctx.alive()) ctx.after(600, ctx.end); });
+                });
+              });
+            });
+          });
+        });
+      });
+    },
     // Checkmate in two with two rooks: one rook checks, the king has to
     // step to the far row, and the other rook gives checkmate there.
     mate2: function (ctx, line) {

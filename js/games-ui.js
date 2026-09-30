@@ -666,10 +666,10 @@
     if (gmode !== 'play' || !gstate || gstate.turn !== 'me' || busy) return;
     if (selected) {
       B.pulseFootprints();
-      // Checkmate in one and two, Which capture is best? and the growing
-      // battle: with a piece selected,
+      // Checkmate in one and two, Checkmate not stalemate, Which capture is
+      // best? and the growing battle: with a piece selected,
       // its best square glows.
-      var target = (gameId === 'mate' || gameId === 'mate2' || gameId === 'value' || gstate.army) ? G.hint(gstate, selected) : null;
+      var target = (gameId === 'mate' || gameId === 'mate2' || gameId === 'value' || gameId === 'stale' || gstate.army) ? G.hint(gstate, selected) : null;
       if (target && gstate.army) {
         B.glow([]);
         armyHelp();
@@ -798,7 +798,8 @@
   }
 
   // Which capture is best?: why the move was taken back.
-  var VALUE_LINES = { none: 'value-find', smaller: 'value-bigger', back: 'value-back' };
+  // Checkmate, not stalemate: a stalemate.
+  var VALUE_LINES = { none: 'value-find', smaller: 'value-bigger', back: 'value-back', stalemate: 'stale-oops' };
 
   function takeBackLine(res) {
     if (res.why && VALUE_LINES[res.why]) return VALUE_LINES[res.why];
@@ -1030,7 +1031,8 @@
     escape: { solved: 'check-3', ask: 'escape-ask' },
     mate: { solved: 'mate-3', ask: 'mate-ask' },
     mate2: { solved: 'mate-3', ask: 'mate2-ask' },
-    value: { solved: 'value-yes', ask: 'value-ask' }
+    value: { solved: 'value-yes', ask: 'value-ask' },
+    stale: { solved: 'mate-3', ask: 'stale-ask' }
   };
 
   function nextPuzzleUI() {
@@ -1039,7 +1041,7 @@
     B.setMode('watch', modeTextWatch());
     var myToken = gameToken;
     var lines = PUZZLE_LINES[gstate.id];
-    if (gstate.id === 'mate' || gstate.id === 'mate2') glowKingCage();
+    if (gstate.id === 'mate' || gstate.id === 'mate2' || gstate.id === 'stale') glowKingCage();
     V.sayAfter(lines.solved, function () {
       if (myToken !== gameToken || !gstate) return;
       // Pacing between puzzles, which reduced motion must not shorten.

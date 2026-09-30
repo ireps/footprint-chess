@@ -117,6 +117,17 @@
       var prize = el('div', 'prize-ring');
       prize.appendChild(B.pieceSvg('q', 'foe'));
       pic.appendChild(prize);
+    } else if (id === 'stale') {
+      // The opponent king in a red ring beside the queen, and a king in a
+      // grey dashed ring: checkmate, not stalemate.
+      pic.classList.add('game-pic-mate2');
+      var cage3 = el('div', 'king-ring');
+      cage3.appendChild(B.pieceSvg('k', 'foe'));
+      pic.appendChild(cage3);
+      pic.appendChild(B.pieceSvg('q', 'me'));
+      var stuck = el('div', 'king-ring stale-ring');
+      stuck.appendChild(B.pieceSvg('k', 'foe'));
+      pic.appendChild(stuck);
     } else if (id === 'mate2') {
       // The opponent king in a red ring, a rook and the queen beside him.
       pic.classList.add('game-pic-mate2');

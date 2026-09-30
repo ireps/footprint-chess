@@ -1061,3 +1061,55 @@ test('value: a move that captures nothing, a smaller prize and a guarded capture
     assert.ok(state.over && state.winner === 'me');
   }
 });
+
+// ---- stale: Checkmate, not stalemate -------------------------------------------
+
+test('stale puzzles: legal, no check yet, a checkmate in one and a stalemate by a piece other than the king', () => {
+  G.STALE_PUZZLES.forEach((list, n) => {
+    for (const mirror of [false, true]) {
+      const board = G.puzzleBoard(list, mirror);
+      const tag = `puzzle ${n}${mirror ? ' mirrored' : ''}`;
+      assert.ok(R.findKing(board, 'foe') && R.findKing(board, 'me'), `${tag}: both kings`);
+      assert.equal(R.inCheck(board, 'foe'), false, `${tag}: already check`);
+      assert.equal(R.inCheck(board, 'me'), false, `${tag}: the child is in check`);
+      assert.ok(R.hasLegalMove(board, 'foe'), `${tag}: already stuck`);
+      assert.ok(G.mateMoves(board).length >= 1, `${tag}: no checkmate`);
+      assert.ok(G.staleMoves(board).some(m => board[m.from[0]][m.from[1]].type !== 'k'), `${tag}: no stalemate trap`);
+    }
+  });
+});
+
+test('stale: a stalemate is taken back with the king, other non-mating moves with his escapes; checkmate solves; five win', () => {
+  for (let seed = 1; seed <= 20; seed++) {
+    const state = G.create('stale', {}, seeded(seed));
+    assert.equal(state.puzzles.length, 5);
+    assert.ok(state.solo);
+    for (let i = 0; i < 5; i++) {
+      const before = JSON.stringify(state.board);
+      const s = G.staleMoves(state.board)[0];
+      const res = G.applyMove(state, s.from, s.to);
+      assert.ok(res.reverted);
+      assert.equal(res.why, 'stalemate');
+      assert.deepEqual(res.escapes, [R.findKing(state.board, 'foe')]);
+      assert.equal(JSON.stringify(state.board), before);
+      const mates = G.mateMoves(state.board);
+      const stales = G.staleMoves(state.board);
+      let other = null;
+      for (let r = 0; r < 8 && !other; r++) for (let c = 0; c < 8 && !other; c++) {
+        const p = state.board[r][c];
+        if (!p || p.team !== 'me') continue;
+        const m = G.legalMoves(state, r, c).find(x => ![...mates, ...stales].some(k => k.from[0] === r && k.from[1] === c && k.to[0] === x.r && k.to[1] === x.c));
+        if (m) other = { from: [r, c], to: [m.r, m.c] };
+      }
+      if (other) {
+        const back = G.applyMove(state, other.from, other.to);
+        assert.ok(back.reverted && !back.why && Array.isArray(back.escapes));
+      }
+      assert.deepEqual(G.hint(state), mates[0].from);
+      const win = G.applyMove(state, mates[0].from, mates[0].to);
+      assert.ok(win.events.includes('mated'));
+      if (i < 4) assert.ok(G.nextPuzzle(state));
+    }
+    assert.ok(state.over && state.winner === 'me');
+  }
+});

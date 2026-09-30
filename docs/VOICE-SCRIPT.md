@@ -170,6 +170,11 @@ naming a direction.
 | value-won | You found every best capture! | ప్రతిసారీ మంచి పట్టు కనుక్కున్నావు! | Big and celebratory; the Which capture is best? win line. |
 | tip-value | Take the biggest prize they cannot capture back! | శత్రువు తిరిగి పట్టుకోలేని పెద్ద బహుమతిని పట్టుకో! | Calm and clear, the whole idea in one line. |
 | how-value-1 | A pawn is a small prize. The queen is the biggest! | భటుడు చిన్న బహుమతి. మంత్రి అన్నిటికంటే పెద్దది! | Playful, as the pieces line up from small to big. |
+| game-stale | Checkmate, not stalemate! Trap the king with check. | చెక్‌మేట్, స్టేల్‌మేట్ కాదు! చెక్ పెట్టి రాజుని బంధించు. | Bright and a little mysterious; states the goal on the Mission card. |
+| stale-ask | Find the checkmate, not the stalemate! | స్టేల్‌మేట్ కాదు, చెక్‌మేట్ కనుక్కో! | Inviting; said as each Checkmate, not stalemate puzzle appears. |
+| stale-oops | Stalemate! He cannot move, but he is not in check. | స్టేల్‌మేట్! రాజు కదలలేడు, కానీ అతనికి చెక్ లేదు. | Surprised and gentle, never "wrong"; the move slides back and the king glows. |
+| stale-won | Checkmate every time! Well done! | ప్రతిసారీ చెక్‌మేట్! శభాష్! | Big and celebratory; the Checkmate, not stalemate win line. |
+| tip-stale | Always give check. No check and no moves is stalemate. | ఎప్పుడూ చెక్ పెట్టు. చెక్ లేకుండా కదలలేకపోతే స్టేల్‌మేట్. | Calm and clear, the difference in one line. |
 | game-run | Run away! Stay where the other piece cannot capture you. | పారిపో! శత్రువు పావు పట్టుకోలేని చోట ఉండు. | Playful and a little breathless; states the goal on the Mission card. |
 | run-danger | Not there! It could capture you there. | అక్కడ వద్దు! అక్కడ అది నిన్ను పట్టుకోగలదు. | Gentle and protective, never scolding; said when the child taps a square the chaser watches. |
 | run-won | You got away safely! | సురక్షితంగా తప్పించుకున్నావు! | Big and relieved; the Run away win line. |
