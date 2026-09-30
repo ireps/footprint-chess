@@ -1,5 +1,6 @@
-# Runs the tests and the project's rule checks (tools/check.js) on every
-# pull request and on every push to main. No secrets are used, and the
+# Runs the tests and the project's rule checks (tools/check.js), and the
+# browser tests (e2e/run.js), on every pull request and on every push to
+# main. No secrets are used, and the
 # workflow can only read the repository.
 name: Tests
 
@@ -30,3 +31,32 @@ jobs:
         run: node --test
       - name: Rule checks
         run: node tools/check.js
+
+  # Plays the app in headless Chromium (e2e/run.js): Home and the Games
+  # screen at both tablet sizes, every game to the child's first turn, and
+  # the pawn battle to its Won card, failing on any page or console error.
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Playwright is installed here only; the app itself has no dependencies.
+      - name: Install Playwright and Chromium
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Browser tests
+        run: node e2e/run.js
+      - name: Keep screenshots of a failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-test-screenshots
+          path: e2e/output/
+          if-no-files-found: ignore
+          retention-days: 7
