@@ -52,7 +52,7 @@ Holding the "?" button on Home for two seconds opens the grown-ups' corner (a ta
 
 ## Status
 
-Stages 1 to 5 are complete (stages 3 and 5, the games and the profiles, await tablet testing), and so is stage 6 (more games, a quiz and tips; awaiting tablet testing): a home screen, board, tap-to-move, footprints for all six pieces, five themes (Robots, Classic, Space, Dinosaurs, Pirate; decoration only, every piece is always named and shown with its real chess shape), capture rounds (capture three opponent pawns), sound effects (with per-theme sounds for tapping a piece, a capture and a win), a device check page (`check.html`), a lesson player with a "watch, then do" lesson and a capturing lesson for every piece, nine games with teams, turn-taking, a footprints quiz, tips after a game, a capture jar and stickers, and a break reminder (see below), a grown-ups guide (`help.html`), and lesson text in English and Telugu with a language switch button. Every voice line has a clip in both languages (see [docs/VOICE-SCRIPT.md](docs/VOICE-SCRIPT.md)); if a clip is missing, the app falls back to the device's speech synthesis, or to silence. The roadmap is in [docs/DESIGN.md](docs/DESIGN.md#roadmap).
+Stages 1 to 5 are complete (stages 3 and 5, the games and the profiles, await tablet testing), and so is stage 6 (more games, a quiz and tips; awaiting tablet testing). Stage 7 has begun with offline mode: after the first visit the app works with no internet. So far: a home screen, board, tap-to-move, footprints for all six pieces, five themes (Robots, Classic, Space, Dinosaurs, Pirate; decoration only, every piece is always named and shown with its real chess shape), capture rounds (capture three opponent pawns), sound effects (with per-theme sounds for tapping a piece, a capture and a win), a device check page (`check.html`), a lesson player with a "watch, then do" lesson and a capturing lesson for every piece, nine games with teams, turn-taking, a footprints quiz, tips after a game, a capture jar and stickers, and a break reminder (see below), a grown-ups guide (`help.html`), and lesson text in English and Telugu with a language switch button. Every voice line has a clip in both languages (see [docs/VOICE-SCRIPT.md](docs/VOICE-SCRIPT.md)); if a clip is missing, the app falls back to the device's speech synthesis, or to silence. The roadmap is in [docs/DESIGN.md](docs/DESIGN.md#roadmap).
 
 ## Games
 
@@ -83,7 +83,7 @@ Requires Node.js 18 or later. There is nothing to install.
 node --test
 ```
 
-The tests cover the movement rules (`js/rules.js`), capture round generation (`js/levels.js`), the games and their opponent (`js/games.js`), the footprints quiz (`js/quiz.js`), the game list and its tip choice (`js/game-list.js`), the lesson scripts (`js/lessons.js`), the theme registry (`js/themes.js`), the language registry (`js/langs.js`), the progress store and backup code (`js/store.js`), the sound effects (`js/sound.js`) and the voice clip generator (`tools/make-voice.js`): every move is legal, timings fit, every line uses real chess terms and never a robot name, left, right or a square name in either language, every theme has a sprite symbol for every piece type and a colour rule in `css/app.css`, and the clip-generating tool's SSML, argument parsing and file indexing behave correctly (its Azure network call is never exercised by the tests).
+The tests cover the movement rules (`js/rules.js`), the offline file list (`sw.js` must match `tools/make-offline.js`; run `node tools/make-offline.js` after changing any page, style, script or clip), capture round generation (`js/levels.js`), the games and their opponent (`js/games.js`), the footprints quiz (`js/quiz.js`), the game list and its tip choice (`js/game-list.js`), the lesson scripts (`js/lessons.js`), the theme registry (`js/themes.js`), the language registry (`js/langs.js`), the progress store and backup code (`js/store.js`), the sound effects (`js/sound.js`) and the voice clip generator (`tools/make-voice.js`): every move is legal, timings fit, every line uses real chess terms and never a robot name, left, right or a square name in either language, every theme has a sprite symbol for every piece type and a colour rule in `css/app.css`, and the clip-generating tool's SSML, argument parsing and file indexing behave correctly (its Azure network call is never exercised by the tests).
 
 ## Deploy
 
@@ -121,7 +121,9 @@ js/app.js         Screen flow: who, home, book, meet, lesson, mission, round, wo
 audio/voice/en/   English voice clips (MP3).
 audio/voice/te/   Telugu voice clips (MP3).
 js/check.js       Device check page logic, including the speech voice list.
+sw.js             Service worker for offline play: keeps every file of the app in a versioned cache.
 tools/make-voice.js  Dev tool: generates voice clips with Azure text-to-speech. Not loaded by the site.
+tools/make-offline.js  Dev tool: writes the offline file list and version into sw.js.
 tests/            Node test files.
 docs/             Design notes, setup instructions, the voice script and how to add a language.
 ```

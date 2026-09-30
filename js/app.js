@@ -1302,6 +1302,20 @@
     else showHomeScreen();
   }
 
+  // Offline mode (stage 7): sw.js keeps every file of the app on the
+  // device after the first visit. Service workers need https (or
+  // localhost); a browser without them simply stays online-only.
+  function registerOffline() {
+    if (!('serviceWorker' in navigator)) return;
+    var loc = window.location;
+    if (loc.protocol !== 'https:' && loc.hostname !== 'localhost' && loc.hostname !== '127.0.0.1') return;
+    try {
+      navigator.serviceWorker.register('sw.js').catch(function () {});
+    } catch (e) {
+      // Offline mode is a nicety; the app works without it.
+    }
+  }
+
   function init() {
     detectFlexGap();
     store = STORE.create(STORE.localBackend());
@@ -1331,6 +1345,7 @@
     else showHomeScreen();
     armFirstTapListener();
     FC.grownupsUI.openIfRequested();
+    registerOffline();
   }
 
   init();

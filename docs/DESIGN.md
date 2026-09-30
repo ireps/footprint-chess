@@ -128,7 +128,7 @@ Stage 5. Progress is kept for each child, on the device only: no login, no cooki
 4. **Themes (done).** Classic, Space, Dinosaurs and Pirate alongside Robots, chosen with `?theme=` or a home-screen palette button that can be used at any time; see "Themes" above.
 5. **Profiles (done).** Picture profiles, a sticker book, and a grown-ups' corner with calm mode, break settings and a backup code. Progress is stored on the device only; see "Profiles, stickers and the grown-ups' corner" above.
 6. **More games (done).** A Games screen with three picture-marked rows of three games, Capture chain, Knight hop, Find the way, Stop the pawns, Keep the king safe, the "Whose footprints?" quiz and tips after a game; see "Games" above.
-7. **Advanced.** Check and checkmate, Mirror Pond (the opponent's view), hand-print levels that introduce left and right, and offline mode with a service worker.
+7. **Advanced (in progress).** In order: offline mode (done: `sw.js` keeps every page, style, script and listed voice clip in one cache per version, written by `tools/make-offline.js`; the version is a hash of the files, so any change makes a new cache, which replaces the old one once it is complete, and the next load uses it), check and checkmate, Mirror Pond (the opponent's view), and hand-print levels that introduce left and right.
 
 ## Rules not yet implemented
 

@@ -13,6 +13,8 @@ It also stores the grown-up settings: calm mode, and the break reminder (on or o
 
 All of this is kept in one item of local storage, under the key `footprint-chess`. The app never asks for a name, and no name is needed to play.
 
+For offline play the browser also keeps a copy of the app's own files (pages, styles, scripts and voice clips) in this site's cache storage, through a service worker (`sw.js`). That copy is the same for everyone and holds nothing about the child.
+
 ## What is not stored or sent
 
 - Nothing is sent anywhere. The data stays in the browser on this device.
