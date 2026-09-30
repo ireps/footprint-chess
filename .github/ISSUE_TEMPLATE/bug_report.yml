@@ -1,0 +1,48 @@
+name: Something is wrong
+description: Something does not work, looks wrong, or is confusing for a child.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you. Please do not include a child's name, photo, voice or anything else that identifies them. For a security problem, do not open an issue: see SECURITY.md.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you saw or heard, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to make it happen
+      description: The steps from the home screen, for example "Games, Pawn battle, tap the rook".
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and browser
+      description: For example "Fire HD 10 (7th gen), Silk, Chromium 108" (check.html shows the Chromium version).
+    validations:
+      required: true
+  - type: dropdown
+    id: language
+    attributes:
+      label: Language
+      options: [English, Telugu]
+  - type: input
+    id: theme
+    attributes:
+      label: Theme
+      description: Robots, Classic, Space, Dinosaurs or Pirate.
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots or anything else
+      description: Screenshots help, as long as they show no personal details.

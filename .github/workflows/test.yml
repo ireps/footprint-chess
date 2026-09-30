@@ -1,0 +1,32 @@
+# Runs the tests and the project's rule checks (tools/check.js) on every
+# pull request and on every push to main. No secrets are used, and the
+# workflow can only read the repository.
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # The ES2017 parse check needs the acorn parser. It is installed here
+      # only; the app itself has no dependencies.
+      - name: Install the parser for the ES2017 check
+        run: npm install --no-save --no-package-lock acorn@8.18.0
+      - name: Tests
+        run: node --test
+      - name: Rule checks
+        run: node tools/check.js

@@ -77,11 +77,13 @@ Opening `index.html` directly from disk is not supported.
 
 ## Tests
 
-Requires Node.js 18 or later. There is nothing to install.
+Requires Node.js 20 or later. There is nothing to install.
 
 ```
-node --test
+npm test
 ```
+
+This runs the tests (`node --test`) and the project's rule checks (`node tools/check.js`: no unsafe page APIs, no syntax newer than ES2017, the Content Security Policy first on every page, no inline scripts or styles, and an up-to-date offline file list). The ES2017 parse check needs the acorn parser (`npm install --no-save acorn`) and is skipped with a warning without it. GitHub runs the same checks on every pull request (`.github/workflows/test.yml`).
 
 The tests cover the movement rules (`js/rules.js`, including castling, en passant and promotion), the offline file list (`sw.js` must match `tools/make-offline.js`; run `node tools/make-offline.js` after changing any page, style, script or clip), capture round generation (`js/levels.js`), the games and their opponent (`js/games.js`), the growing battle and its opponent (`js/army.js`), the footprints quiz (`js/quiz.js`), the other side's view games (`js/pond.js`), left or right (`js/hands.js`), the game list and its tip choice (`js/game-list.js`), the lesson scripts (`js/lessons.js`), the theme registry (`js/themes.js`), the language registry (`js/langs.js`), the progress store and backup code (`js/store.js`), the sound effects (`js/sound.js`) and the voice clip generator (`tools/make-voice.js`): every move is legal, timings fit, every line uses real chess terms and never a robot name, left, right (outside the hand-print levels) or a square name in either language, every theme has a sprite symbol for every piece type and a colour rule in `css/app.css`, and the clip-generating tool's SSML, argument parsing and file indexing behave correctly (its Azure network call is never exercised by the tests).
 
@@ -127,6 +129,9 @@ js/check.js       Device check page logic, including the speech voice list.
 sw.js             Service worker for offline play: keeps every file of the app in a versioned cache.
 tools/make-voice.js  Dev tool: generates voice clips with Azure text-to-speech. Not loaded by the site.
 tools/make-offline.js  Dev tool: writes the offline file list and version into sw.js.
+tools/check.js    Dev tool: the project's rule checks, run by npm test and on every pull request.
+package.json      Scripts only (npm test, npm run check, npm run offline); no dependencies.
+.github/          The test workflow, issue and pull request templates, and CODEOWNERS.
 tests/            Node test files.
 docs/             Design notes, setup instructions, the voice script and how to add a language.
 ```
@@ -147,6 +152,10 @@ The target engine is Chromium 108 (Silk 108 on Fire OS 5). Silk builds as old as
 ## Security and privacy
 
 See [SECURITY.md](SECURITY.md) and [PRIVACY.md](PRIVACY.md).
+
+## Contributing
+
+Contributions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## License
 

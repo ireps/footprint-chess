@@ -1,0 +1,20 @@
+{
+  "name": "footprint-chess",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A chess-learning web app for young children: footprints instead of left and right, animated lessons, no login, works offline.",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "homepage": "https://ireps.github.io/footprint-chess/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ireps/footprint-chess.git"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test && node tools/check.js",
+    "check": "node tools/check.js",
+    "offline": "node tools/make-offline.js"
+  }
+}
