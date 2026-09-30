@@ -156,6 +156,11 @@ naming a direction.
 | mate-nearly | Nearly! The king can still escape. | దాదాపు! రాజు ఇంకా తప్పించుకోగలడు. | Warm and encouraging, never "wrong"; the squares he could reach glow red. |
 | mate-won | You found every checkmate! | అన్ని చెక్‌మేట్లూ కనుక్కున్నావు! | Big and celebratory; the Checkmate in one win line. |
 | tip-mate | Check the king, and cover every square he could run to! | రాజుకి చెక్ పెట్టు, అతను పారిపోయే ప్రతి గడినీ కాపు కాయి! | Calm and clear, the whole idea of checkmate in one line. |
+| game-mate2 | Checkmate in two! Give check first, then checkmate. | రెండు ఎత్తుల్లో చెక్‌మేట్! ముందు చెక్ పెట్టు, తర్వాత చెక్‌మేట్. | Excited, a bigger puzzle than before; states the goal on the Mission card. |
+| mate2-ask | Give check first! | ముందు చెక్ పెట్టు! | Inviting; said as each Checkmate in two puzzle appears. |
+| mate2-nearly | Nearly! Find the check that traps him next move. | దాదాపు! తర్వాతి ఎత్తులో రాజుని బంధించే చెక్ కనుక్కో. | Warm and encouraging, never "wrong"; said when a first move is taken back. |
+| mate2-won | You found every checkmate in two! | రెండు ఎత్తుల్లో చెక్‌మేట్లు అన్నీ కనుక్కున్నావు! | Big and celebratory; the Checkmate in two win line. |
+| tip-mate2 | Give check so the king must move. Then checkmate him! | రాజు కదలక తప్పని చెక్ పెట్టు. తర్వాత చెక్‌మేట్ పెట్టు! | Calm and clear, the idea of checkmate in two in one line. |
 | game-run | Run away! Stay where the other piece cannot capture you. | పారిపో! శత్రువు పావు పట్టుకోలేని చోట ఉండు. | Playful and a little breathless; states the goal on the Mission card. |
 | run-danger | Not there! It could capture you there. | అక్కడ వద్దు! అక్కడ అది నిన్ను పట్టుకోగలదు. | Gentle and protective, never scolding; said when the child taps a square the chaser watches. |
 | run-won | You got away safely! | సురక్షితంగా తప్పించుకున్నావు! | Big and relieved; the Run away win line. |

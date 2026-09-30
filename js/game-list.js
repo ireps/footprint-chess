@@ -64,6 +64,7 @@
     { id: 'safe', row: 'king', mission: 'game-safe', win: 'reach-won', tip: 'tip-safe', teams: false, kind: 'board' },
     { id: 'escape', row: 'king', mission: 'game-escape', win: 'escape-won', tip: 'tip-escape', teams: false, kind: 'board', lesson: 'check' },
     { id: 'mate', row: 'king', mission: 'game-mate', win: 'mate-won', tip: 'tip-mate', teams: false, kind: 'board', lesson: 'checkmate' },
+    { id: 'mate2', row: 'king', mission: 'game-mate2', win: 'mate2-won', tip: 'tip-mate2', teams: false, kind: 'board', lesson: 'checkmate' },
     { id: 'army1', row: 'army', mission: 'game-army1', win: 'army-won', tip: 'tip-army1', teams: true, kind: 'board' },
     { id: 'army2', row: 'army', mission: 'game-army2', win: 'army-won', tip: 'tip-army2', teams: true, kind: 'board' },
     { id: 'army3', row: 'army', mission: 'game-army3', win: 'army-won', tip: 'tip-army3', teams: true, kind: 'board' },

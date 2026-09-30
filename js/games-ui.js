@@ -666,9 +666,9 @@
     if (gmode !== 'play' || !gstate || gstate.turn !== 'me' || busy) return;
     if (selected) {
       B.pulseFootprints();
-      // Checkmate in one and the growing battle: with a piece selected,
+      // Checkmate in one and two, and the growing battle: with a piece selected,
       // its best square glows.
-      var target = (gameId === 'mate' || gstate.army) ? G.hint(gstate, selected) : null;
+      var target = (gameId === 'mate' || gameId === 'mate2' || gstate.army) ? G.hint(gstate, selected) : null;
       if (target && gstate.army) {
         B.glow([]);
         armyHelp();
@@ -796,8 +796,9 @@
     });
   }
 
-  // Checkmate in one: a move that is not checkmate goes back where it came
-  // from; the squares the king could still reach glow red.
+  // Checkmate in one (and the checkmate of Checkmate in two): a move that
+  // is not checkmate goes back where it came from; the squares the king
+  // could still reach glow red.
   function takeBack(node, type, from, to, res) {
     var myToken = gameToken;
     B.moveHero(node, type, to, from, function () {
@@ -805,7 +806,8 @@
       B.glow(res.escapes || [], DANGER);
       resetStreak();
       busy = false;
-      V.say('mate-nearly', function () {});
+      // Checkmate in two: a first move that does not lead to checkmate.
+      V.say(res.first ? 'mate2-nearly' : 'mate-nearly', function () {});
       armIdle();
     });
   }
@@ -899,13 +901,19 @@
       onGameOver();
       return;
     }
-    if ((gstate.id === 'escape' || gstate.id === 'mate') && gstate.solved) {
+    if ((gstate.id === 'escape' || gstate.id === 'mate' || gstate.id === 'mate2') && gstate.solved) {
       nextPuzzleUI();
       return;
     }
     if (isChild) {
       armIdle();
       botTurn();
+    } else if (gstate.id === 'mate2') {
+      // Checkmate in two: the king has answered; now the checkmate.
+      B.setMode('play', modeTextPlay());
+      S.play('your-turn');
+      V.sayAfter('mate-ask');
+      armIdle();
     } else {
       if (GL.get(gameId).row === 'pond') showPondStrip(gstate.board);
       B.setActiveTeamBar('home');
@@ -1006,11 +1014,12 @@
     B.glow(from, DANGER);
   }
 
-  // Get out of check and Checkmate in one: after a solved puzzle, its line,
-  // then the next puzzle and its question.
+  // Get out of check and Checkmate in one and two: after a solved puzzle,
+  // its line, then the next puzzle and its question.
   var PUZZLE_LINES = {
     escape: { solved: 'check-3', ask: 'escape-ask' },
-    mate: { solved: 'mate-3', ask: 'mate-ask' }
+    mate: { solved: 'mate-3', ask: 'mate-ask' },
+    mate2: { solved: 'mate-3', ask: 'mate2-ask' }
   };
 
   function nextPuzzleUI() {
@@ -1019,7 +1028,7 @@
     B.setMode('watch', modeTextWatch());
     var myToken = gameToken;
     var lines = PUZZLE_LINES[gstate.id];
-    if (gstate.id === 'mate') glowKingCage();
+    if (gstate.id === 'mate' || gstate.id === 'mate2') glowKingCage();
     V.sayAfter(lines.solved, function () {
       if (myToken !== gameToken || !gstate) return;
       // Pacing between puzzles, which reduced motion must not shorten.
@@ -1056,11 +1065,13 @@
 
   function botTurn() {
     if (!gstate || gstate.over || gstate.turn !== 'foe') return;
-    var announce = (botTurnCount % 2 === 0);
+    // A game without teams (Checkmate in two) has no team bars or turn line.
+    var teams = GL.get(gameId).teams;
+    var announce = teams && (botTurnCount % 2 === 0);
     botTurnCount += 1;
     var theme = B.getTheme();
     var otherSide = childSide === 'a' ? 'b' : 'a';
-    B.setActiveTeamBar('far');
+    if (teams) B.setActiveTeamBar('far');
     B.setMode('watch', announce ? B.turnBadgeText(theme, otherSide) : modeTextWatch());
     if (announce) V.sayAfter('turn-foe');
     var myToken = gameToken;

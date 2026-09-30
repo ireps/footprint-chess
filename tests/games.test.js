@@ -896,3 +896,105 @@ test('mate: a move that is not checkmate is taken back with the king\'s escapes;
     assert.ok(state.over && state.winner === 'me');
   }
 });
+
+// ---- mate2: Checkmate in two ------------------------------------------------
+
+test('mate2 puzzles: legal, no check yet, no checkmate in one, and a first move that is a check forcing checkmate', () => {
+  G.MATE2_PUZZLES.forEach((list, n) => {
+    for (const mirror of [false, true]) {
+      const board = G.puzzleBoard(list, mirror);
+      const tag = `puzzle ${n}${mirror ? ' mirrored' : ''}`;
+      assert.ok(R.findKing(board, 'foe') && R.findKing(board, 'me'), `${tag}: both kings`);
+      assert.equal(R.inCheck(board, 'foe'), false, `${tag}: already check`);
+      assert.equal(R.inCheck(board, 'me'), false, `${tag}: the child is in check`);
+      assert.equal(G.mateMoves(board).length, 0, `${tag}: a checkmate in one`);
+      const keys = G.mateInTwoMoves(board);
+      assert.ok(keys.length >= 1, `${tag}: no checkmate in two`);
+      // Every first move found gives check, and never with the king.
+      keys.forEach(k => assert.notEqual(board[k.from[0]][k.from[1]].type, 'k', `${tag}: a king move`));
+    }
+  });
+});
+
+test('mate2: a wrong first move and a wrong second move are taken back; any answer still allows checkmate; five puzzles win', () => {
+  for (let seed = 1; seed <= 30; seed++) {
+    const rng = seeded(seed);
+    const state = G.create('mate2', {}, rng);
+    assert.equal(state.puzzles.length, 5);
+    assert.ok(state.solo, 'no Team card');
+    for (let i = 0; i < 5; i++) {
+      const keys = G.mateInTwoMoves(state.board);
+      // A legal first move that does not force checkmate is taken back.
+      let wrong = null;
+      for (let r = 0; r < 8 && !wrong; r++) for (let c = 0; c < 8 && !wrong; c++) {
+        const p = state.board[r][c];
+        if (!p || p.team !== 'me') continue;
+        const m = G.legalMoves(state, r, c).find(x => !keys.some(k => k.from[0] === r && k.from[1] === c && k.to[0] === x.r && k.to[1] === x.c));
+        if (m) wrong = { from: [r, c], to: [m.r, m.c] };
+      }
+      assert.ok(wrong, 'some first move is wrong');
+      const before = JSON.stringify(state.board);
+      const back = G.applyMove(state, wrong.from, wrong.to);
+      assert.ok(back.reverted && back.first && back.events.includes('nearly'));
+      assert.equal(JSON.stringify(state.board), before, 'the board is unchanged');
+      assert.equal(state.turn, 'me');
+
+      const h = G.hint(state);
+      assert.deepEqual(h, keys[0].from);
+      assert.deepEqual(G.hint(state, h), keys[0].to);
+      const res = G.applyMove(state, keys[0].from, keys[0].to);
+      assert.ok(res.events.includes('check'));
+      assert.ok(R.inCheck(state.board, 'foe'));
+      assert.equal(state.turn, 'foe');
+      assert.equal(G.hint(state), null, 'no hint on the other side\'s turn');
+
+      const reply = G.botMove(state, rng);
+      assert.ok(reply, 'the other side answers');
+      assert.equal(state.turn, 'me');
+      assert.equal(R.inCheck(state.board, 'foe'), false, 'the answer ends the check');
+      const mates = G.mateMoves(state.board);
+      assert.ok(mates.length >= 1, `puzzle ${i}: no checkmate after the answer`);
+
+      const mh = G.hint(state);
+      assert.deepEqual(mh, mates[0].from);
+      const res2 = G.applyMove(state, mates[0].from, mates[0].to);
+      assert.ok(res2.events.includes('mated'));
+      assert.ok(R.isCheckmate(state.board, 'foe'));
+      if (i < 4) assert.ok(G.nextPuzzle(state));
+    }
+    assert.ok(state.over && state.winner === 'me');
+  }
+});
+
+test('mate2: every answer to every first move leaves a checkmate, and a non-mating second move shows the king\'s escapes', () => {
+  G.MATE2_PUZZLES.forEach((list, n) => {
+    const board = G.puzzleBoard(list, false);
+    G.mateInTwoMoves(board).forEach(k => {
+      const state = { id: 'mate2', board: R.cloneBoard(board), turn: 'me', moveCount: 0, over: false, winner: null, solo: true, checkRules: true, puzzles: [{ n, mirror: false }], index: 0, solved: false, step: 1 };
+      G.applyMove(state, k.from, k.to);
+      const snapshot = JSON.stringify(state.board);
+      let answers = 0;
+      for (let seed = 1; seed <= 20; seed++) {
+        state.board = JSON.parse(snapshot);
+        state.turn = 'foe';
+        G.botMove(state, seeded(seed));
+        answers++;
+        assert.ok(G.mateMoves(state.board).length >= 1, `puzzle ${n}: an answer escapes`);
+      }
+      assert.equal(answers, 20);
+      // A second move that is not checkmate goes back.
+      const mates = G.mateMoves(state.board);
+      let wrong = null;
+      for (let r = 0; r < 8 && !wrong; r++) for (let c = 0; c < 8 && !wrong; c++) {
+        const p = state.board[r][c];
+        if (!p || p.team !== 'me') continue;
+        const m = G.legalMoves(state, r, c).find(x => !mates.some(mm => mm.from[0] === r && mm.from[1] === c && mm.to[0] === x.r && mm.to[1] === x.c));
+        if (m) wrong = { from: [r, c], to: [m.r, m.c] };
+      }
+      if (wrong) {
+        const res = G.applyMove(state, wrong.from, wrong.to);
+        assert.ok(res.reverted && !res.first && Array.isArray(res.escapes));
+      }
+    });
+  });
+});

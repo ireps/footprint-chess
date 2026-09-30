@@ -714,6 +714,44 @@
         });
       });
     },
+    // Checkmate in two with two rooks: one rook checks, the king has to
+    // step to the far row, and the other rook gives checkmate there.
+    mate2: function (ctx, line) {
+      var board = G.puzzleBoard(G.MATE2_PUZZLES[0], false);
+      var nodes = {};
+      for (var r = 0; r < 8; r++) {
+        for (var c = 0; c < 8; c++) {
+          var p = board[r][c];
+          if (!p) continue;
+          nodes[key(r, c)] = p.team === 'me' ? tipPiece(p.type, r, c) : tipFoe(p.type, r, c);
+        }
+      }
+      var done = join(2, ctx.end);
+      V.say(line, function () { if (ctx.alive()) done(); });
+      ctx.after(800, function () {
+        tipPrints(board, [7, 7], {});
+        ctx.after(1000, function () {
+          // Check: the king's row glows red, so he must step away.
+          tipMove(ctx, board, nodes['7,7'], [7, 7], [1, 7], null, function () {
+            B.glow([[1, 3]], DANGER);
+            ctx.after(1200, function () {
+              B.glow([]);
+              tipMove(ctx, board, nodes['1,3'], [1, 3], [0, 3], null, function () {
+                ctx.after(700, function () {
+                  tipPrints(board, [2, 0], {});
+                  ctx.after(900, function () {
+                    tipMove(ctx, board, nodes['2,0'], [2, 0], [0, 0], null, function () {
+                      B.glow([[0, 2], [0, 3], [0, 4], [1, 2], [1, 3], [1, 4]], DANGER);
+                      ctx.after(1500, done);
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    },
     // Three ways out of check, one after another, in time with the line:
     // step away, block the line, capture the attacker.
     escape: function (ctx, line) {
