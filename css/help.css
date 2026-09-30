@@ -23,6 +23,22 @@ body {
   line-height: 1.5;
 }
 
+/* The two buttons stay at the top of the screen while the page scrolls. */
+.topbar {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 10px 12px;
+  background: var(--bg);
+  box-shadow: 0 2px 10px rgba(20, 40, 60, 0.12);
+}
+
+.topbar .back { margin: 4px 8px; }
+
 main {
   max-width: 760px;
   margin: 0 auto;
