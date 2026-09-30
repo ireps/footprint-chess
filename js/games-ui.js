@@ -30,6 +30,7 @@
   var G = FC.games;
   var Q = FC.quiz;
   var PD = FC.pond;
+  var HD = FC.hands;
   var GL = FC.gameList;
   var LS = FC.lessons;
   var S = FC.sound;
@@ -105,6 +106,7 @@
   var qstate = null;         // FC.quiz state (the footprints quiz)
   var pstate = null;         // FC.pond state (Their footprints, Which piece is in danger?)
   var pondIdle = 0;          // idle hints given on the current pond question
+  var hstate = null;         // FC.hands state (Left or right?)
   var quizMisses = 0;        // wrong taps on the current quiz question
   var quizIdle = 0;          // idle hints given on the current quiz question
   var wrongTaps = {};        // piece type -> taps on a square it cannot reach, this game (for the tip)
@@ -231,6 +233,13 @@
       pic.appendChild(B.pieceSvg('n', 'foe'));
       pic.appendChild(el('span', 'speed-lines'));
       pic.appendChild(B.pieceSvg('r', 'me'));
+    } else if (id === 'hands') {
+      // The two hand prints: left orange, right blue.
+      ['left', 'right'].forEach(function (side) {
+        var palm = el('div', 'palm palm-' + side);
+        palm.appendChild(B.svgUse('ic-palm'));
+        pic.appendChild(palm);
+      });
     } else if (id === 'theirs') {
       // Their pawn above its dark footprints, pointing toward your side.
       var st5 = el('div', 'game-pic-stack game-pic-tight');
@@ -698,6 +707,10 @@
       preparePond();
       return;
     }
+    if (GL.get(gameId).kind === 'hands') {
+      prepareHands();
+      return;
+    }
     gameToken += 1;
     window.clearTimeout(botTimer);
     botTimer = null;
@@ -727,6 +740,10 @@
     }
     if (GL.get(gameId).kind === 'pond') {
       startPond();
+      return;
+    }
+    if (GL.get(gameId).kind === 'hands') {
+      startHands();
       return;
     }
     gmode = 'play';
@@ -762,6 +779,10 @@
   function onIdle() {
     if (gmode === 'pond') {
       onPondIdle();
+      return;
+    }
+    if (gmode === 'hands') {
+      onHandsIdle();
       return;
     }
     if (gmode === 'quiz') {
@@ -827,6 +848,7 @@
     if (gmode === 'lesson') { P.handleTap(r, c); return; }
     if (gmode === 'quiz') { onQuizTap(r, c); return; }
     if (gmode === 'pond') { onPondTap(r, c); return; }
+    if (gmode === 'hands') { onHandsTap(r, c); return; }
     if (gmode === 'tip') { B.nudgeMode(); return; }
     if (gmode !== 'play' || !gstate || gstate.over) return;
     if (gstate.turn !== 'me' || busy) {
@@ -1112,7 +1134,7 @@
     // The pond games teach the other side's moves, so no rule tip of the
     // child's own pieces follows them.
     var kind = GL.get(gameId).kind;
-    var misses = gmodeIsQuiz() ? qstate.misses : (kind === 'pond' ? {} : wrongTaps);
+    var misses = gmodeIsQuiz() ? qstate.misses : ((kind === 'pond' || kind === 'hands') ? {} : wrongTaps);
     var tip = GL.pickTip(gameId, misses);
     if (!tip) {
       showGameWonOrBreak();
@@ -1611,6 +1633,159 @@
   }
 
   /* =====================================================================
+   * Left or right? (js/hands.js): the one game that names left and right,
+   * with the child's two hand prints at the ends of their own strip.
+   * ===================================================================*/
+
+  var handsIdle = 0;
+
+  function handsAskLine() {
+    var q = HD.current(hstate);
+    return q && q.dir === 'right' ? 'hands-right' : 'hands-left';
+  }
+
+  function prepareHands() {
+    gameToken += 1;
+    clearIdle();
+    busy = false;
+    selected = null;
+    hstate = HD.create({}, Math.random);
+    B.hideTeamBars();
+    renderHands();
+    prepared = true;
+  }
+
+  function renderHands() {
+    B.clearAll();
+    pieceNodes = {};
+    selected = null;
+    var q = HD.current(hstate);
+    pieceNodes[key(q.at[0], q.at[1])] = B.addPiece(q.type, q.at[0], q.at[1], childPieceSide());
+    B.showHandPrints(true);
+  }
+
+  function startHands() {
+    gmode = 'hands';
+    if (dom.toolSkip) dom.toolSkip.hidden = true;
+    setPanel(gameId);
+    if (!prepared) prepareHands();
+    prepared = false;
+    askHands(false);
+  }
+
+  // Watch while the question is asked (the named hand print glows), then
+  // the child's turn.
+  function askHands(redraw) {
+    handsIdle = 0;
+    busy = true;
+    if (redraw) renderHands();
+    B.setMode('watch', modeTextWatch());
+    B.flashHandPrint(HD.current(hstate).dir);
+    var myToken = gameToken;
+    V.say(handsAskLine(), function () {
+      if (myToken !== gameToken) return;
+      busy = false;
+      B.setMode('play', modeTextPlay());
+      S.play('your-turn');
+      armIdle();
+    });
+  }
+
+  function handsMoves() {
+    return HD.moves(hstate);
+  }
+
+  function onHandsTap(r, c) {
+    if (!hstate || hstate.over || busy) {
+      B.nudgeMode();
+      return;
+    }
+    armIdle();
+    var q = HD.current(hstate);
+    var node = pieceNodes[key(q.at[0], q.at[1])];
+    if (r === q.at[0] && c === q.at[1]) {
+      selected = q.at.slice();
+      node.classList.add('selected');
+      B.replay(node, 'bounce');
+      B.showFootprints(q.type, q.at, handsMoves(), {});
+      S.play('pick', q.type);
+      return;
+    }
+    if (!selected) {
+      S.play('nudge');
+      return;
+    }
+    var legal = handsMoves().some(function (m) { return m.r === r && m.c === c; });
+    if (!legal) {
+      B.pulseFootprints();
+      S.play('bonk');
+      return;
+    }
+    var res = HD.answer(hstate, [r, c]);
+    selected = null;
+    node.classList.remove('selected');
+    B.hideFootprints({});
+    B.hideHand();
+    busy = true;
+    clearIdle();
+    B.setMode('watch', modeTextWatch());
+    var myToken = gameToken;
+    B.moveHero(node, q.type, q.at, [r, c], function () {
+      if (myToken !== gameToken || !hstate) return;
+      if (res === 'yes') {
+        S.play('star');
+        B.sparkle(r, c, 0);
+        B.flashHandPrint(q.dir);
+        V.say(q.dir === 'left' ? 'hands-yes-left' : 'hands-yes-right', function () {
+          if (myToken !== gameToken || !hstate) return;
+          // Pacing between questions, which reduced motion must not shorten.
+          B.wait(function () {
+            if (myToken !== gameToken || !hstate) return;
+            if (HD.next(hstate)) askHands(true);
+            else onGameOver();
+          }, 400);
+        });
+        return;
+      }
+      // No fail state: the piece goes back. The other way: that hand is
+      // named, then the asked one glows; straight up or down: ask again.
+      if (res === 'other') B.flashHandPrint(q.dir === 'left' ? 'right' : 'left');
+      var line = res === 'other' ? (q.dir === 'left' ? 'hands-not-left' : 'hands-not-right') : handsAskLine();
+      B.moveHero(node, q.type, [r, c], q.at, function () {
+        if (myToken !== gameToken || !hstate) return;
+        V.say(line, function () {
+          if (myToken !== gameToken || !hstate) return;
+          B.flashHandPrint(q.dir);
+          busy = false;
+          B.setMode('play', modeTextPlay());
+          armIdle();
+        });
+      });
+    });
+  }
+
+  // First the question again (with its hand print), then the ghost hand on
+  // the piece, or, once it is selected, on a square the asked way; then
+  // nothing more until the child taps.
+  function onHandsIdle() {
+    if (busy || !hstate || hstate.over) return;
+    handsIdle += 1;
+    var q = HD.current(hstate);
+    if (handsIdle === 1) {
+      B.flashHandPrint(q.dir);
+      V.say(handsAskLine(), function () {});
+      armIdle();
+      return;
+    }
+    if (!selected) {
+      B.handRest(q.at[0], q.at[1]);
+      return;
+    }
+    var good = handsMoves().filter(function (m) { return HD.sideOf(q.at, [m.r, m.c]) === q.dir; });
+    if (good.length) B.handRest(good[0].r, good[0].c);
+  }
+
+  /* =====================================================================
    * Short "watch" scenes on the board: "watch how to play" (each game's
    * own scene in HOW_TO, before its first game and from the light bulb on
    * its Mission and Won cards), and the rule tip after a win
@@ -1952,6 +2127,31 @@
         });
       });
     },
+    // The two hand prints glow in turn, then the rook slides toward the
+    // left hand and back toward the right.
+    hands: function (ctx, line) {
+      var board = R.emptyBoard();
+      board[4][4] = { type: 'r', team: 'me' };
+      var rook = tipPiece('r', 4, 4);
+      B.showHandPrints(true);
+      var done = join(2, ctx.end);
+      V.say(line, function () { if (ctx.alive()) done(); });
+      ctx.after(1400, function () {
+        B.flashHandPrint('left');
+        ctx.after(1600, function () {
+          B.flashHandPrint('right');
+          ctx.after(1600, function () {
+            B.flashHandPrint('left');
+            tipMove(ctx, board, rook, [4, 4], [4, 1], null, function () {
+              ctx.after(500, function () {
+                B.flashHandPrint('right');
+                tipMove(ctx, board, rook, [4, 1], [4, 6], null, done);
+              });
+            });
+          });
+        });
+      });
+    },
     // Their pawn's footprints point toward your side; it marches down.
     theirs: function (ctx, line) {
       var board = R.emptyBoard();
@@ -2282,6 +2482,8 @@
     gstate = null;
     qstate = null;
     pstate = null;
+    hstate = null;
+    B.showHandPrints(false);
     hidePondStrip();
     tipDone = null;
     B.glow([]);
@@ -2318,6 +2520,7 @@
     if (gmode === 'lesson' && lessonRun) startGameLesson(lessonRun.id, lessonRun.next);
     else if (gmode === 'quiz' && !busy) V.say('quiz-ask', function () {});
     else if (gmode === 'pond' && !busy) V.say(pondAskLine(), function () {});
+    else if (gmode === 'hands' && !busy && hstate && !hstate.over) V.say(handsAskLine(), function () {});
   }
 
   // A different child is now playing (or everything was replaced): the

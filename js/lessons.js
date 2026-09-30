@@ -203,6 +203,19 @@
     'danger-safe': { en: 'That one is safe. Try another!', te: 'అది క్షేమంగానే ఉంది. ఇంకోటి చూడు!' },
     'danger-won': { en: 'You kept your pieces safe!', te: 'నీ పావులన్నిటినీ కాపాడావు!' },
     'tip-danger': { en: 'Look at their footprints. Is one of your pieces on them?', te: 'శత్రువు అడుగుల గుర్తులు చూడు. వాటి మీద నీ పావు ఏదైనా ఉందా?' },
+    'hands-1': { en: 'Hold up your hands and look at them.', te: 'నీ చేతులు పైకెత్తి చూసుకో.' },
+    'hands-2': { en: 'This hand print is your left hand.', te: 'ఈ చేతి ముద్ర నీ ఎడమ చేయి.' },
+    'hands-3': { en: 'This one is your right hand.', te: 'ఇది నీ కుడి చేయి.' },
+    'hands-4': { en: 'The rook slides toward your left hand.', te: 'ఏనుగు నీ ఎడమ చేయి వైపుకి జారుతుంది.' },
+    'game-hands': { en: 'Left or right? Move the way I say!', te: 'ఎడమ, కుడి! నేను చెప్పిన వైపుకి కదుపు!' },
+    'hands-left': { en: 'Move to your left!', te: 'నీ ఎడమ వైపుకి కదుపు!' },
+    'hands-right': { en: 'Move to your right!', te: 'నీ కుడి వైపుకి కదుపు!' },
+    'hands-yes-left': { en: 'Yes! That is your left.', te: 'అవును! అది నీ ఎడమ వైపు.' },
+    'hands-yes-right': { en: 'Yes! That is your right.', te: 'అవును! అది నీ కుడి వైపు.' },
+    'hands-not-left': { en: 'That way is your right. Try your left!', te: 'అది నీ కుడి వైపు. ఎడమ వైపు ప్రయత్నించు!' },
+    'hands-not-right': { en: 'That way is your left. Try your right!', te: 'అది నీ ఎడమ వైపు. కుడి వైపు ప్రయత్నించు!' },
+    'hands-won': { en: 'You know your left and right!', te: 'నీకు ఎడమ, కుడి బాగా తెలుసు!' },
+    'tip-hands': { en: 'Look at the hand prints: this one is left, that one is right.', te: 'చేతి ముద్రలు చూడు: ఇది ఎడమ, అది కుడి.' },
     'tip-escape': { en: 'Step away, block the line, or capture the attacker!', te: 'పక్కకి తప్పుకో, దారికి అడ్డం పెట్టు, లేదా దాడి చేసే పావుని పట్టుకో!' },
     'game-chain': { en: 'Capture chain! Capture every pawn, one after another.', te: 'గొలుసు ఆట! శత్రువు భటులను ఒకరి తర్వాత ఒకరిని పట్టుకో!' },
     'game-whose': { en: 'Whose footprints? Tap the piece that made them!', te: 'ఎవరి అడుగులు? ఆ అడుగులు వేసిన పావుని నొక్కు!' },
@@ -316,7 +329,20 @@
     'game-run', 'run-danger', 'run-won', 'tip-run',
     'game-mate', 'mate-ask', 'mate-nearly', 'mate-won', 'tip-mate',
     'game-theirs', 'theirs-ask', 'theirs-again', 'theirs-won', 'tip-theirs',
-    'game-danger', 'danger-ask', 'danger-yes', 'danger-safe', 'danger-won', 'tip-danger'
+    'game-danger', 'danger-ask', 'danger-yes', 'danger-safe', 'danger-won', 'tip-danger',
+    'game-hands', 'hands-left', 'hands-right', 'hands-yes-left', 'hands-yes-right',
+    'hands-not-left', 'hands-not-right', 'hands-won', 'tip-hands'
+  ];
+
+  /*
+   * Hand-print levels (stage 7): the only lines that may say left or right
+   * (ఎడమ, కుడి). Every other line keeps the "never left or right" rule
+   * (tests/lessons.test.js).
+   */
+  var HAND_LINES = [
+    'hands-1', 'hands-2', 'hands-3', 'hands-4',
+    'game-hands', 'hands-left', 'hands-right', 'hands-yes-left', 'hands-yes-right',
+    'hands-not-left', 'hands-not-right', 'hands-won', 'tip-hands'
   ];
 
   var LESSONS = [
@@ -726,6 +752,41 @@
     ]
   });
 
+  /*
+   * Your hands (stage 7): the hand prints at the two ends of the child's
+   * strip glow in turn ({ handPrint: 'left' | 'right' }, drawn by
+   * js/board.js), then the rook slides toward the left hand. Played before
+   * the child's first Left or right? game.
+   */
+  LESSONS.push({
+    id: 'yourhands',
+    type: 'r',
+    title: 'Your hands',
+    setup: { hero: [4, 4], foes: [] },
+    watch: [
+      { wait: 600 },
+      { say: 'hands-1' },
+      { waitVoice: true },
+      { handPrint: 'left' },
+      { say: 'hands-2' },
+      { waitVoice: true },
+      { handPrint: 'right' },
+      { say: 'hands-3' },
+      { waitVoice: true },
+      { select: true },
+      { say: 'hands-4' },
+      { handPrint: 'left' },
+      { hand: [4, 1] },
+      { move: [4, 1] },
+      { waitVoice: true },
+      { wait: 400 },
+      { reset: true }
+    ],
+    practice: [
+      { to: [4, 1], accept: 'only' }
+    ]
+  });
+
   var STEP_MS = { hand: 900, move: 700, select: 300, unselect: 300, reset: 300, foeMove: 700 };
 
   function get(id) {
@@ -851,6 +912,7 @@
     GAME_LINES: GAME_LINES,
     PROFILE_LINES: PROFILE_LINES,
     MORE_GAME_LINES: MORE_GAME_LINES,
+    HAND_LINES: HAND_LINES,
     LESSONS: LESSONS,
     get: get,
     boardFor: boardFor,
