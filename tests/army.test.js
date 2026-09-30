@@ -69,7 +69,8 @@ test('each level sets up both sides as in a real game, with only its kinds of pi
     }
     assert.equal(s.startPieces, count(s.board, 'me'));
   }
-  assert.deepEqual(A.LEVELS.map(l => l.types.length), [1, 2, 3]);
+  assert.deepEqual(A.LEVELS.map(l => l.types.length), [1, 2, 3, 4, 5, 6]);
+  assert.deepEqual(A.LEVELS.map(l => l.id), ['army1', 'army2', 'army3', 'army4', 'army5', 'army6']);
 });
 
 test('the opponent gets a little stronger at each level', () => {
@@ -173,7 +174,7 @@ test('the opponent never takes the child below half their pieces, or their last 
 });
 
 test('the opponent\'s pawns never step onto the child\'s home row', () => {
-  for (const lv of A.LEVELS) {
+  for (const lv of A.LEVELS.filter(l => l.goal !== 'mate')) {
     for (let seed = 1; seed <= 25; seed++) {
       play(lv.id, seed, (s, rng) => { const all = childMoves(s); return all[Math.floor(rng() * all.length)]; }, (s) => {
         for (let c = 0; c < 8; c++) {
@@ -185,21 +186,98 @@ test('the opponent\'s pawns never step onto the child\'s home row', () => {
   }
 });
 
+function hintMove(s) {
+  const piece = A.hint(s, null);
+  return { from: piece, to: A.hint(s, piece) };
+}
+
 test('a child who follows the hints wins every level, in a short game', () => {
-  for (const lv of A.LEVELS) {
+  for (const lv of A.LEVELS.filter(l => l.goal !== 'mate')) {
     for (let seed = 1; seed <= 40; seed++) {
-      const n = play(lv.id, seed, (s) => {
-        const piece = A.hint(s, null);
-        const to = A.hint(s, piece);
-        return { from: piece, to };
-      }, null, 90);
+      const n = play(lv.id, seed, hintMove, null, 90);
       assert.ok(n > 0, `${lv.id} seed ${seed}: not won in 90 moves`);
     }
   }
 });
 
+test('with the kings, a child who follows the hints gives checkmate', () => {
+  for (let seed = 1; seed <= 8; seed++) {
+    const rng = seeded(seed);
+    const s = A.create('army6', {}, rng);
+    let n = 0;
+    while (!s.over && n < 200) {
+      if (s.turn === 'me') { const mv = hintMove(s); A.applyMove(s, mv.from, mv.to); n++; } else A.botMove(s, rng);
+    }
+    assert.equal(s.winner, 'me', `seed ${seed}`);
+    assert.ok(A.checkmated(s.board, 'foe'));
+  }
+});
+
+test('with the kings, the opponent never checkmates or stalemates the child, and plays only legal moves', () => {
+  for (let seed = 1; seed <= 6; seed++) {
+    const rng = seeded(seed);
+    const s = A.create('army6', {}, rng);
+    for (let n = 0; n < 60 && !s.over; n++) {
+      if (s.turn === 'me') {
+        const all = childMoves(s);
+        assert.ok(all.length, `seed ${seed}: the child has no move`);
+        const mv = all[Math.floor(rng() * all.length)];
+        A.applyMove(s, mv.from, mv.to);
+        assert.ok(!R.inCheck(s.board, 'me'), 'the child left their own king in check');
+      } else {
+        A.botMove(s, rng);
+        assert.ok(!R.inCheck(s.board, 'foe'), 'the opponent left its king in check');
+        if (!s.over) assert.ok(!A.checkmated(s.board, 'me') && !A.stalemated(s.board, 'me'));
+      }
+    }
+  }
+});
+
+test('with the kings: a pawn on the other side becomes a queen, check and stalemate are reported', () => {
+  const s = A.create('army6', {}, Math.random);
+  s.board = R.emptyBoard();
+  s.board[7][4] = { type: 'k', team: 'me' };
+  s.board[1][0] = { type: 'p', team: 'me' };
+  s.board[3][7] = { type: 'k', team: 'foe' };
+  const res = A.applyMove(s, [1, 0], [0, 0]);
+  assert.deepEqual(s.board[0][0], { type: 'q', team: 'me' });
+  assert.ok(res.events.includes('promoted'));
+  assert.ok(!res.events.includes('check'));
+
+  const t = A.create('army6', {}, Math.random);
+  t.board = R.emptyBoard();
+  t.board[7][4] = { type: 'k', team: 'me' };
+  t.board[5][0] = { type: 'r', team: 'me' };
+  t.board[2][3] = { type: 'k', team: 'foe' };
+  assert.ok(A.applyMove(t, [5, 0], [2, 0]).events.includes('check'));
+
+  // The king in the corner with nowhere to go but not in check.
+  const u = A.create('army6', {}, Math.random);
+  u.board = R.emptyBoard();
+  u.board[0][0] = { type: 'k', team: 'foe' };
+  u.board[2][1] = { type: 'q', team: 'me' };
+  u.board[7][7] = { type: 'k', team: 'me' };
+  u.board[3][2] = { type: 'p', team: 'me' };
+  const res3 = A.applyMove(u, [2, 1], [1, 2]);
+  assert.deepEqual(res3.events, ['army-draw']);
+  assert.equal(u.over, true);
+  assert.equal(u.winner, null);
+});
+
+test('with the kings: the king cannot step into check, and those squares are reported', () => {
+  const s = A.create('army6', {}, Math.random);
+  s.board = R.emptyBoard();
+  s.board[7][4] = { type: 'k', team: 'me' };
+  s.board[0][3] = { type: 'r', team: 'foe' };
+  s.board[0][7] = { type: 'k', team: 'foe' };
+  const moves = A.legalMoves(s, 7, 4).map(m => m.c);
+  assert.ok(!moves.includes(3));
+  assert.deepEqual(A.dangerSquares(s, 7, 4).map(sq => sq[1]).sort(), [3, 3]);
+  assert.deepEqual(A.checkers(s.board, 'me'), []);
+});
+
 test('every game ends, even when the child moves at random, and the child keeps half their pieces', () => {
-  for (const lv of A.LEVELS) {
+  for (const lv of A.LEVELS.filter(l => l.goal !== 'mate')) {
     for (let seed = 1; seed <= 25; seed++) {
       let start = null;
       const n = play(lv.id, seed, (s, rng) => {

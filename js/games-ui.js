@@ -273,9 +273,9 @@
       stack4.appendChild(B.pieceSvg('k', 'me'));
       pic.appendChild(stack4);
     } else if (A.isArmy(id)) {
-      // The growing battle: the kinds of piece in that battle, the newest
-      // one first.
-      var types = A.level(id).types.slice().reverse();
+      // The growing battle: the newest three kinds of piece in that
+      // battle, the newest one first.
+      var types = A.level(id).types.slice().reverse().slice(0, 3);
       if (types.length === 1) types = ['p', 'p', 'p'];
       pic.classList.add('game-pic-3');
       types.forEach(function (t) { pic.appendChild(B.pieceSvg(t, 'me')); });
@@ -747,6 +747,7 @@
     botTurnCount = 0;
     gstate = G.create(gameId, gameOptions(gameId), Math.random);
     armyDangerKeys = {};
+    armyDanger = [];
     // "The opponent moves first" when the child's chosen team is b: team a
     // always moves first (js/themes.js TEAMS), and js/games.js's own 'me'
     // is really just "the bottom of the board", not a literal team - so
@@ -1012,6 +1013,17 @@
       if (capNode && capNode !== node) B.poof(capNode);
     }
     pieceNodes[tk] = node;
+    if ((res.events || []).indexOf('promoted') !== -1) {
+      // The pawn on the other side becomes a queen.
+      var queen = B.addPiece('q', to[0], to[1], childPieceSide());
+      B.replay(queen, 'enter');
+      B.sparkle(to[0], to[1], 0);
+      node.remove();
+      node = queen;
+      pieceNodes[tk] = queen;
+      V.sayAfter('army-queen');
+    }
+    if (isChild && (res.events || []).indexOf('check') !== -1) V.sayAfter('army-check');
 
     if (res.captured && res.captured.team === 'foe') {
       captureJuice(to[0], to[1], { isPawn: res.captured.type === 'p', golden: goldenCaptured, node: node });
@@ -1039,12 +1051,14 @@
       S.play('your-turn');
       V.sayAfter('turn-me');
       if (gstate.army) {
-        // A piece newly in danger: its red ring, and the warning once.
+        // A piece newly in danger: its red ring, and the warning once. In
+        // check, the check line instead.
         var before = armyDangerKeys;
         B.glow([]);
-        armyHelp();
+        armyHelp(true);
         var fresh = Object.keys(armyDangerKeys).some(function (k) { return !before[k]; });
-        if (fresh) V.sayAfter('army-danger');
+        if (R.inCheck(gstate.board, 'me')) V.sayAfter('escape-ask');
+        else if (fresh) V.sayAfter('army-danger');
       }
       armIdle();
     }
@@ -1053,17 +1067,24 @@
   /* ---------- the growing battle: help while playing ---------- */
 
   var armyDangerKeys = {};   // "r,c" of the child's pieces in danger, as last shown
+  var armyDanger = [];       // the same squares, worked out once per turn
 
   // The other side's last move (where it came from and where it went)
   // glows softly, and the child's pieces the other side could capture get
-  // a red ring. Added to whatever else glows.
-  function armyHelp() {
+  // a red ring. Added to whatever else glows. fresh: work the danger out
+  // again (after a move); otherwise the squares from the start of this
+  // turn are reused, since nothing has moved.
+  function armyHelp(fresh) {
     if (!gstate || !gstate.army) return;
     if (gstate.lastFoe) B.glowAdd([gstate.lastFoe.from, gstate.lastFoe.to], LAST_MOVE);
-    var danger = A.inDanger(gstate.board, 'me');
-    armyDangerKeys = {};
-    danger.forEach(function (sq) { armyDangerKeys[key(sq[0], sq[1])] = true; });
-    B.glowAdd(danger, DANGER);
+    if (fresh) {
+      armyDanger = A.inDanger(gstate.board, 'me');
+      // In check: the pieces giving check glow red too.
+      if (R.inCheck(gstate.board, 'me')) armyDanger = armyDanger.concat(A.checkers(gstate.board, 'me'));
+      armyDangerKeys = {};
+      armyDanger.forEach(function (sq) { armyDangerKeys[key(sq[0], sq[1])] = true; });
+    }
+    B.glowAdd(armyDanger, DANGER);
   }
 
   /* ---------- Get out of check: one puzzle after another ---------- */
@@ -1167,6 +1188,11 @@
 
   /* ---------- game over -> Won or Break ---------- */
 
+  // The battle with kings can end with nobody winning (a stalemate).
+  function isDraw() {
+    return !!gstate && gstate.over && !gstate.winner && GL.get(gameId).kind === 'board';
+  }
+
   function onGameOver() {
     clearIdle();
     resetStreak();
@@ -1174,6 +1200,14 @@
     B.hideHand();
     B.glow([]);
     selected = null;
+    if (isDraw()) {
+      // A calm ending: no win sound, no confetti, not counted as a win.
+      var drawToken = gameToken;
+      V.sayAfter('army-draw', function () {
+        if (drawToken === gameToken) showGameWonOrBreak();
+      });
+      return;
+    }
     S.play('win');
     B.confetti(28);
     var lineId = GL.get(gameId).win;
@@ -1232,8 +1266,9 @@
     B.hideTeamBars();
     function build() {
       var frag = document.createDocumentFragment();
-      var trophy = el('div', 'trophy');
-      trophy.appendChild(el('div', 'ray'));
+      var drawn = isDraw();
+      var trophy = el('div', drawn ? 'trophy trophy-calm' : 'trophy');
+      if (!drawn) trophy.appendChild(el('div', 'ray'));
       trophy.appendChild(buildGamePic(gameId));
       frag.appendChild(trophy);
 
@@ -1288,7 +1323,7 @@
       return frag;
     }
     FC.app.showCustomCard(build, null);
-    B.screenConfetti(40);
+    if (!isDraw()) B.screenConfetti(40);
   }
 
   /* =====================================================================
@@ -2126,6 +2161,138 @@
           });
         });
       });
+    },
+    // Knights: the knight hops out over its own pawns, then lands where it
+    // attacks two of the other side's pieces at once, and captures one.
+    army4: function (ctx, line) {
+      var board = R.emptyBoard();
+      board[7][1] = { type: 'n', team: 'me' };
+      board[2][5] = { type: 'r', team: 'foe' };
+      board[1][2] = { type: 'b', team: 'foe' };
+      var knight = tipPiece('n', 7, 1);
+      for (var c = 0; c < 8; c++) {
+        board[6][c] = { type: 'p', team: 'me' };
+        tipPiece('p', 6, c);
+      }
+      var items = { '2,5': tipFoe('r', 2, 5), '1,2': tipFoe('b', 1, 2) };
+      [[1, 0], [1, 6], [1, 7]].forEach(function (sq) {
+        board[sq[0]][sq[1]] = { type: 'p', team: 'foe' };
+        items[key(sq[0], sq[1])] = tipFoe('p', sq[0], sq[1]);
+      });
+      var done = join(2, ctx.end);
+      V.say(line, function () { if (ctx.alive()) done(); });
+      knight.classList.add('selected');
+      tipPrints(board, [7, 1], items);
+      ctx.after(1200, function () {
+        knight.classList.remove('selected');
+        tipMove(ctx, board, knight, [7, 1], [5, 2], items, function () {
+          ctx.after(500, function () {
+            tipMove(ctx, board, knight, [5, 2], [3, 3], items, function () {
+              // Two pieces in reach at once.
+              knight.classList.add('selected');
+              tipPrints(board, [3, 3], items);
+              B.glow([[2, 5], [1, 2]]);
+              ctx.after(1800, function () {
+                B.glow([]);
+                knight.classList.remove('selected');
+                tipMove(ctx, board, knight, [3, 3], [2, 5], items, done);
+              });
+            });
+          });
+        });
+      });
+    },
+    // Queens: the queen could capture a pawn that is protected (red: she
+    // would be captured back) or a knight nobody protects (gold).
+    army5: function (ctx, line) {
+      var board = R.emptyBoard();
+      board[4][3] = { type: 'q', team: 'me' };
+      var queen = tipPiece('q', 4, 3);
+      [[6, 1], [6, 5], [7, 4]].forEach(function (sq) {
+        var t = sq[0] === 7 ? 'k' : 'p';
+        board[sq[0]][sq[1]] = { type: t, team: 'me' };
+        tipPiece(t, sq[0], sq[1]);
+      });
+      var items = {};
+      [[2, 3, 'p'], [1, 2, 'p'], [4, 6, 'n'], [1, 6, 'p'], [0, 4, 'k']].forEach(function (x) {
+        board[x[0]][x[1]] = { type: x[2], team: 'foe' };
+        items[key(x[0], x[1])] = tipFoe(x[2], x[0], x[1]);
+      });
+      var done = join(2, ctx.end);
+      V.say(line, function () { if (ctx.alive()) done(); });
+      queen.classList.add('selected');
+      tipPrints(board, [4, 3], items);
+      ctx.after(1800, function () {
+        // That pawn is protected: capturing it loses the queen.
+        B.glow([[2, 3], [1, 2]], DANGER);
+        ctx.after(1800, function () {
+          B.glow([[4, 6]]);
+          ctx.after(1200, function () {
+            B.glow([]);
+            queen.classList.remove('selected');
+            tipMove(ctx, board, queen, [4, 3], [4, 6], items, done);
+          });
+        });
+      });
+    },
+    // The whole army: check and checkmate with many pieces. First the
+    // child's king is in check and a pawn blocks the line; then the rook
+    // and queen work together to checkmate the other king.
+    army6: function (ctx, line) {
+      var board = R.emptyBoard();
+      var mine = {};
+      function put(list, team) {
+        list.forEach(function (x) {
+          board[x[0]][x[1]] = { type: x[2], team: team };
+          var n = team === 'me' ? tipPiece(x[2], x[0], x[1]) : tipFoe(x[2], x[0], x[1]);
+          if (team === 'me') mine[key(x[0], x[1])] = n;
+        });
+      }
+      put([[7, 4, 'k'], [7, 3, 'q'], [7, 0, 'r'], [6, 0, 'p'], [6, 1, 'p'], [6, 2, 'p'], [6, 4, 'p'], [6, 5, 'p'], [6, 6, 'p'], [6, 7, 'p']], 'me');
+      put([[4, 1, 'b'], [0, 4, 'k'], [0, 7, 'r'], [1, 5, 'p'], [1, 6, 'p'], [2, 3, 'p']], 'foe');
+      V.say(line, function () {
+        if (!ctx.alive()) return;
+        // Check: the bishop's line to the king glows red.
+        B.glow([[4, 1], [5, 2], [6, 3], [7, 4]], DANGER);
+        V.say('army-how-1', function () {
+          if (!ctx.alive()) return;
+          tipMove(ctx, board, mine['6,2'], [6, 2], [5, 2], null, function () {
+            B.glow([[7, 4]], SAFE);
+            V.say('army-how-2', function () {
+              if (!ctx.alive()) return;
+              ctx.after(400, secondPart);
+            });
+          });
+        });
+      });
+      // Checkmate: a new position.
+      function secondPart() {
+        B.glow([]);
+        B.clearAll();
+        board = R.emptyBoard();
+        mine = {};
+        put([[7, 5, 'r'], [4, 1, 'q'], [7, 4, 'k'], [6, 0, 'p'], [6, 2, 'p'], [5, 3, 'p'], [6, 6, 'p']], 'me');
+        put([[0, 6, 'k'], [1, 6, 'p'], [1, 7, 'p'], [4, 7, 'n'], [3, 4, 'p']], 'foe');
+        V.say('army-how-3', function () {
+          if (!ctx.alive()) return;
+          tipMove(ctx, board, mine['7,5'], [7, 5], [4, 5], null, function () {
+            // The rook now watches his escape squares.
+            B.glow([[1, 5], [0, 5]], DANGER);
+            ctx.after(900, function () {
+              tipMove(ctx, board, mine['4,1'], [4, 1], [0, 1], null, function () {
+                var cage = [];
+                for (var dr = -1; dr <= 1; dr++) {
+                  for (var dc = -1; dc <= 1; dc++) {
+                    if (R.onBoard(0 + dr, 6 + dc)) cage.push([dr, 6 + dc]);
+                  }
+                }
+                B.glow(cage, DANGER);
+                V.say('mate-3', function () { if (ctx.alive()) ctx.end(); });
+              });
+            });
+          });
+        });
+      }
     },
     // The pawn's first step: two squares.
     race: function (ctx, line) {

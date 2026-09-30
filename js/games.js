@@ -722,6 +722,7 @@
 
   /* 'safe' only: the squares next to the king it may not step to. */
   function dangerSquares(state, r, c) {
+    if (state.army) return A.dangerSquares(state, r, c);
     if (state.id === 'run') {
       if (!state.hero || state.hero[0] !== r || state.hero[1] !== c) return [];
       return runDanger(state.board, [r, c]).map(function (m) { return [m.r, m.c]; });
