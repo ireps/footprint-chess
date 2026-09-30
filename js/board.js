@@ -180,14 +180,16 @@
   }
 
   // Run an animation, then call done exactly once (with a timer as a fallback).
-  function animate(node, frames, duration, easing, done) {
+  // always: run it even under reduced motion (a piece's plain slide, which
+  // shows where it went; see moveHero).
+  function animate(node, frames, duration, easing, done, always) {
     var finished = false;
     function finish() {
       if (finished) return;
       finished = true;
       if (done) done();
     }
-    if (reduceMotion || typeof node.animate !== 'function') {
+    if ((reduceMotion && !always) || typeof node.animate !== 'function') {
       finish();
       return;
     }
@@ -415,19 +417,51 @@
     }, delay);
   }
 
-  function moveHero(node, type, from, to, done) {
+  // How much slower a move is in a "watch how to play" scene or a tip, so a
+  // child can follow it (opts.slow).
+  var SLOW_MOVE = 1.8;
+
+  // Under reduced motion a piece still slides to its square, plainly: no
+  // hop, lean, swoosh or bounce, but the path stays visible, since where a
+  // piece can go is what the app teaches. The knight slides along its two
+  // legs, the rest straight.
+  function slideFrames(type, from, to) {
+    var dr = to[0] - from[0];
+    var dc = to[1] - from[1];
+    var dist = Math.max(Math.abs(dr), Math.abs(dc));
+    if (type === 'n') {
+      var corner = Math.abs(dr) === 2 ? [from[0] + dr, from[1]] : [from[0], from[1] + dc];
+      return {
+        duration: 700,
+        frames: [frame(from[0], from[1], 0, 0, 1, 0), frame(corner[0], corner[1], 0, 0, 1, 0.66), frame(to[0], to[1], 0, 0, 1, 1)]
+      };
+    }
+    return {
+      duration: Math.min(900, 300 + 120 * dist),
+      frames: [frame(from[0], from[1], 0, 0, 1, 0), frame(to[0], to[1], 0, 0, 1, 1)]
+    };
+  }
+
+  // opts.slow: a scene's pace (SLOW_MOVE times longer).
+  function moveHero(node, type, from, to, done, opts) {
+    var slow = (opts && opts.slow) ? SLOW_MOVE : 1;
     var plan = moveFrames(type, from, to);
 
     if (type === 'q') {
       var dist = Math.max(Math.abs(to[0] - from[0]), Math.abs(to[1] - from[1]));
       for (var s = 1; s < dist; s++) {
-        sparkle(from[0] + (to[0] - from[0]) * s / dist, from[1] + (to[1] - from[1]) * s / dist, s * 50);
+        sparkle(from[0] + (to[0] - from[0]) * s / dist, from[1] + (to[1] - from[1]) * s / dist, s * 50 * slow);
       }
     }
 
     S.play('move-' + type);
     place(node, to[0], to[1]);
-    animate(node, plan.frames, plan.duration, plan.easing, done);
+    if (reduceMotion) {
+      var slide = slideFrames(type, from, to);
+      animate(node, slide.frames, slide.duration * slow, 'ease-in-out', done, true);
+      return;
+    }
+    animate(node, plan.frames, plan.duration * slow, plan.easing, done);
   }
 
   function poof(node) {

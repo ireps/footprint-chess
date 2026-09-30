@@ -50,7 +50,9 @@ These are changed by the repository owner on GitHub; nothing in the repository c
    - **Chromium version:** 108 is expected. Lower numbers may still work. Note the number if something breaks.
    - **Secure connection (HTTPS):** should be Yes.
    - **CSS grid, Pointer events, Web Animations, Web Audio:** all should be Yes.
-   - **Speech voices:** note the number of English voices. Zero means spoken lessons will use recorded audio clips.
+   - **Speech voices:** note the number of English and Telugu voices. Zero means spoken lines without a recorded clip fall back to another language, or to silence.
+   - **Screen (CSS pixels):** the part of the screen the page gets. On the Fire HD 10 in Silk this is 1280 x 614 in landscape, because the address bar and the Android bars take the rest.
+   - **Reduced motion setting:** On means the tablet asks apps for less motion, and pieces jump instead of gliding. The app follows this setting; turn it off in the tablet's settings to see the piece animations.
 3. Tap **Play test sound** and **Test speech** and note what happens.
 4. Tap **Test game speed** and wait for the result (up to a minute). It times the other side's moves and the hints in the two biggest battles. "Fast enough" means the opponent's longest move fits inside its thinking pause (600 ms) and the longest hint takes under a second; otherwise note the numbers.
 5. Open the game. Tap the rook card, then follow the lesson: tap the piece, then tap a footprint.

@@ -1293,7 +1293,11 @@ body {
 
 .gamescreen[hidden] { display: none; }
 
-.games-home { position: absolute; left: 26px; top: 24px; }
+.games-home { position: absolute; left: 26px; top: 24px; z-index: 1; }
+
+/* The rows and the ladder, scaled as one to fit the window (fitGamesScreen
+   in js/games-ui.js sets the transform). */
+.games-fit { display: flex; align-items: center; flex: none; transform-origin: 50% 50%; }
 
 .game-rows { display: flex; flex-direction: column; gap: 12px; }
 
@@ -2459,7 +2463,7 @@ body.theme-pirate {
   .game-pic-entry .whose-mark, .game-pic-entry .pond-mark { transform: scale(0.8); }
   .game-row .game-card { width: 140px; }
   /* The growing battle's ladder: a row below the others. */
-  .gamescreen { flex-direction: column; }
+  .games-fit { flex-direction: column; }
   /* Below the rows: the picture, then two lines of four battles. */
   .army-ladder { grid-template-columns: 88px 140px 140px 140px 140px; margin-left: 0; margin-top: 12px; }
   .army-ladder .game-card { width: 140px; }

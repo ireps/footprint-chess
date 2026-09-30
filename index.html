@@ -330,10 +330,15 @@
      never a word. Every game can be tapped. -->
 <div class="gamescreen" id="gamescreen" hidden>
   <button class="tool games-home" id="games-home" type="button" aria-label="Home"></button>
-  <div class="game-rows" id="game-rows"></div>
-  <!-- The growing battle (stage 8): its levels as a ladder beside the rows
-       (below them in portrait), built by js/games-ui.js. -->
-  <div class="army-ladder" id="army-ladder"></div>
+  <!-- The rows and the ladder, scaled down by js/games-ui.js when the
+       browser window is smaller than they are (Silk shows 1280 x 614 on the
+       tablet in landscape). -->
+  <div class="games-fit" id="games-fit">
+    <div class="game-rows" id="game-rows"></div>
+    <!-- The growing battle (stage 8): its levels as a ladder beside the rows
+         (below them in portrait), built by js/games-ui.js. -->
+    <div class="army-ladder" id="army-ladder"></div>
+  </div>
 </div>
 
 <!-- Who's playing (stage 5; js/profile-ui.js): full screen like the home
