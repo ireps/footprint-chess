@@ -7,7 +7,9 @@
  * Plays the app in headless Chromium, the way a child would, and fails on
  * any page error, console error or Content Security Policy report:
  *   - Home and the Games screen, at the tablet's landscape (1280x800) and
- *     portrait (800x1280) sizes, with touch;
+ *     portrait (800x1280) sizes and at the smaller window Silk leaves on
+ *     the tablet (1280x614, 800x1094), with touch; every game card inside
+ *     the window and clear of the Home button;
  *   - every game on the Games screen, from its card through any first-time
  *     lesson (skipped), the Team card, the Mission card and the whole
  *     "watch how to play" scene (js/games-how.js, watched to its end),
@@ -46,6 +48,10 @@ const OUT = path.join(__dirname, 'output');
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.mp3': 'audio/mpeg', '.svg': 'image/svg+xml', '.png': 'image/png', '.json': 'application/json' };
 const LANDSCAPE = { width: 1280, height: 800 };
 const PORTRAIT = { width: 800, height: 1280 };
+// What Silk leaves for the page on the Fire HD 10 (check.html on the
+// tablet: 1280 x 614 in landscape); portrait loses about the same height.
+const TABLET_LANDSCAPE = { width: 1280, height: 614 };
+const TABLET_PORTRAIT = { width: 800, height: 1094 };
 
 /* A static file server for the repository, on a free port. */
 function serve() {
@@ -143,7 +149,7 @@ async function readBoard(page) {
 }
 
 async function testScreens() {
-  for (const [label, viewport] of [['landscape', LANDSCAPE], ['portrait', PORTRAIT]]) {
+  for (const [label, viewport] of [['landscape', LANDSCAPE], ['portrait', PORTRAIT], ['tablet landscape', TABLET_LANDSCAPE], ['tablet portrait', TABLET_PORTRAIT]]) {
     const name = 'screens ' + label;
     const page = await newPage(viewport);
     await page.click('.games-entry');
@@ -158,6 +164,19 @@ async function testScreens() {
       return wide && !hidden;
     });
     if (scrolls) await fail(page, name, 'the Games screen scrolls sideways');
+    // Every game card, and the Home button, fully inside the window and
+    // clear of each other.
+    const outside = await page.evaluate(() => {
+      const home = document.getElementById('games-home').getBoundingClientRect();
+      const bad = [];
+      document.querySelectorAll('#game-rows .game-card, #army-ladder .game-card, .row-mark').forEach(n => {
+        const r = n.getBoundingClientRect();
+        if (r.top < 0 || r.left < 0 || r.bottom > window.innerHeight || r.right > window.innerWidth) bad.push((n.getAttribute('aria-label') || 'row picture') + ' outside');
+        if (r.left < home.right && r.right > home.left && r.top < home.bottom && r.bottom > home.top) bad.push((n.getAttribute('aria-label') || 'row picture') + ' under Home');
+      });
+      return bad;
+    });
+    if (outside.length) await fail(page, name, outside.join(', '));
     await done(page, name);
   }
 }

@@ -93,6 +93,7 @@
     homeGames: byId('home-games'),
     gameScreen: byId('gamescreen'),
     gameRows: byId('game-rows'),
+    gamesFit: byId('games-fit'),
     armyLadder: byId('army-ladder'),
     gamesHome: byId('games-home'),
     stickerRow: byId('sticker-row'),
@@ -250,11 +251,37 @@
     byId('lang-row').hidden = true;
   }
 
+  // Scales the rows and the ladder down, as one, until they fit the window
+  // with a margin: on the tablet Silk leaves 1280 x 614 in landscape, less
+  // than the 1280 x 800 of the screen. Never scales up.
+  // The content stays clear of the Home button in the top corner: either
+  // beside it (a margin at both sides) or below it (a margin at top and
+  // bottom), whichever leaves it bigger.
+  var FIT_MARGIN = 16;
+  var FIT_HOME = 84;
+  function fitGamesScreen() {
+    var box = dom.gamesFit;
+    if (!box || !gamesScreenVisible()) return;
+    box.style.transform = '';
+    var w = box.offsetWidth;
+    var h = box.offsetHeight;
+    if (!w || !h) return;
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    var beside = Math.min((vw - 2 * FIT_HOME) / w, (vh - 2 * FIT_MARGIN) / h);
+    var below = Math.min((vw - 2 * FIT_MARGIN) / w, (vh - 2 * FIT_HOME) / h);
+    var scale = Math.min(1, Math.max(beside, below));
+    if (scale < 1) box.style.transform = 'scale(' + scale.toFixed(3) + ')';
+  }
+  window.addEventListener('resize', fitGamesScreen);
+  window.addEventListener('orientationchange', function () { window.setTimeout(fitGamesScreen, 200); });
+
   function showGamesScreen() {
     S.unlock();
     leaveHome();
     renderGamesScreen();
     dom.gameScreen.hidden = false;
+    fitGamesScreen();
     V.say('games-pick', function () {});
   }
 
@@ -2098,11 +2125,17 @@
 
   function onLangChange() {
     renderHomeGames();
-    if (gamesScreenVisible()) renderGamesScreen();
+    if (gamesScreenVisible()) {
+      renderGamesScreen();
+      fitGamesScreen();
+    }
     refreshTeamBarLabels();
   }
   function onThemeChange() {
-    if (gamesScreenVisible()) renderGamesScreen();
+    if (gamesScreenVisible()) {
+      renderGamesScreen();
+      fitGamesScreen();
+    }
     refreshTeamBarLabels();
   }
 
