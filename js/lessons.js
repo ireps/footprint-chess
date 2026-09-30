@@ -189,6 +189,20 @@
     'mate-nearly': { en: 'Nearly! The king can still escape.', te: 'దాదాపు! రాజు ఇంకా తప్పించుకోగలడు.' },
     'mate-won': { en: 'You found every checkmate!', te: 'అన్ని చెక్‌మేట్లూ కనుక్కున్నావు!' },
     'tip-mate': { en: 'Check the king, and cover every square he could run to!', te: 'రాజుకి చెక్ పెట్టు, అతను పారిపోయే ప్రతి గడినీ కాపు కాయి!' },
+    'pond-1': { en: 'Your pawns march toward the other side.', te: 'నీ భటులు అవతలి వైపుకి నడుస్తారు.' },
+    'pond-2': { en: 'Their pawns march toward your side!', te: 'శత్రువు భటులు నీ వైపుకి నడుస్తారు!' },
+    'pond-3': { en: 'Their footprints point toward your side.', te: 'శత్రువు అడుగుల గుర్తులు నీ వైపుకే ఉంటాయి.' },
+    'game-theirs': { en: 'Their footprints! Tap where their piece can go.', te: 'శత్రువు అడుగులు! శత్రువు పావు వెళ్ళగలిగే గడిని నొక్కు.' },
+    'theirs-ask': { en: 'Where can their piece go?', te: 'శత్రువు పావు ఎక్కడికి వెళ్ళగలదు?' },
+    'theirs-again': { en: 'Look at how it moves, then try again.', te: 'అది ఎలా కదులుతుందో చూడు, మళ్ళీ ప్రయత్నించు.' },
+    'theirs-won': { en: 'You can see their moves now!', te: 'ఇప్పుడు శత్రువు ఎత్తులు నీకు కనిపిస్తున్నాయి!' },
+    'tip-theirs': { en: 'Their pawns march toward your side, and capture on the slant.', te: 'శత్రువు భటులు నీ వైపుకి నడుస్తారు, వాలుగా పట్టుకుంటారు.' },
+    'game-danger': { en: 'Which piece is in danger? Find it, then move it to safety.', te: 'ఏ పావుకి ప్రమాదం? కనుక్కుని, దాన్ని సురక్షిత చోటుకి తీసుకెళ్ళు.' },
+    'danger-ask': { en: 'Which of your pieces could they capture?', te: 'శత్రువు నీ ఏ పావుని పట్టుకోగలదు?' },
+    'danger-yes': { en: 'Yes! Now move it somewhere safe.', te: 'అవును! ఇప్పుడు దాన్ని సురక్షిత చోటుకి కదుపు.' },
+    'danger-safe': { en: 'That one is safe. Try another!', te: 'అది క్షేమంగానే ఉంది. ఇంకోటి చూడు!' },
+    'danger-won': { en: 'You kept your pieces safe!', te: 'నీ పావులన్నిటినీ కాపాడావు!' },
+    'tip-danger': { en: 'Look at their footprints. Is one of your pieces on them?', te: 'శత్రువు అడుగుల గుర్తులు చూడు. వాటి మీద నీ పావు ఏదైనా ఉందా?' },
     'tip-escape': { en: 'Step away, block the line, or capture the attacker!', te: 'పక్కకి తప్పుకో, దారికి అడ్డం పెట్టు, లేదా దాడి చేసే పావుని పట్టుకో!' },
     'game-chain': { en: 'Capture chain! Capture every pawn, one after another.', te: 'గొలుసు ఆట! శత్రువు భటులను ఒకరి తర్వాత ఒకరిని పట్టుకో!' },
     'game-whose': { en: 'Whose footprints? Tap the piece that made them!', te: 'ఎవరి అడుగులు? ఆ అడుగులు వేసిన పావుని నొక్కు!' },
@@ -300,7 +314,9 @@
     'tip-hop', 'tip-way', 'tip-stop', 'tip-safe',
     'game-escape', 'escape-ask', 'escape-won', 'tip-escape',
     'game-run', 'run-danger', 'run-won', 'tip-run',
-    'game-mate', 'mate-ask', 'mate-nearly', 'mate-won', 'tip-mate'
+    'game-mate', 'mate-ask', 'mate-nearly', 'mate-won', 'tip-mate',
+    'game-theirs', 'theirs-ask', 'theirs-again', 'theirs-won', 'tip-theirs',
+    'game-danger', 'danger-ask', 'danger-yes', 'danger-safe', 'danger-won', 'tip-danger'
   ];
 
   var LESSONS = [
@@ -674,6 +690,39 @@
     ],
     practice: [
       { to: [0, 0], accept: 'only' }
+    ]
+  });
+
+  /*
+   * Their side (stage 7, Mirror Pond): the child's pawn marches up, the
+   * opponent's pawn marches down, and its footprints show pointing toward
+   * the child's side ({ foePrints: [r, c] }, a step js/player.js draws in
+   * the other side's dark colour). Played before the first of the Mirror
+   * Pond games (js/game-list.js).
+   */
+  LESSONS.push({
+    id: 'theirside',
+    type: 'p',
+    title: 'Their side',
+    setup: { hero: [6, 3], foes: [[1, 4]] },
+    watch: [
+      { wait: 600 },
+      { say: 'pond-1' },
+      { select: true },
+      { hand: [5, 3] },
+      { move: [5, 3] },
+      { waitVoice: true },
+      { foeMove: [[1, 4], [2, 4]] },
+      { say: 'pond-2' },
+      { waitVoice: true },
+      { foePrints: [2, 4] },
+      { say: 'pond-3' },
+      { waitVoice: true },
+      { wait: 600 },
+      { reset: true }
+    ],
+    practice: [
+      { to: [5, 3], accept: 'any' }
     ]
   });
 

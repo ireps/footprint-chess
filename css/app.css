@@ -1291,12 +1291,12 @@ body {
 
 .games-home { position: absolute; left: 26px; top: 24px; }
 
-.game-rows { display: flex; flex-direction: column; gap: 16px; }
+.game-rows { display: flex; flex-direction: column; gap: 12px; }
 
 .game-row { display: flex; align-items: center; gap: 22px; }
 
-.game-row .game-card { height: 162px; position: relative; gap: 6px; }
-.game-row .game-pic { height: 84px; }
+.game-row .game-card { height: 138px; position: relative; gap: 4px; padding: 8px; }
+.game-row .game-pic { height: 74px; }
 
 .game-card.suggested {
   box-shadow: 0 8px 0 #9fd8d0, 0 0 0 6px var(--gold), 0 0 26px 6px rgba(255, 201, 60, 0.6);
@@ -1305,8 +1305,8 @@ body {
 /* The picture that starts each row, a rounded tile so it reads as a label
    and not as a button. */
 .row-mark {
-  width: 96px;
-  height: 96px;
+  width: 88px;
+  height: 88px;
   border-radius: 26px;
   background: rgba(255, 255, 255, 0.55);
   border: 4px dashed rgba(29, 43, 54, 0.25);
@@ -1390,6 +1390,64 @@ body {
 .game-pic-mini.game-pic-chain svg.pc { width: 30px; height: 30px; }
 .rbtn .game-pic-mini.game-pic-chain svg.pc { width: 20px; height: 20px; }
 .rbtn .game-pic-mini .chain-dot { width: 5px; height: 5px; }
+
+/* Mirror Pond: still water across the far strip, the other side's pieces
+   reflected upside down above their own columns. Static: no animation. */
+.pond {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #4f86b8 0%, #6fa7d4 55%, #9cc9ea 100%);
+  overflow: hidden;
+  z-index: 1; /* under the team bar (z-index 2) */
+}
+.pond[hidden] { display: none; }
+.pond::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 58%;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.45);
+}
+.pond-ref {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 12.5%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.55;
+}
+.pond-ref svg.pc { width: 70%; height: 90%; transform: scaleY(-1); }
+.strip-far.pond-on > .cl-icon, .strip-far.pond-on > .hull { visibility: hidden; }
+
+/* The pond row's mark: a pawn standing over its reflection. */
+.pond-mark {
+  width: 70px;
+  height: 80px;
+  border-radius: 40%;
+  background: linear-gradient(180deg, transparent 0 48%, #6fa7d4 48% 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.pond-mark svg.pc { width: 40px; height: 40px; }
+.pond-mark .pond-mark-ref { transform: scaleY(-1); opacity: 0.5; }
+.game-pic-entry .pond-mark { width: 56px; height: 64px; }
+.game-pic-entry .pond-mark svg.pc { width: 32px; height: 32px; }
+/* The Games screen's cards are shorter with five rows: the tall two-piece
+   pictures shrink to fit above their names. */
+.game-row .game-pic-tight svg.pc { width: 38px; height: 38px; }
+.game-row .game-pic-check svg.pc { width: 28px; height: 28px; }
+.game-row .game-pic-check .check-line { height: 10px; }
+/* Their footprints: the dark footprints of the other side. */
+.their-feet span { background: #3b4a5a; }
 
 /* The Won card's tip button. */
 .rbtn.rbtn-tip { background: #fff8d6; color: var(--ink); }
@@ -2399,7 +2457,7 @@ body.theme-pirate {
 .no-flexgap .game-pic-3 > * + * { margin-left: 0; }
 .no-flexgap .game-pic-mini > * + * { margin-left: 4px; }
 .no-flexgap .game-pic-mini .game-pic-stack > * + * { margin-top: 4px; }
-.no-flexgap .game-rows > * + * { margin-top: 16px; }
+.no-flexgap .game-rows > * + * { margin-top: 12px; }
 .no-flexgap .game-row > * + * { margin-left: 22px; }
 .no-flexgap .row-mark > * + * { margin-top: 4px; }
 .no-flexgap .game-pic-entry > * + * { margin-left: 18px; }

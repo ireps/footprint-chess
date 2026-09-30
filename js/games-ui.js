@@ -29,6 +29,7 @@
   var R = FC.rules;
   var G = FC.games;
   var Q = FC.quiz;
+  var PD = FC.pond;
   var GL = FC.gameList;
   var LS = FC.lessons;
   var S = FC.sound;
@@ -44,6 +45,9 @@
   var QUIZ_PRINT = '#7a8699';
   // Squares the king may not step to (Keep the king safe).
   var DANGER = '#e0604d';
+  // The other side's footprints (Mirror Pond games), and a "safe" ring.
+  var FOE_PRINT = '#3b4a5a';
+  var SAFE = '#3dc46b';
 
   /*
    * Test hooks, both harmless and off by default:
@@ -99,6 +103,8 @@
   var childSide = null;      // 'a' | 'b': the team the child is playing (set at the Team card, kept for Again / next game)
   var gstate = null;         // FC.games state (board games)
   var qstate = null;         // FC.quiz state (the footprints quiz)
+  var pstate = null;         // FC.pond state (Their footprints, Which piece is in danger?)
+  var pondIdle = 0;          // idle hints given on the current pond question
   var quizMisses = 0;        // wrong taps on the current quiz question
   var quizIdle = 0;          // idle hints given on the current quiz question
   var wrongTaps = {};        // piece type -> taps on a square it cannot reach, this game (for the tip)
@@ -225,6 +231,21 @@
       pic.appendChild(B.pieceSvg('n', 'foe'));
       pic.appendChild(el('span', 'speed-lines'));
       pic.appendChild(B.pieceSvg('r', 'me'));
+    } else if (id === 'theirs') {
+      // Their pawn above its dark footprints, pointing toward your side.
+      var st5 = el('div', 'game-pic-stack game-pic-tight');
+      st5.appendChild(B.pieceSvg('p', 'foe'));
+      var feet = el('div', 'whose-feet their-feet');
+      feet.appendChild(el('span'));
+      feet.appendChild(el('span'));
+      st5.appendChild(feet);
+      pic.appendChild(st5);
+    } else if (id === 'danger') {
+      // An opponent rook looking at the child's piece in a red ring.
+      pic.appendChild(B.pieceSvg('r', 'foe'));
+      var ring5 = el('div', 'king-ring');
+      ring5.appendChild(B.pieceSvg('b', 'me'));
+      pic.appendChild(ring5);
     } else if (id === 'mate') {
       // The opponent king in a red ring, the child's queen beside him.
       var cage = el('div', 'king-ring');
@@ -273,6 +294,14 @@
     if (row === 'capture') {
       mark.appendChild(el('div', 'row-burst'));
       mark.appendChild(B.pieceSvg('p', 'foe'));
+    } else if (row === 'pond') {
+      // The pond: a pawn and its upside-down reflection in still water.
+      var water = el('div', 'pond-mark');
+      water.appendChild(B.pieceSvg('p', 'foe'));
+      var refl = B.pieceSvg('p', 'foe');
+      refl.classList.add('pond-mark-ref');
+      water.appendChild(refl);
+      mark.appendChild(water);
     } else if (row === 'king') {
       // The king in a red ring: games about keeping him safe.
       var ring = el('div', 'king-ring');
@@ -451,6 +480,9 @@
     lessonRun = { id: id, next: next };
     setPanel(id === 'turns' ? 'turns' : gameId);
     if (dom.toolSkip) dom.toolSkip.hidden = false;
+    // The other side's view games: the pond (with the lesson's opponent
+    // pawn reflected) shows from their lesson on.
+    if (GL.get(gameId).row === 'pond') showPondStrip(LS.boardFor(LS.get(id)).board);
     P.start(LS.get(id), {
       onDone: function () {
         if (dom.toolSkip) dom.toolSkip.hidden = true;
@@ -617,6 +649,7 @@
 
   function renderGame() {
     pieceNodes = {};
+    if (GL.get(gameId).row === 'pond') showPondStrip(gstate.board);
     for (var r = 0; r < 8; r++) {
       for (var c = 0; c < 8; c++) {
         var p = gstate.board[r][c];
@@ -661,6 +694,10 @@
       prepareQuiz();
       return;
     }
+    if (GL.get(gameId).kind === 'pond') {
+      preparePond();
+      return;
+    }
     gameToken += 1;
     window.clearTimeout(botTimer);
     botTimer = null;
@@ -686,6 +723,10 @@
   function startGame() {
     if (GL.get(gameId).kind === 'quiz') {
       startQuiz();
+      return;
+    }
+    if (GL.get(gameId).kind === 'pond') {
+      startPond();
       return;
     }
     gmode = 'play';
@@ -719,6 +760,10 @@
     idleTimer = window.setTimeout(onIdle, IDLE_MS);
   }
   function onIdle() {
+    if (gmode === 'pond') {
+      onPondIdle();
+      return;
+    }
     if (gmode === 'quiz') {
       // Once per question the question is asked again; the next time the
       // hand rests on the answer. Then nothing more until the child taps.
@@ -781,6 +826,7 @@
   function handleTap(r, c) {
     if (gmode === 'lesson') { P.handleTap(r, c); return; }
     if (gmode === 'quiz') { onQuizTap(r, c); return; }
+    if (gmode === 'pond') { onPondTap(r, c); return; }
     if (gmode === 'tip') { B.nudgeMode(); return; }
     if (gmode !== 'play' || !gstate || gstate.over) return;
     if (gstate.turn !== 'me' || busy) {
@@ -922,6 +968,7 @@
       armIdle();
       botTurn();
     } else {
+      if (GL.get(gameId).row === 'pond') showPondStrip(gstate.board);
       B.setActiveTeamBar('home');
       B.setMode('play', modeTextPlay());
       S.play('your-turn');
@@ -1062,7 +1109,10 @@
   // After the win line: a tip on the board when one is due (js/game-list.js
   // pickTip), then the Won card (or the Break card).
   function afterWin() {
-    var misses = gmodeIsQuiz() ? qstate.misses : wrongTaps;
+    // The pond games teach the other side's moves, so no rule tip of the
+    // child's own pieces follows them.
+    var kind = GL.get(gameId).kind;
+    var misses = gmodeIsQuiz() ? qstate.misses : (kind === 'pond' ? {} : wrongTaps);
     var tip = GL.pickTip(gameId, misses);
     if (!tip) {
       showGameWonOrBreak();
@@ -1287,6 +1337,277 @@
       if (quizMisses >= 2) pointAtAnswer();
       armIdle();
     });
+  }
+
+  /* =====================================================================
+   * Mirror Pond: the other side's view (js/pond.js). A still pond in the
+   * far strip shows the other side's pieces reflected, as if seen from
+   * their seat; the board itself never turns.
+   * ===================================================================*/
+
+  function showPondStrip(board) {
+    var pond = byId('pond');
+    var strip = byId('strip-far');
+    if (!pond || !strip) return;
+    clear(pond);
+    for (var r = 0; r < 8; r++) {
+      for (var c = 0; c < 8; c++) {
+        var p = board[r][c];
+        if (!p || p.team !== 'foe') continue;
+        var ref = el('div', 'pond-ref');
+        ref.style.left = (c * 12.5) + '%';
+        ref.appendChild(B.pieceSvg(p.type, foePieceSide()));
+        pond.appendChild(ref);
+      }
+    }
+    pond.hidden = false;
+    strip.classList.add('pond-on');
+  }
+
+  function hidePondStrip() {
+    var pond = byId('pond');
+    var strip = byId('strip-far');
+    if (pond) {
+      clear(pond);
+      pond.hidden = true;
+    }
+    if (strip) strip.classList.remove('pond-on');
+  }
+
+  function pondBoard() {
+    return gameId === 'theirs' ? pstate.questions[pstate.index].board : pstate.positions[pstate.index].board;
+  }
+  function pondAskLine() { return gameId === 'theirs' ? 'theirs-ask' : 'danger-ask'; }
+
+  function preparePond() {
+    gameToken += 1;
+    clearIdle();
+    busy = false;
+    pstate = gameId === 'theirs' ? PD.createTheirs({}, Math.random) : PD.createDanger({}, Math.random);
+    B.hideTeamBars();
+    renderPond();
+    prepared = true;
+  }
+
+  function renderPond() {
+    B.clearAll();
+    pieceNodes = {};
+    var board = pondBoard();
+    for (var r = 0; r < 8; r++) {
+      for (var c = 0; c < 8; c++) {
+        var p = board[r][c];
+        if (!p) continue;
+        pieceNodes[key(r, c)] = p.team === 'me' ? B.addPiece(p.type, r, c, childPieceSide()) : B.addItem(r, c, p.type, foePieceSide());
+      }
+    }
+    if (gameId === 'theirs') B.glow([pstate.questions[pstate.index].at]);
+    showPondStrip(board);
+  }
+
+  function startPond() {
+    gmode = 'pond';
+    if (dom.toolSkip) dom.toolSkip.hidden = true;
+    setPanel(gameId);
+    if (!prepared) preparePond();
+    prepared = false;
+    askPond(false);
+  }
+
+  function askPond(redraw) {
+    pondIdle = 0;
+    busy = true;
+    if (redraw) renderPond();
+    B.setMode('watch', modeTextWatch());
+    var myToken = gameToken;
+    V.say(pondAskLine(), function () {
+      if (myToken !== gameToken) return;
+      busy = false;
+      B.setMode('play', modeTextPlay());
+      S.play('your-turn');
+      armIdle();
+    });
+  }
+
+  // Their piece's footprints, in the other side's dark colour.
+  function showTheirPrints(at) {
+    var board = pondBoard();
+    var p = board[at[0]][at[1]];
+    B.showFootprints(p.type, at, R.movesFor(board, at[0], at[1]), {}, FOE_PRINT);
+  }
+
+  // Next question or position, after a short pause (pacing, which reduced
+  // motion must not shorten), or the end of the game.
+  function pondNext(more) {
+    var myToken = gameToken;
+    B.wait(function () {
+      if (myToken !== gameToken || !pstate) return;
+      if (more) askPond(true);
+      else onGameOver();
+    }, 900);
+  }
+
+  function onPondTap(r, c) {
+    if (!pstate || pstate.over || busy) {
+      B.nudgeMode();
+      return;
+    }
+    armIdle();
+    if (gameId === 'theirs') theirsTap(r, c);
+    else if (pstate.phase === 'find') dangerFindTap(r, c);
+    else if (pstate.phase === 'move') dangerMoveTap(r, c);
+  }
+
+  function theirsTap(r, c) {
+    var q = pstate.questions[pstate.index];
+    var res = PD.tapTheirs(pstate, r, c);
+    if (res === 'self') {
+      S.play('nudge');
+      return;
+    }
+    var myToken = gameToken;
+    if (res === 'wrong') {
+      // No fail state: its footprints show while the voice explains; after
+      // two misses they stay.
+      busy = true;
+      B.setMode('watch', modeTextWatch());
+      S.play('bonk');
+      showTheirPrints(q.at);
+      V.say('theirs-again', function () {
+        if (myToken !== gameToken) return;
+        if (pstate.misses < 2) B.hideFootprints({});
+        busy = false;
+        B.setMode('play', modeTextPlay());
+        armIdle();
+      });
+      return;
+    }
+    // Right: its footprints show and it moves there.
+    busy = true;
+    clearIdle();
+    B.setMode('watch', modeTextWatch());
+    B.glow([]);
+    showTheirPrints(q.at);
+    S.play('star');
+    var node = pieceNodes[key(q.at[0], q.at[1])];
+    var landed = pieceNodes[key(r, c)];
+    B.wait(function () {
+      if (myToken !== gameToken) return;
+      B.hideFootprints({});
+      B.moveHero(node, q.type, q.at, [r, c], function () {
+        if (myToken !== gameToken) return;
+        if (landed && landed !== node) B.poof(landed);
+        B.sparkle(r, c, 0);
+        pondNext(PD.nextTheirs(pstate));
+      });
+    }, 700);
+  }
+
+  // The other side's piece (or pieces) that could capture the piece on sq.
+  function attackersOf(board, sq) {
+    var out = [];
+    for (var r = 0; r < 8; r++) {
+      for (var c = 0; c < 8; c++) {
+        var p = board[r][c];
+        if (p && p.team === 'foe' && R.attacks(board, r, c).some(function (a) { return a[0] === sq[0] && a[1] === sq[1]; })) out.push([r, c]);
+      }
+    }
+    return out;
+  }
+
+  function dangerFindTap(r, c) {
+    var pos = pstate.positions[pstate.index];
+    var res = PD.tapDanger(pstate, r, c);
+    if (res === 'none') {
+      S.play('nudge');
+      return;
+    }
+    var myToken = gameToken;
+    if (res === 'safe') {
+      B.replay(pieceNodes[key(r, c)], 'bounce');
+      B.glow([[r, c]], SAFE);
+      V.say('danger-safe', function () {});
+      return;
+    }
+    // Right: the attacker's footprints reach it and it glows red; then the
+    // child moves it to a safe square.
+    busy = true;
+    clearIdle();
+    B.hideHand();
+    B.setMode('watch', modeTextWatch());
+    S.play('star');
+    var from = attackersOf(pos.board, pos.target)[0];
+    if (from) showTheirPrints(from);
+    B.glow([pos.target], DANGER);
+    V.say('danger-yes', function () {
+      if (myToken !== gameToken) return;
+      B.hideFootprints({});
+      selectDangerPiece();
+      busy = false;
+      B.setMode('play', modeTextPlay());
+      armIdle();
+    });
+  }
+
+  // The piece in danger, selected: safe footprints, red on the rest.
+  function selectDangerPiece() {
+    var pos = pstate.positions[pstate.index];
+    var node = pieceNodes[key(pos.target[0], pos.target[1])];
+    var type = pos.board[pos.target[0]][pos.target[1]].type;
+    node.classList.add('selected');
+    B.replay(node, 'bounce');
+    B.showFootprints(type, pos.target, PD.dangerSafeMoves(pstate), {});
+    B.glow(PD.dangerUnsafe(pstate), DANGER);
+  }
+
+  function dangerMoveTap(r, c) {
+    var pos = pstate.positions[pstate.index];
+    var from = pos.target.slice();
+    var type = pos.board[from[0]][from[1]].type;
+    var node = pieceNodes[key(from[0], from[1])];
+    var unsafe = PD.dangerUnsafe(pstate).some(function (sq) { return sq[0] === r && sq[1] === c; });
+    if (!PD.moveToSafety(pstate, r, c)) {
+      B.pulseFootprints();
+      S.play('bonk');
+      if (unsafe) V.say('run-danger', function () {});
+      return;
+    }
+    busy = true;
+    clearIdle();
+    B.glow([]);
+    B.hideFootprints({});
+    node.classList.remove('selected');
+    var landed = pieceNodes[key(r, c)];
+    var myToken = gameToken;
+    B.moveHero(node, type, from, [r, c], function () {
+      if (myToken !== gameToken) return;
+      if (landed && landed !== node) B.poof(landed);
+      S.play('star');
+      B.sparkle(r, c, 0);
+      pondNext(PD.nextDanger(pstate));
+    });
+  }
+
+  // First the question again, then an answer to look at (their footprints,
+  // or the ghost hand on the piece in danger, or a safe square); then
+  // nothing more until the child taps.
+  function onPondIdle() {
+    if (busy || !pstate || pstate.over) return;
+    pondIdle += 1;
+    if (gameId === 'danger' && pstate.phase === 'move') {
+      var safe = PD.dangerSafeMoves(pstate);
+      if (safe.length && pondIdle === 1) {
+        B.pulseFootprints();
+        armIdle();
+      }
+      return;
+    }
+    if (pondIdle === 1) {
+      V.say(pondAskLine(), function () {});
+      armIdle();
+      return;
+    }
+    if (gameId === 'theirs') showTheirPrints(pstate.questions[pstate.index].at);
+    else B.handRest(pstate.positions[pstate.index].target[0], pstate.positions[pstate.index].target[1]);
   }
 
   /* =====================================================================
@@ -1631,6 +1952,49 @@
         });
       });
     },
+    // Their pawn's footprints point toward your side; it marches down.
+    theirs: function (ctx, line) {
+      var board = R.emptyBoard();
+      board[2][3] = { type: 'p', team: 'foe' };
+      board[3][4] = { type: 'n', team: 'me' };
+      var pawn = tipFoe('p', 2, 3);
+      tipPiece('n', 3, 4);
+      showPondStrip(board);
+      var done = join(2, ctx.end);
+      V.say(line, function () { if (ctx.alive()) done(); });
+      B.glow([[2, 3]]);
+      ctx.after(800, function () {
+        B.showFootprints('p', [2, 3], R.movesFor(board, 2, 3), {}, FOE_PRINT);
+        ctx.after(2200, function () {
+          B.glow([]);
+          B.hideFootprints({});
+          B.moveHero(pawn, 'p', [2, 3], [3, 3], function () { if (ctx.alive()) done(); });
+        });
+      });
+    },
+    // Their rook's footprints reach one of your pieces: it glows red and
+    // moves to safety.
+    danger: function (ctx, line) {
+      var board = R.emptyBoard();
+      board[1][1] = { type: 'r', team: 'foe' };
+      board[6][1] = { type: 'r', team: 'me' };
+      board[5][5] = { type: 'b', team: 'me' };
+      tipFoe('r', 1, 1);
+      var rook = tipPiece('r', 6, 1);
+      tipPiece('b', 5, 5);
+      showPondStrip(board);
+      var done = join(2, ctx.end);
+      V.say(line, function () { if (ctx.alive()) done(); });
+      ctx.after(800, function () {
+        B.showFootprints('r', [1, 1], R.movesFor(board, 1, 1), {}, FOE_PRINT);
+        B.glow([[6, 1]], DANGER);
+        ctx.after(2000, function () {
+          B.glow([]);
+          B.hideFootprints({});
+          tipMove(ctx, board, rook, [6, 1], [6, 3], null, done);
+        });
+      });
+    },
     // Checkmate: the king is stuck behind his pawns; the rook slides to
     // the far row; his squares glow red.
     mate: function (ctx, line) {
@@ -1917,6 +2281,8 @@
     gameId = null;
     gstate = null;
     qstate = null;
+    pstate = null;
+    hidePondStrip();
     tipDone = null;
     B.glow([]);
     pieceNodes = {};
@@ -1951,6 +2317,7 @@
   function onReplay() {
     if (gmode === 'lesson' && lessonRun) startGameLesson(lessonRun.id, lessonRun.next);
     else if (gmode === 'quiz' && !busy) V.say('quiz-ask', function () {});
+    else if (gmode === 'pond' && !busy) V.say(pondAskLine(), function () {});
   }
 
   // A different child is now playing (or everything was replaced): the
