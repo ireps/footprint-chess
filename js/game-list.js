@@ -3,7 +3,7 @@
  *
  * One registry for every game the Games screen shows: its row, its lines
  * (mission, win and tip) and whether it is played in teams. No DOM; the
- * pictures are drawn by js/games-ui.js (buildGamePic), the rules live in
+ * pictures are drawn by js/game-pics.js, the rules live in
  * js/games.js (board games) and js/quiz.js (the footprints quiz). Adding a
  * game is an entry here, its rules and tests, its picture and its lines in
  * js/lessons.js and docs/VOICE-SCRIPT.md.
@@ -16,7 +16,7 @@
  * its own beside the rows).
  * The order here is also the order of the Won card's "next game" button.
  *
- * Each game has a "watch how to play" scene (js/games-ui.js), played
+ * Each game has a "watch how to play" scene (js/games-how.js), played
  * before the first game each child plays of it and from the light bulb on
  * its Mission and Won cards; `tip` is its line. After a win, pickTip
  * chooses a rule tip: a child who kept tapping squares a piece cannot reach
