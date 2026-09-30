@@ -178,3 +178,76 @@ test('isCheckmate and isStalemate', () => {
   assert.equal(R.isStalemate(stale, 'foe'), true);
   assert.equal(R.isCheckmate(stale, 'foe'), false);
 });
+
+/* ---------- the full game: castling, en passant, promotion ---------- */
+
+function put(list) {
+  const b = R.emptyBoard();
+  for (const [r, c, type, team] of list) b[r][c] = { type, team: team || 'me' };
+  return b;
+}
+
+test('castling: both sides, when the squares between are empty and not watched', () => {
+  const b = put([[7, 4, 'k'], [7, 0, 'r'], [7, 7, 'r'], [0, 4, 'k', 'foe']]);
+  const info = R.newInfo();
+  const castles = R.specialMoves(b, 7, 4, info).map(m => [m.c, m.castle]);
+  assert.deepEqual(castles.sort(), [[2, 'q'], [6, 'k']]);
+  const res = R.playMove(b, [7, 4], [7, 6], info);
+  assert.deepEqual(res.board[7][6], { type: 'k', team: 'me' });
+  assert.deepEqual(res.board[7][5], { type: 'r', team: 'me' });
+  assert.equal(res.board[7][7], null);
+  assert.deepEqual(res.rook, { from: [7, 7], to: [7, 5] });
+  assert.deepEqual(res.info.castle.me, { k: false, q: false });
+  // The other side castles on its own row.
+  const f = put([[0, 4, 'k', 'foe'], [0, 0, 'r', 'foe'], [7, 4, 'k']]);
+  const q = R.playMove(f, [0, 4], [0, 2], info);
+  assert.deepEqual(q.board[0][3], { type: 'r', team: 'foe' });
+});
+
+test('castling is not allowed out of check, through a watched square, after the king or rook moved, or with a piece between', () => {
+  const info = R.newInfo();
+  const inCheck = put([[7, 4, 'k'], [7, 7, 'r'], [2, 4, 'r', 'foe'], [0, 0, 'k', 'foe']]);
+  assert.equal(R.specialMoves(inCheck, 7, 4, info).length, 0);
+  const through = put([[7, 4, 'k'], [7, 7, 'r'], [2, 5, 'r', 'foe'], [0, 0, 'k', 'foe']]);
+  assert.equal(R.specialMoves(through, 7, 4, info).length, 0);
+  const between = put([[7, 4, 'k'], [7, 7, 'r'], [7, 6, 'n'], [0, 0, 'k', 'foe']]);
+  assert.equal(R.specialMoves(between, 7, 4, info).length, 0);
+  const moved = put([[7, 4, 'k'], [7, 7, 'r'], [0, 0, 'k', 'foe']]);
+  const after = R.playMove(moved, [7, 7], [6, 7], info);
+  const back = R.playMove(after.board, [6, 7], [7, 7], after.info);
+  assert.equal(R.specialMoves(back.board, 7, 4, back.info).length, 0);
+  // Only the queen's rook may pass a watched square next to itself.
+  const qside = put([[7, 4, 'k'], [7, 0, 'r'], [2, 1, 'r', 'foe'], [0, 7, 'k', 'foe']]);
+  assert.deepEqual(R.specialMoves(qside, 7, 4, info).map(m => m.c), [2]);
+});
+
+test('en passant: only right after the two-square step, and it removes the pawn that passed', () => {
+  const b = put([[3, 4, 'p'], [1, 3, 'p', 'foe'], [7, 4, 'k'], [0, 0, 'k', 'foe']]);
+  const step = R.playMove(b, [1, 3], [3, 3], R.newInfo());
+  assert.deepEqual(step.info.ep, [2, 3]);
+  const ep = R.specialMoves(step.board, 3, 4, step.info);
+  assert.deepEqual(ep, [{ r: 2, c: 3, capture: true, ep: true }]);
+  const res = R.playMove(step.board, [3, 4], [2, 3], step.info);
+  assert.equal(res.ep, true);
+  assert.deepEqual(res.capturedAt, [3, 3]);
+  assert.equal(res.board[3][3], null);
+  assert.deepEqual(res.board[2][3], { type: 'p', team: 'me' });
+  // One move later it is gone.
+  const later = R.playMove(step.board, [7, 4], [7, 5], step.info);
+  assert.equal(R.specialMoves(later.board, 3, 4, later.info).length, 0);
+});
+
+test('promotion: a pawn on the last row becomes a queen, for both sides', () => {
+  const b = put([[1, 2, 'p'], [6, 5, 'p', 'foe'], [7, 0, 'k'], [0, 7, 'k', 'foe']]);
+  const mine = R.playMove(b, [1, 2], [0, 2], R.newInfo());
+  assert.deepEqual(mine.board[0][2], { type: 'q', team: 'me' });
+  assert.equal(mine.promoted, true);
+  const theirs = R.playMove(b, [6, 5], [7, 5], R.newInfo());
+  assert.deepEqual(theirs.board[7][5], { type: 'q', team: 'foe' });
+});
+
+test('movesFor and legalMoves never include the special moves', () => {
+  const b = put([[7, 4, 'k'], [7, 7, 'r'], [0, 0, 'k', 'foe']]);
+  assert.ok(!R.legalMoves(b, 7, 4).some(m => m.c === 6));
+  assert.ok(R.fullMoves(b, 7, 4, R.newInfo()).some(m => m.c === 6 && m.castle === 'k'));
+});

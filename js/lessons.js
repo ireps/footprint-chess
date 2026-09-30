@@ -263,7 +263,14 @@
     'tip-army6': { en: 'Keep your king safe, and trap theirs!', te: 'నీ రాజుని కాపాడుకో, శత్రువు రాజుని బంధించు!' },
     'army-how-1': { en: 'Check! Their bishop could capture your king.', te: 'చెక్! శత్రువు ఒంటె నీ రాజుని పట్టుకోగలదు.' },
     'army-how-2': { en: 'Your pawn steps in the way. Your king is safe again.', te: 'నీ భటుడు దారికి అడ్డం వచ్చాడు. నీ రాజు మళ్ళీ క్షేమం.' },
-    'army-how-3': { en: 'Now your queen and rook work together to trap their king.', te: 'ఇప్పుడు నీ మంత్రి, ఏనుగు కలిసి శత్రువు రాజుని బంధిస్తాయి.' }
+    'army-how-3': { en: 'Now your queen and rook work together to trap their king.', te: 'ఇప్పుడు నీ మంత్రి, ఏనుగు కలిసి శత్రువు రాజుని బంధిస్తాయి.' },
+    'game-army7': { en: 'The full game! Every rule of chess. Checkmate their king to win.', te: 'పూర్తి ఆట! చదరంగంలోని ప్రతి నియమం. శత్రువు రాజుకి చెక్‌మేట్ పెట్టి గెలువు.' },
+    'tip-army7': { en: 'Castling: the king steps two squares, and the rook jumps beside him!', te: 'క్యాస్లింగ్: రాజు రెండు గడులు కదులుతాడు, ఏనుగు అతని పక్కకి దూకుతుంది!' },
+    'army-castle': { en: 'Castling! The king and rook moved together.', te: 'క్యాస్లింగ్! రాజు, ఏనుగు కలిసి కదిలారు.' },
+    'army-passant': { en: 'En passant! A pawn captured the pawn that rushed past it.', te: 'ఆన్ పసాంట్! పక్క నుంచి దూసుకెళ్ళిన భటుడిని ఇంకో భటుడు పట్టుకున్నాడు.' },
+    'army-foe-queen': { en: 'Their pawn reached your side. Now it is a queen!', te: 'శత్రువు భటుడు నీ వైపుకి చేరాడు. ఇప్పుడు అది మంత్రి!' },
+    'army-draw-kings': { en: 'Only the two kings remain. Nobody wins this time.', te: 'ఇద్దరు రాజులే మిగిలారు. ఈసారి ఎవరూ గెలవలేదు.' },
+    'army-undo': { en: 'Taken back. Try another move!', te: 'వెనక్కి తీసుకున్నాం. ఇంకో ఎత్తు వేసి చూడు!' }
   };
 
   /*
@@ -366,7 +373,8 @@
     'game-army1', 'game-army2', 'game-army3', 'army-won', 'army-danger',
     'tip-army1', 'tip-army2', 'tip-army3',
     'game-army4', 'game-army5', 'game-army6', 'army-mate-won', 'army-check', 'army-queen', 'army-draw',
-    'tip-army4', 'tip-army5', 'tip-army6', 'army-how-1', 'army-how-2', 'army-how-3'
+    'tip-army4', 'tip-army5', 'tip-army6', 'army-how-1', 'army-how-2', 'army-how-3',
+    'game-army7', 'tip-army7', 'army-castle', 'army-passant', 'army-foe-queen', 'army-draw-kings', 'army-undo'
   ];
 
   /*

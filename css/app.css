@@ -1316,13 +1316,15 @@ body {
   margin-left: 40px;
 }
 .army-ladder:empty { display: none; }
-.army-ladder > :nth-child(1) { grid-area: 4 / 1 / 5 / 3; }
-.army-ladder > :nth-child(2) { grid-area: 3 / 1; }
-.army-ladder > :nth-child(3) { grid-area: 3 / 2; }
-.army-ladder > :nth-child(4) { grid-area: 2 / 1; }
-.army-ladder > :nth-child(5) { grid-area: 2 / 2; }
-.army-ladder > :nth-child(6) { grid-area: 1 / 1; }
-.army-ladder > :nth-child(7) { grid-area: 1 / 2; }
+.army-ladder > :nth-child(1) { grid-area: 5 / 1 / 6 / 3; }
+.army-ladder > :nth-child(2) { grid-area: 4 / 1; }
+.army-ladder > :nth-child(3) { grid-area: 4 / 2; }
+.army-ladder > :nth-child(4) { grid-area: 3 / 1; }
+.army-ladder > :nth-child(5) { grid-area: 3 / 2; }
+.army-ladder > :nth-child(6) { grid-area: 2 / 1; }
+.army-ladder > :nth-child(7) { grid-area: 2 / 2; }
+/* The full game, alone at the top of the ladder. */
+.army-ladder > :nth-child(8) { grid-area: 1 / 1 / 2 / 3; }
 
 /* A whole army: three pawns in front of three pieces. */
 .row-mark-army { gap: 0; }
@@ -2434,16 +2436,17 @@ body.theme-pirate {
   .game-row .game-card { width: 140px; }
   /* The growing battle's ladder: a row below the others. */
   .gamescreen { flex-direction: column; }
-  /* Below the rows: the picture, then two lines of three battles. */
-  .army-ladder { grid-template-columns: 88px 140px 140px 140px; margin-left: 0; margin-top: 12px; }
+  /* Below the rows: the picture, then two lines of four battles. */
+  .army-ladder { grid-template-columns: 88px 140px 140px 140px 140px; margin-left: 0; margin-top: 12px; }
   .army-ladder .game-card { width: 140px; }
   .army-ladder > :nth-child(1) { grid-area: 1 / 1 / 3 / 2; }
   .army-ladder > :nth-child(2) { grid-area: 1 / 2; }
   .army-ladder > :nth-child(3) { grid-area: 1 / 3; }
   .army-ladder > :nth-child(4) { grid-area: 1 / 4; }
-  .army-ladder > :nth-child(5) { grid-area: 2 / 2; }
-  .army-ladder > :nth-child(6) { grid-area: 2 / 3; }
-  .army-ladder > :nth-child(7) { grid-area: 2 / 4; }
+  .army-ladder > :nth-child(5) { grid-area: 1 / 5; }
+  .army-ladder > :nth-child(6) { grid-area: 2 / 2; }
+  .army-ladder > :nth-child(7) { grid-area: 2 / 3; }
+  .army-ladder > :nth-child(8) { grid-area: 2 / 4; }
   .row-mark { width: 88px; height: 88px; }
   /* flex-wrap, not a fixed-column grid: Skip only shows during a lesson,
      so the tools row has 4 or 5 buttons depending on mode. */
