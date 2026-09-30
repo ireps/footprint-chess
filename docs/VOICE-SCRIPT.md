@@ -121,6 +121,20 @@ naming a direction.
 | escape-ask | Check! Save your king. | చెక్! నీ రాజుని కాపాడు. | Clear, a little urgent; said as each Get out of check puzzle appears. |
 | escape-won | You kept your king safe every time! | ప్రతిసారీ నీ రాజుని కాపాడావు! | Big and celebratory; the Get out of check win line. |
 | tip-escape | Step away, block the line, or capture the attacker! | పక్కకి తప్పుకో, దారికి అడ్డం పెట్టు, లేదా దాడి చేసే పావుని పట్టుకో! | Three clear beats, one per way out, in time with the scene. |
+| pond-1 | Your pawns march toward the other side. | నీ భటులు అవతలి వైపుకి నడుస్తారు. | Steady, marching rhythm; the child's pawn steps up the board. |
+| pond-2 | Their pawns march toward your side! | శత్రువు భటులు నీ వైపుకి నడుస్తారు! | A small surprise on "your side"; the opponent's pawn steps down the board. |
+| pond-3 | Their footprints point toward your side. | శత్రువు అడుగుల గుర్తులు నీ వైపుకే ఉంటాయి. | Calm, pointing at the dark footprints. |
+| game-theirs | Their footprints! Tap where their piece can go. | శత్రువు అడుగులు! శత్రువు పావు వెళ్ళగలిగే గడిని నొక్కు. | Curious and playful; states the goal on the Mission card. |
+| theirs-ask | Where can their piece go? | శత్రువు పావు ఎక్కడికి వెళ్ళగలదు? | A real question, gentle; said as each question appears. |
+| theirs-again | Look at how it moves, then try again. | అది ఎలా కదులుతుందో చూడు, మళ్ళీ ప్రయత్నించు. | Kind and encouraging, never "wrong"; its footprints show for a moment. |
+| theirs-won | You can see their moves now! | ఇప్పుడు శత్రువు ఎత్తులు నీకు కనిపిస్తున్నాయి! | Big and proud; the Their footprints win line. |
+| tip-theirs | Their pawns march toward your side, and capture on the slant. | శత్రువు భటులు నీ వైపుకి నడుస్తారు, వాలుగా పట్టుకుంటారు. | Calm and clear, the one thing to remember about their pawns. |
+| game-danger | Which piece is in danger? Find it, then move it to safety. | ఏ పావుకి ప్రమాదం? కనుక్కుని, దాన్ని సురక్షిత చోటుకి తీసుకెళ్ళు. | Brave and caring; states the goal on the Mission card. |
+| danger-ask | Which of your pieces could they capture? | శత్రువు నీ ఏ పావుని పట్టుకోగలదు? | A real question, a little serious; said as each position appears. |
+| danger-yes | Yes! Now move it somewhere safe. | అవును! ఇప్పుడు దాన్ని సురక్షిత చోటుకి కదుపు. | Bright, then a calm instruction. |
+| danger-safe | That one is safe. Try another! | అది క్షేమంగానే ఉంది. ఇంకోటి చూడు! | Friendly and light; the tapped piece gets a green ring. |
+| danger-won | You kept your pieces safe! | నీ పావులన్నిటినీ కాపాడావు! | Big and warm; the Which piece is in danger? win line. |
+| tip-danger | Look at their footprints. Is one of your pieces on them? | శత్రువు అడుగుల గుర్తులు చూడు. వాటి మీద నీ పావు ఏదైనా ఉందా? | Calm, a question to ask yourself before every move. |
 | mate-1 | This king is stuck behind his own pawns. | ఈ రాజు తన సొంత భటుల వెనక ఇరుక్కుపోయాడు. | Curious, pointing at the glowing pawns in front of the king. |
 | mate-2 | Slide the rook all the way to the other side! | ఏనుగుని అవతలి వైపు దాకా దూసుకుపోనివ్వు! | Bright, matching the rook's long glide. |
 | mate-3 | Checkmate! The king has nowhere to go. | చెక్‌మేట్! రాజుకి ఎక్కడికీ వెళ్ళే దారి లేదు. | Big and proud; also said after each solved Checkmate in one puzzle. |

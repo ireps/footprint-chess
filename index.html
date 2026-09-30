@@ -228,6 +228,9 @@
       <svg class="hull hull-far" viewBox="0 0 280 26" preserveAspectRatio="none" aria-hidden="true" focusable="false"><rect width="280" height="26" fill="#3a2618"/><path d="M0 9 H280 M0 18 H280" stroke="#2a1b10" stroke-width="1.5"/><rect x="12" y="10" width="16" height="11" rx="2" fill="#120c08"/><rect x="17" y="2" width="6" height="9" rx="2" fill="#1d1a18"/><rect x="52" y="10" width="16" height="11" rx="2" fill="#120c08"/><rect x="57" y="2" width="6" height="9" rx="2" fill="#1d1a18"/><rect x="92" y="10" width="16" height="11" rx="2" fill="#120c08"/><rect x="97" y="2" width="6" height="9" rx="2" fill="#1d1a18"/><rect x="132" y="10" width="16" height="11" rx="2" fill="#120c08"/><rect x="137" y="2" width="6" height="9" rx="2" fill="#1d1a18"/><rect x="172" y="10" width="16" height="11" rx="2" fill="#120c08"/><rect x="177" y="2" width="6" height="9" rx="2" fill="#1d1a18"/><rect x="212" y="10" width="16" height="11" rx="2" fill="#120c08"/><rect x="217" y="2" width="6" height="9" rx="2" fill="#1d1a18"/><rect x="252" y="10" width="16" height="11" rx="2" fill="#120c08"/><rect x="257" y="2" width="6" height="9" rx="2" fill="#1d1a18"/></svg>
       <!-- Games (stage 3): a team bar, filled in by js/board.js
            (showTeamBars), shown only during a game or the "turns" lesson. -->
+      <!-- Mirror Pond (stage 7): a still pond showing the other side's
+           pieces reflected, during the other side's view games. -->
+      <div class="pond" id="pond" hidden></div>
       <div class="team-bar" id="team-bar-far" hidden></div>
     </div>
     <div class="board" id="board">
@@ -355,6 +358,7 @@
 <script src="js/levels.js"></script>
 <script src="js/games.js"></script>
 <script src="js/quiz.js"></script>
+<script src="js/pond.js"></script>
 <script src="js/game-list.js"></script>
 <script src="js/lessons.js"></script>
 <script src="js/themes.js"></script>

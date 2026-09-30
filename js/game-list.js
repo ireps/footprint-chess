@@ -26,7 +26,7 @@
 
   var isNode = typeof module !== 'undefined' && module.exports;
 
-  var ROWS = ['capture', 'reach', 'think', 'king'];
+  var ROWS = ['capture', 'reach', 'think', 'pond', 'king'];
 
   /*
    * id:      the game id (js/games.js or js/quiz.js; stored in a child's wins)
@@ -37,7 +37,8 @@
    * tip:     the line of its "watch how to play" scene
    * teams:   true when the child plays against the other side, taking
    *          turns (the Team card shows first); false for a solo game
-   * kind:    'board' (js/games.js) or 'quiz' (js/quiz.js)
+   * kind:    'board' (js/games.js), 'quiz' (js/quiz.js) or 'pond'
+   *          (js/pond.js, the other side's view)
    * lesson:  (optional) a lesson (js/lessons.js) played before the child's
    *          first game of it, like the "Taking turns" lesson before team
    *          games
@@ -50,7 +51,9 @@
     { id: 'hop', row: 'reach', mission: 'game-hop', win: 'reach-won', tip: 'tip-hop', teams: false, kind: 'board' },
     { id: 'way', row: 'reach', mission: 'game-way', win: 'reach-won', tip: 'tip-way', teams: false, kind: 'board' },
     { id: 'whose', row: 'think', mission: 'game-whose', win: 'quiz-won', tip: 'tip-whose', teams: false, kind: 'quiz' },
-    { id: 'run', row: 'think', mission: 'game-run', win: 'run-won', tip: 'tip-run', teams: true, kind: 'board' },
+    { id: 'theirs', row: 'pond', mission: 'game-theirs', win: 'theirs-won', tip: 'tip-theirs', teams: false, kind: 'pond', lesson: 'theirside' },
+    { id: 'danger', row: 'pond', mission: 'game-danger', win: 'danger-won', tip: 'tip-danger', teams: false, kind: 'pond', lesson: 'theirside' },
+    { id: 'run', row: 'pond', mission: 'game-run', win: 'run-won', tip: 'tip-run', teams: true, kind: 'board' },
     { id: 'stop', row: 'think', mission: 'game-stop', win: 'won', tip: 'tip-stop', teams: true, kind: 'board' },
     { id: 'safe', row: 'king', mission: 'game-safe', win: 'reach-won', tip: 'tip-safe', teams: false, kind: 'board' },
     { id: 'escape', row: 'king', mission: 'game-escape', win: 'escape-won', tip: 'tip-escape', teams: false, kind: 'board', lesson: 'check' },

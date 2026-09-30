@@ -48,6 +48,7 @@
 
   function key(r, c) { return r + ',' + c; }
   var DANGER = '#e0604d';
+  var FOE_PRINT = '#3b4a5a';
   function heroColor() { return B.TYPES[current.type].color; }
 
   function placeSetup(lesson, animateEnter) {
@@ -287,6 +288,14 @@
       // also speak, or the two would collide (see the "turns" lesson).
       B.setActiveTeamBar(step.turn === 'me' ? 'home' : 'far');
       S.play('tick');
+      next();
+      return;
+    }
+    if (step.foePrints) {
+      // An opponent piece's footprints, in the other side's dark colour.
+      var fsq = step.foePrints;
+      var fp = local.board[fsq[0]][fsq[1]];
+      if (fp) B.showFootprints(fp.type, fsq, R.movesFor(local.board, fsq[0], fsq[1]), {}, FOE_PRINT);
       next();
       return;
     }

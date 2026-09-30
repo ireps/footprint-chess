@@ -281,7 +281,7 @@ test('lesson order is hello, rook, bishop, queen, king, knight, pawn, a capture 
   assert.deepEqual(L.LESSONS.map(l => l.id), [
     'hello', 'rook', 'bishop', 'queen', 'king', 'knight', 'pawn',
     'capture-r', 'capture-b', 'capture-q', 'capture-k', 'capture-n', 'pawn-capture',
-    'turns', 'check', 'checkmate'
+    'turns', 'check', 'checkmate', 'theirside'
   ]);
 });
 
@@ -538,4 +538,28 @@ test('checkmate lesson: the rook move is checkmate', () => {
   b[to[0]][to[1]] = b[start.hero[0]][start.hero[1]];
   b[start.hero[0]][start.hero[1]] = null;
   assert.ok(R.isCheckmate(b, 'foe'));
+});
+
+test('their side lesson: the opponent pawn moves toward the child side, legally', () => {
+  const lesson = L.get('theirside');
+  const start = L.boardFor(lesson);
+  const board = start.board.map(row => row.slice());
+  for (const step of lesson.watch) {
+    if (step.move) {
+      board[step.move[0]][step.move[1]] = board[start.hero[0]][start.hero[1]];
+      board[start.hero[0]][start.hero[1]] = null;
+    }
+    if (step.foeMove) {
+      const [from, to] = step.foeMove;
+      assert.ok(R.movesFor(board, from[0], from[1]).some(m => m.r === to[0] && m.c === to[1]));
+      assert.ok(to[0] > from[0], 'toward the child side');
+      board[to[0]][to[1]] = board[from[0]][from[1]];
+      board[from[0]][from[1]] = null;
+    }
+    if (step.foePrints) {
+      const p = board[step.foePrints[0]][step.foePrints[1]];
+      assert.ok(p && p.team === 'foe');
+      assert.ok(R.movesFor(board, step.foePrints[0], step.foePrints[1]).every(m => m.r > step.foePrints[0]));
+    }
+  }
 });
