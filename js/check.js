@@ -215,4 +215,39 @@
       status.textContent = 'Speech failed: ' + e.message;
     }
   });
+
+  // Game speed (js/speed.js): the growing battle's opponent and hints, one
+  // move at a time with a short pause between, so the page stays usable.
+  var speedBtn = document.getElementById('test-speed');
+  var speedOut = document.getElementById('speed-result');
+  if (speedBtn && window.FC.speed && window.FC.army) {
+    speedBtn.addEventListener('click', function () {
+      var SP = window.FC.speed;
+      var clock = (window.performance && performance.now) ? function () { return performance.now(); } : function () { return Date.now(); };
+      var run = SP.createRun(window.FC.army, clock);
+      var moves = 0;
+      speedBtn.disabled = true;
+      speedOut.className = '';
+      speedOut.textContent = 'Running...';
+      function tick() {
+        var more = run.step();
+        moves++;
+        if (more) {
+          speedOut.textContent = 'Running... ' + moves + ' moves';
+          window.setTimeout(tick, 30);
+          return;
+        }
+        var res = run.result();
+        var bot = SP.summary(res.bot);
+        var hint = SP.summary(res.hint);
+        var ok = bot.max <= SP.LIMITS.bot && hint.max <= SP.LIMITS.hint;
+        speedOut.className = ok ? 'ok' : 'warn';
+        speedOut.textContent = 'Other side\'s move: typically ' + bot.median + ' ms, longest ' + bot.max + ' ms (limit ' + SP.LIMITS.bot + '). ' +
+          'Hint: typically ' + hint.median + ' ms, longest ' + hint.max + ' ms (limit ' + SP.LIMITS.hint + '). ' +
+          (ok ? 'Fast enough.' : 'Slower than it should be: please report these numbers.');
+        speedBtn.disabled = false;
+      }
+      window.setTimeout(tick, 30);
+    });
+  }
 })();

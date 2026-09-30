@@ -1041,6 +1041,8 @@
     if ((res.events || []).indexOf('foe-promoted') !== -1) {
       // The other side's pawn on the child's side becomes a queen.
       var foeQueen = B.addItem(to[0], to[1], 'q', foePieceSide());
+      // The golden pawn is golden only while it is a pawn.
+      if (goldenKey === tk) goldenKey = null;
       node.remove();
       node = foeQueen;
       pieceNodes[tk] = foeQueen;
@@ -1151,7 +1153,7 @@
     if (!gstate || !gstate.army) return;
     if (gstate.lastFoe) B.glowAdd([gstate.lastFoe.from, gstate.lastFoe.to], LAST_MOVE);
     if (fresh) {
-      armyDanger = A.inDanger(gstate.board, 'me');
+      armyDanger = A.inDanger(gstate.board, 'me', gstate);
       // In check: the pieces giving check glow red too.
       if (R.inCheck(gstate.board, 'me')) armyDanger = armyDanger.concat(A.checkers(gstate.board, 'me'));
       armyDangerKeys = {};

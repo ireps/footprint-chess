@@ -209,7 +209,7 @@ test('with the kings, a child who follows the hints gives checkmate', () => {
       if (s.turn === 'me') { const mv = hintMove(s); A.applyMove(s, mv.from, mv.to); n++; } else A.botMove(s, rng);
     }
     assert.equal(s.winner, 'me', `seed ${seed}`);
-    assert.ok(A.checkmated(s.board, 'foe'));
+    assert.ok(A.checkmated(s.board, 'foe', s));
   }
 });
 
@@ -227,7 +227,7 @@ test('with the kings, the opponent never checkmates or stalemates the child, and
       } else {
         A.botMove(s, rng);
         assert.ok(!R.inCheck(s.board, 'foe'), 'the opponent left its king in check');
-        if (!s.over) assert.ok(!A.checkmated(s.board, 'me') && !A.stalemated(s.board, 'me'));
+        if (!s.over) assert.ok(!A.checkmated(s.board, 'me', s) && !A.stalemated(s.board, 'me', s));
       }
     }
   }
@@ -351,7 +351,7 @@ test('the full game: a child who follows the hints gives checkmate', () => {
     while (!s.over && n < 200) {
       if (s.turn === 'me') { const mv = hintMove(s); A.applyMove(s, mv.from, mv.to); n++; } else {
         A.botMove(s, rng);
-        if (!s.over) assert.ok(!A.checkmated(s.board, 'me'));
+        if (!s.over) assert.ok(!A.checkmated(s.board, 'me', s));
       }
     }
     assert.equal(s.winner, 'me', `seed ${seed}`);
@@ -377,4 +377,22 @@ test('undo takes back the child\'s move and the reply, in every battle', () => {
     assert.equal(s.lastFoe, null);
     assert.equal(A.canUndo(s), false);
   }
+});
+
+test('the board helpers use the rules of the game passed in, never the last game played', () => {
+  // A child's rook on its home row, next to the other side's pawn: in the
+  // full game that pawn may capture onto the home row; before it, never.
+  const b = R.emptyBoard();
+  b[7][3] = { type: 'r', team: 'me' };
+  b[6][2] = { type: 'p', team: 'foe' };
+  const full = A.create('army7', {}, seeded(1));
+  const plain = A.create('army2', {}, seeded(1));
+  // Play a little of the full game first: nothing from it may leak.
+  const mv = hintMove(full);
+  A.applyMove(full, mv.from, mv.to);
+  A.botMove(full, seeded(2));
+  assert.deepEqual(A.inDanger(b, 'me', plain), []);
+  assert.deepEqual(A.inDanger(b, 'me'), []);
+  assert.deepEqual(A.inDanger(b, 'me', full), [[7, 3]]);
+  assert.deepEqual(A.inDanger(b, 'me', plain), []);
 });
