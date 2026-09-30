@@ -1025,6 +1025,9 @@ body {
 
 .trophy > svg { width: 68%; height: 68%; }
 
+/* A game that ends with nobody winning (a stalemate): a quiet disc, no rays. */
+.trophy-calm { background: radial-gradient(circle, #f4f7f9 0 55%, #d9e3ea 56% 100%); }
+
 .ray {
   position: absolute;
   top: -30px;
@@ -1299,17 +1302,27 @@ body {
 .game-row .game-card, .army-ladder .game-card { height: 138px; position: relative; gap: 4px; padding: 8px; }
 .game-row .game-pic, .army-ladder .game-pic { height: 74px; }
 
-/* The growing battle (stage 8): a ladder beside the rows, the first battle
-   at the bottom and the row's picture under it; margins, not the gamescreen's
-   gap, so older browsers without flex gap lay it out the same. */
+/* The growing battle (stage 8): a ladder of two columns beside the rows,
+   climbing from the first battle at the bottom to the battle with kings at
+   the top, with the row's picture under it. A grid (grid-gap works in every
+   browser the app supports), placed by child order: the picture, then the
+   battles in order. */
 .army-ladder {
-  display: flex;
-  flex-direction: column-reverse;
+  display: grid;
+  grid-template-columns: 150px 150px;
+  grid-gap: 12px 22px;
+  justify-items: center;
   align-items: center;
-  gap: 12px;
   margin-left: 40px;
 }
 .army-ladder:empty { display: none; }
+.army-ladder > :nth-child(1) { grid-area: 4 / 1 / 5 / 3; }
+.army-ladder > :nth-child(2) { grid-area: 3 / 1; }
+.army-ladder > :nth-child(3) { grid-area: 3 / 2; }
+.army-ladder > :nth-child(4) { grid-area: 2 / 1; }
+.army-ladder > :nth-child(5) { grid-area: 2 / 2; }
+.army-ladder > :nth-child(6) { grid-area: 1 / 1; }
+.army-ladder > :nth-child(7) { grid-area: 1 / 2; }
 
 /* A whole army: three pawns in front of three pieces. */
 .row-mark-army { gap: 0; }
@@ -2421,8 +2434,16 @@ body.theme-pirate {
   .game-row .game-card { width: 140px; }
   /* The growing battle's ladder: a row below the others. */
   .gamescreen { flex-direction: column; }
-  .army-ladder { flex-direction: row; align-items: center; gap: 22px; margin-left: 0; margin-top: 24px; }
+  /* Below the rows: the picture, then two lines of three battles. */
+  .army-ladder { grid-template-columns: 88px 140px 140px 140px; margin-left: 0; margin-top: 12px; }
   .army-ladder .game-card { width: 140px; }
+  .army-ladder > :nth-child(1) { grid-area: 1 / 1 / 3 / 2; }
+  .army-ladder > :nth-child(2) { grid-area: 1 / 2; }
+  .army-ladder > :nth-child(3) { grid-area: 1 / 3; }
+  .army-ladder > :nth-child(4) { grid-area: 1 / 4; }
+  .army-ladder > :nth-child(5) { grid-area: 2 / 2; }
+  .army-ladder > :nth-child(6) { grid-area: 2 / 3; }
+  .army-ladder > :nth-child(7) { grid-area: 2 / 4; }
   .row-mark { width: 88px; height: 88px; }
   /* flex-wrap, not a fixed-column grid: Skip only shows during a lesson,
      so the tools row has 4 or 5 buttons depending on mode. */
@@ -2536,12 +2557,10 @@ body.theme-pirate {
 .no-flexgap .game-pic-run > * + * { margin-left: 2px; }
 .no-flexgap .game-pic-tight > * + * { margin-top: 0; }
 
-.no-flexgap .army-ladder > * + * { margin-bottom: 12px; }
 .no-flexgap .row-mark-army > * + * { margin-top: 0; }
 
 @media (orientation: portrait) {
   .no-flexgap .app > * + * { margin-left: 0; margin-top: 12px; }
-  .no-flexgap .army-ladder > * + * { margin-bottom: 0; margin-left: 22px; }
   .no-flexgap .game-pic-entry > * + * { margin-left: 8px; }
   /* Three cards a row: 3 x (150px + 22px of margin). */
   .no-flexgap .home-cards { max-width: 522px; }

@@ -192,6 +192,19 @@ naming a direction.
 | tip-army1 | Pawns keep each other safe. If one is captured, the other captures back! | భటులు ఒకరినొకరు కాపాడుకుంటారు. ఒకరిని పట్టుకుంటే, ఇంకొకరు తిరిగి పట్టుకుంటారు! | Warm, like teamwork; in time with the capture and the capture back. |
 | tip-army2 | Find a pawn that nobody protects, and capture it with your rook! | ఎవరూ కాపు కాయని భటుడిని వెతికి, నీ ఏనుగుతో పట్టుకో! | Clever and playful; the protected pawn glows red, the free one gold. |
 | tip-army3 | Your bishop is stuck behind the pawns. Move a pawn, and out it comes! | నీ ఒంటె భటుల వెనక ఇరుక్కుపోయింది. ఒక భటుడిని కదుపు, అది బయటకు వస్తుంది! | A small "oh no" on stuck, then bright as the bishop comes out. |
+| game-army4 | Knights join in! Capture all their pawns, or reach the other side. | గుర్రాలు కూడా వచ్చాయి! శత్రువు భటులందరినీ పట్టుకో, లేదా అవతలి వైపుకి చేరు. | Excited, the army growing again; two ways to win, clearly apart. |
+| game-army5 | The queens join in! Capture all their pawns, or reach the other side. | మంత్రులు కూడా వచ్చారు! శత్రువు భటులందరినీ పట్టుకో, లేదా అవతలి వైపుకి చేరు. | Excited and a little grand for the queens; two ways to win, clearly apart. |
+| game-army6 | The whole army, kings too! Checkmate their king to win. | మొత్తం సైన్యం, రాజులతో సహా! శత్రువు రాజుకి చెక్‌మేట్ పెట్టి గెలువు. | Big and proud, a real game at last; states the goal on the Mission card. |
+| army-mate-won | Checkmate! You won the whole battle! | చెక్‌మేట్! మొత్తం యుద్ధం నువ్వే గెలిచావు! | The biggest celebration in the app; the win line of the battle with kings. |
+| army-check | Check! Their king must get out of check. | చెక్! శత్రువు రాజు చెక్ నుంచి తప్పించుకోవాలి. | Bright and pleased; said when the child gives check. |
+| army-queen | Your pawn reached the other side. Now it is a queen! | నీ భటుడు అవతలి వైపుకి చేరాడు. ఇప్పుడు అతను మంత్రి! | Delighted surprise on "queen"; the pawn turns into a queen with sparkles. |
+| army-draw | Stalemate! Their king cannot move, but nobody wins this time. | స్టేల్‌మేట్! శత్రువు రాజు కదలలేడు, కానీ ఈసారి ఎవరూ గెలవలేదు. | Calm and kind, never disappointed; a game that ends with nobody winning. |
+| tip-army4 | Knights jump over pieces. One knight can attack two pieces at once! | గుర్రాలు పావుల మీదుగా దూకుతాయి. ఒక్క గుర్రం ఒకేసారి రెండు పావుల మీద దాడి చేయగలదు! | Playful on "jump", then impressed on "two at once", in time with the scene. |
+| tip-army5 | Your queen is strong. Never let her be captured for a pawn! | నీ మంత్రి చాలా బలమైనది. ఒక భటుడి కోసం ఆమెని పోగొట్టుకోకు! | Proud of the queen, then a gentle warning; the protected pawn glows red. |
+| tip-army6 | Keep your king safe, and trap theirs! | నీ రాజుని కాపాడుకో, శత్రువు రాజుని బంధించు! | Brave, the whole idea of chess in one line; starts the check and checkmate scene. |
+| army-how-1 | Check! Their bishop could capture your king. | చెక్! శత్రువు ఒంటె నీ రాజుని పట్టుకోగలదు. | A little urgent; the bishop's line to the king glows red. |
+| army-how-2 | Your pawn steps in the way. Your king is safe again. | నీ భటుడు దారికి అడ్డం వచ్చాడు. నీ రాజు మళ్ళీ క్షేమం. | Relieved; the pawn steps into the line. |
+| army-how-3 | Now your queen and rook work together to trap their king. | ఇప్పుడు నీ మంత్రి, ఏనుగు కలిసి శత్రువు రాజుని బంధిస్తాయి. | Clever teamwork; the rook moves first, then the queen. |
 
 ## How the owner makes the clips
 

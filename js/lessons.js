@@ -250,7 +250,20 @@
     'army-danger': { en: 'Careful! One of your pieces could be captured.', te: 'జాగ్రత్త! శత్రువు నీ పావుల్లో ఒకదాన్ని పట్టుకోగలదు.' },
     'tip-army1': { en: 'Pawns keep each other safe. If one is captured, the other captures back!', te: 'భటులు ఒకరినొకరు కాపాడుకుంటారు. ఒకరిని పట్టుకుంటే, ఇంకొకరు తిరిగి పట్టుకుంటారు!' },
     'tip-army2': { en: 'Find a pawn that nobody protects, and capture it with your rook!', te: 'ఎవరూ కాపు కాయని భటుడిని వెతికి, నీ ఏనుగుతో పట్టుకో!' },
-    'tip-army3': { en: 'Your bishop is stuck behind the pawns. Move a pawn, and out it comes!', te: 'నీ ఒంటె భటుల వెనక ఇరుక్కుపోయింది. ఒక భటుడిని కదుపు, అది బయటకు వస్తుంది!' }
+    'tip-army3': { en: 'Your bishop is stuck behind the pawns. Move a pawn, and out it comes!', te: 'నీ ఒంటె భటుల వెనక ఇరుక్కుపోయింది. ఒక భటుడిని కదుపు, అది బయటకు వస్తుంది!' },
+    'game-army4': { en: 'Knights join in! Capture all their pawns, or reach the other side.', te: 'గుర్రాలు కూడా వచ్చాయి! శత్రువు భటులందరినీ పట్టుకో, లేదా అవతలి వైపుకి చేరు.' },
+    'game-army5': { en: 'The queens join in! Capture all their pawns, or reach the other side.', te: 'మంత్రులు కూడా వచ్చారు! శత్రువు భటులందరినీ పట్టుకో, లేదా అవతలి వైపుకి చేరు.' },
+    'game-army6': { en: 'The whole army, kings too! Checkmate their king to win.', te: 'మొత్తం సైన్యం, రాజులతో సహా! శత్రువు రాజుకి చెక్‌మేట్ పెట్టి గెలువు.' },
+    'army-mate-won': { en: 'Checkmate! You won the whole battle!', te: 'చెక్‌మేట్! మొత్తం యుద్ధం నువ్వే గెలిచావు!' },
+    'army-check': { en: 'Check! Their king must get out of check.', te: 'చెక్! శత్రువు రాజు చెక్ నుంచి తప్పించుకోవాలి.' },
+    'army-queen': { en: 'Your pawn reached the other side. Now it is a queen!', te: 'నీ భటుడు అవతలి వైపుకి చేరాడు. ఇప్పుడు అతను మంత్రి!' },
+    'army-draw': { en: 'Stalemate! Their king cannot move, but nobody wins this time.', te: 'స్టేల్‌మేట్! శత్రువు రాజు కదలలేడు, కానీ ఈసారి ఎవరూ గెలవలేదు.' },
+    'tip-army4': { en: 'Knights jump over pieces. One knight can attack two pieces at once!', te: 'గుర్రాలు పావుల మీదుగా దూకుతాయి. ఒక్క గుర్రం ఒకేసారి రెండు పావుల మీద దాడి చేయగలదు!' },
+    'tip-army5': { en: 'Your queen is strong. Never let her be captured for a pawn!', te: 'నీ మంత్రి చాలా బలమైనది. ఒక భటుడి కోసం ఆమెని పోగొట్టుకోకు!' },
+    'tip-army6': { en: 'Keep your king safe, and trap theirs!', te: 'నీ రాజుని కాపాడుకో, శత్రువు రాజుని బంధించు!' },
+    'army-how-1': { en: 'Check! Their bishop could capture your king.', te: 'చెక్! శత్రువు ఒంటె నీ రాజుని పట్టుకోగలదు.' },
+    'army-how-2': { en: 'Your pawn steps in the way. Your king is safe again.', te: 'నీ భటుడు దారికి అడ్డం వచ్చాడు. నీ రాజు మళ్ళీ క్షేమం.' },
+    'army-how-3': { en: 'Now your queen and rook work together to trap their king.', te: 'ఇప్పుడు నీ మంత్రి, ఏనుగు కలిసి శత్రువు రాజుని బంధిస్తాయి.' }
   };
 
   /*
@@ -351,7 +364,9 @@
    */
   var ARMY_LINES = [
     'game-army1', 'game-army2', 'game-army3', 'army-won', 'army-danger',
-    'tip-army1', 'tip-army2', 'tip-army3'
+    'tip-army1', 'tip-army2', 'tip-army3',
+    'game-army4', 'game-army5', 'game-army6', 'army-mate-won', 'army-check', 'army-queen', 'army-draw',
+    'tip-army4', 'tip-army5', 'tip-army6', 'army-how-1', 'army-how-2', 'army-how-3'
   ];
 
   /*
