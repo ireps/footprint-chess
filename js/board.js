@@ -640,6 +640,25 @@
     if (node) replay(node, 'lit');
   }
 
+  /* ---------- hand prints (left/right levels) ---------- */
+
+  // The child's left and right hand prints at the two ends of their own
+  // strip, shown only in the hand-print levels.
+  function showHandPrints(on) {
+    ['hand-left', 'hand-right'].forEach(function (id) {
+      var node = byId(id);
+      if (node) node.hidden = !on;
+    });
+  }
+
+  // One hand print glows and grows for a moment (finite, see css/app.css).
+  function flashHandPrint(side) {
+    var node = byId(side === 'right' ? 'hand-right' : 'hand-left');
+    if (!node) return;
+    node.hidden = false;
+    replay(node, 'lit');
+  }
+
   /* ---------- ghost hand ---------- */
 
   function cancelHandHide() {
@@ -836,6 +855,8 @@
     hideTeamBars: hideTeamBars,
     glow: glow,
     landmark: landmark,
+    showHandPrints: showHandPrints,
+    flashHandPrint: flashHandPrint,
     hand: hand,
     handRest: handRest,
     hideHand: hideHand,

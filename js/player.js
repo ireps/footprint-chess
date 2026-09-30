@@ -137,6 +137,7 @@
     B.hideHand();
     B.glow([]);
     B.hideTeamBars();
+    B.showHandPrints(false);
   }
 
   // The page-load "ready" state: the hello lesson's start position, hand
@@ -288,6 +289,13 @@
       // also speak, or the two would collide (see the "turns" lesson).
       B.setActiveTeamBar(step.turn === 'me' ? 'home' : 'far');
       S.play('tick');
+      next();
+      return;
+    }
+    if (step.handPrint) {
+      // Hand-print lessons: that hand print glows.
+      B.showHandPrints(true);
+      B.flashHandPrint(step.handPrint);
       next();
       return;
     }

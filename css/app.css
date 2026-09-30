@@ -1449,6 +1449,45 @@ body {
 /* Their footprints: the dark footprints of the other side. */
 .their-feet span { background: #3b4a5a; }
 
+/* Hand prints (left/right levels): at the two ends of the child's strip,
+   left always orange and right always blue; the right hand is the left
+   one mirrored. "lit" is a finite glow, shortened by reduced motion. */
+.hand-print {
+  position: absolute;
+  top: 6%;
+  bottom: 6%;
+  width: calc(var(--cell) * 0.9);
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hand-print[hidden] { display: none; }
+.hand-print svg { width: 100%; height: 100%; }
+.hand-left { left: 6px; color: #f59e2e; }
+.hand-right { right: 6px; color: #4d8fe0; }
+.hand-right svg { transform: scaleX(-1); }
+.hand-print.lit svg { animation: hand-lit calc(900ms * var(--dur)) ease-in-out 2; }
+@keyframes hand-lit {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.25); opacity: 0.85; }
+}
+.hand-right.lit svg { animation-name: hand-lit-mirror; }
+@keyframes hand-lit-mirror {
+  0%, 100% { transform: scaleX(-1) scale(1); opacity: 1; }
+  50% { transform: scaleX(-1) scale(1.25); opacity: 0.85; }
+}
+
+/* Left or right?: the two palms of its picture. */
+.palm { display: flex; }
+.palm svg { width: 52px; height: 52px; }
+.palm-left { color: #f59e2e; }
+.palm-right { color: #4d8fe0; }
+.palm-right svg { transform: scaleX(-1); }
+.game-pic-mini .palm svg { width: 34px; height: 34px; }
+.rbtn .game-pic-mini .palm svg { width: 24px; height: 24px; }
+.game-row .palm svg { width: 46px; height: 46px; }
+
 /* The Won card's tip button. */
 .rbtn.rbtn-tip { background: #fff8d6; color: var(--ink); }
 

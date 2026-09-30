@@ -11,7 +11,7 @@ test('every game has a known row, unique id, and lines that exist in every langu
   assert.equal(new Set(GL.ids()).size, GL.GAMES.length);
   for (const g of GL.GAMES) {
     assert.ok(GL.ROWS.includes(g.row), `${g.id}: unknown row`);
-    assert.ok(g.kind === 'board' || g.kind === 'quiz' || g.kind === 'pond');
+    assert.ok(['board', 'quiz', 'pond', 'hands'].includes(g.kind));
     assert.equal(typeof g.teams, 'boolean');
   }
   for (const id of GL.lineIds()) {
@@ -27,6 +27,7 @@ test('every board game can be created, the quiz too', () => {
   for (const g of GL.GAMES) {
     if (g.kind === 'board') assert.equal(G.create(g.id, {}, Math.random).id, g.id);
     else if (g.kind === 'quiz') assert.equal(Q.create({}, Math.random).id, g.id);
+    else if (g.kind === 'hands') assert.equal(require('../js/hands.js').create({}, Math.random).id, g.id);
     else assert.equal((g.id === 'theirs' ? PD.createTheirs : PD.createDanger)({}, Math.random).id, g.id);
   }
 });

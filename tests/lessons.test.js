@@ -281,7 +281,7 @@ test('lesson order is hello, rook, bishop, queen, king, knight, pawn, a capture 
   assert.deepEqual(L.LESSONS.map(l => l.id), [
     'hello', 'rook', 'bishop', 'queen', 'king', 'knight', 'pawn',
     'capture-r', 'capture-b', 'capture-q', 'capture-k', 'capture-n', 'pawn-capture',
-    'turns', 'check', 'checkmate', 'theirside'
+    'turns', 'check', 'checkmate', 'theirside', 'yourhands'
   ]);
 });
 
@@ -330,9 +330,24 @@ test('no LINES text breaks its language\'s content rules (left/right, square nam
     if (!rules) continue; // generic checks only
     for (const [id, line] of Object.entries(L.LINES)) {
       for (const [re, why] of rules.banned) {
-        assert.ok(!re.test(line[lang]), `${id}: ${lang} text ${why}`);
+        // The hand-print levels are the one place left and right are named:
+        // there the words themselves are taken out before the other checks.
+        const text = L.HAND_LINES.includes(id) ? line[lang].replace(/\b(left|right)\b|ఎడమ|కుడి/gi, '') : line[lang];
+        assert.ok(!re.test(text), `${id}: ${lang} text ${why}`);
       }
     }
+  }
+});
+
+test('left and right are named only in the hand-print lines, and the hand lines have no robot words', () => {
+  for (const [id, line] of Object.entries(L.LINES)) {
+    const names = NO_LEFT_RIGHT.test(line.en) || NO_TELUGU_LEFT_RIGHT.test(line.te);
+    if (names) assert.ok(L.HAND_LINES.includes(id), `${id} names left or right outside the hand-print levels`);
+  }
+  for (const id of L.HAND_LINES) {
+    assert.ok(L.LINES[id], `HAND_LINES: unknown line ${id}`);
+    assert.ok(!BANNED_EN.test(L.LINES[id].en));
+    assert.ok(!/రోబో|బాట్|జంక్/.test(L.LINES[id].te));
   }
 });
 

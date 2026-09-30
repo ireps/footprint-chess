@@ -37,8 +37,9 @@
    * tip:     the line of its "watch how to play" scene
    * teams:   true when the child plays against the other side, taking
    *          turns (the Team card shows first); false for a solo game
-   * kind:    'board' (js/games.js), 'quiz' (js/quiz.js) or 'pond'
-   *          (js/pond.js, the other side's view)
+   * kind:    'board' (js/games.js), 'quiz' (js/quiz.js), 'pond'
+   *          (js/pond.js, the other side's view) or 'hands' (js/hands.js,
+   *          left and right)
    * lesson:  (optional) a lesson (js/lessons.js) played before the child's
    *          first game of it, like the "Taking turns" lesson before team
    *          games
@@ -54,6 +55,7 @@
     { id: 'theirs', row: 'pond', mission: 'game-theirs', win: 'theirs-won', tip: 'tip-theirs', teams: false, kind: 'pond', lesson: 'theirside' },
     { id: 'danger', row: 'pond', mission: 'game-danger', win: 'danger-won', tip: 'tip-danger', teams: false, kind: 'pond', lesson: 'theirside' },
     { id: 'run', row: 'pond', mission: 'game-run', win: 'run-won', tip: 'tip-run', teams: true, kind: 'board' },
+    { id: 'hands', row: 'think', mission: 'game-hands', win: 'hands-won', tip: 'tip-hands', teams: false, kind: 'hands', lesson: 'yourhands' },
     { id: 'stop', row: 'think', mission: 'game-stop', win: 'won', tip: 'tip-stop', teams: true, kind: 'board' },
     { id: 'safe', row: 'king', mission: 'game-safe', win: 'reach-won', tip: 'tip-safe', teams: false, kind: 'board' },
     { id: 'escape', row: 'king', mission: 'game-escape', win: 'escape-won', tip: 'tip-escape', teams: false, kind: 'board', lesson: 'check' },

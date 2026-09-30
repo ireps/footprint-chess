@@ -35,7 +35,7 @@ Telugu clip and Telugu device speech are both unavailable.
 
 Every line uses real chess terminology: rook, bishop, queen, king, knight,
 pawn, capture. No robot names, no "bot" or "robot", no junk or junkyard, no
-"bump". No "left", "right" or a square name (e.g. e4), in either language.
+"bump". No "left", "right" or a square name (e.g. e4), in either language, except in the hand-print levels: the lines whose ids start with `hands-` (and `game-hands`, `tip-hands`) are the only ones that name left and right (ఎడమ, కుడి).
 The two edges are "the other side" (row 0, the opponent's home) and "your
 side" (row 7, the child's home); lines refer to them this way rather than
 naming a direction.
@@ -121,6 +121,19 @@ naming a direction.
 | escape-ask | Check! Save your king. | చెక్! నీ రాజుని కాపాడు. | Clear, a little urgent; said as each Get out of check puzzle appears. |
 | escape-won | You kept your king safe every time! | ప్రతిసారీ నీ రాజుని కాపాడావు! | Big and celebratory; the Get out of check win line. |
 | tip-escape | Step away, block the line, or capture the attacker! | పక్కకి తప్పుకో, దారికి అడ్డం పెట్టు, లేదా దాడి చేసే పావుని పట్టుకో! | Three clear beats, one per way out, in time with the scene. |
+| hands-1 | Hold up your hands and look at them. | నీ చేతులు పైకెత్తి చూసుకో. | Warm and playful; the child really holds up their hands. |
+| hands-2 | This hand print is your left hand. | ఈ చేతి ముద్ర నీ ఎడమ చేయి. | Slow and clear; the orange hand print glows. |
+| hands-3 | This one is your right hand. | ఇది నీ కుడి చేయి. | Slow and clear; the blue hand print glows. |
+| hands-4 | The rook slides toward your left hand. | ఏనుగు నీ ఎడమ చేయి వైపుకి జారుతుంది. | Smooth, matching the glide; the left hand print glows again. |
+| game-hands | Left or right? Move the way I say! | ఎడమ, కుడి! నేను చెప్పిన వైపుకి కదుపు! | Playful, like a game of Simon says; states the goal on the Mission card. |
+| hands-left | Move to your left! | నీ ఎడమ వైపుకి కదుపు! | Clear and bright, a little emphasis on "left". |
+| hands-right | Move to your right! | నీ కుడి వైపుకి కదుపు! | Clear and bright, a little emphasis on "right". |
+| hands-yes-left | Yes! That is your left. | అవును! అది నీ ఎడమ వైపు. | Happy, naming the side once more. |
+| hands-yes-right | Yes! That is your right. | అవును! అది నీ కుడి వైపు. | Happy, naming the side once more. |
+| hands-not-left | That way is your right. Try your left! | అది నీ కుడి వైపు. ఎడమ వైపు ప్రయత్నించు! | Kind, never "wrong"; the piece slides back and the orange print glows. |
+| hands-not-right | That way is your left. Try your right! | అది నీ ఎడమ వైపు. కుడి వైపు ప్రయత్నించు! | Kind, never "wrong"; the piece slides back and the blue print glows. |
+| hands-won | You know your left and right! | నీకు ఎడమ, కుడి బాగా తెలుసు! | Big and proud; the Left or right? win line. |
+| tip-hands | Look at the hand prints: this one is left, that one is right. | చేతి ముద్రలు చూడు: ఇది ఎడమ, అది కుడి. | Calm, in time with the two prints glowing one after the other. |
 | pond-1 | Your pawns march toward the other side. | నీ భటులు అవతలి వైపుకి నడుస్తారు. | Steady, marching rhythm; the child's pawn steps up the board. |
 | pond-2 | Their pawns march toward your side! | శత్రువు భటులు నీ వైపుకి నడుస్తారు! | A small surprise on "your side"; the opponent's pawn steps down the board. |
 | pond-3 | Their footprints point toward your side. | శత్రువు అడుగుల గుర్తులు నీ వైపుకే ఉంటాయి. | Calm, pointing at the dark footprints. |
