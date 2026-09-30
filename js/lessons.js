@@ -177,6 +177,10 @@
     'game-escape': { en: 'Get out of check! Save your king every time.', te: 'చెక్ నుంచి తప్పించుకో! ప్రతిసారీ నీ రాజుని కాపాడు.' },
     'escape-ask': { en: 'Check! Save your king.', te: 'చెక్! నీ రాజుని కాపాడు.' },
     'escape-won': { en: 'You kept your king safe every time!', te: 'ప్రతిసారీ నీ రాజుని కాపాడావు!' },
+    'game-run': { en: 'Run away! Stay where the other piece cannot capture you.', te: 'పారిపో! శత్రువు పావు పట్టుకోలేని చోట ఉండు.' },
+    'run-danger': { en: 'Not there! It could capture you there.', te: 'అక్కడ వద్దు! అక్కడ అది నిన్ను పట్టుకోగలదు.' },
+    'run-won': { en: 'You got away safely!', te: 'సురక్షితంగా తప్పించుకున్నావు!' },
+    'tip-run': { en: 'Look at its footprints, and stand where they are not!', te: 'దాని అడుగుల గుర్తులు చూడు, అవి లేని చోట నిలబడు!' },
     'tip-escape': { en: 'Step away, block the line, or capture the attacker!', te: 'పక్కకి తప్పుకో, దారికి అడ్డం పెట్టు, లేదా దాడి చేసే పావుని పట్టుకో!' },
     'game-chain': { en: 'Capture chain! Capture every pawn, one after another.', te: 'గొలుసు ఆట! శత్రువు భటులను ఒకరి తర్వాత ఒకరిని పట్టుకో!' },
     'game-whose': { en: 'Whose footprints? Tap the piece that made them!', te: 'ఎవరి అడుగులు? ఆ అడుగులు వేసిన పావుని నొక్కు!' },
@@ -286,7 +290,8 @@
     'tip-look', 'how-look', 'how-catch-1', 'how-catch-2', 'how-catch-3', 'tip-race', 'tip-battle', 'tip-chain', 'tip-whose',
     'game-hop', 'game-way', 'game-stop', 'game-safe', 'reach-won', 'king-danger',
     'tip-hop', 'tip-way', 'tip-stop', 'tip-safe',
-    'game-escape', 'escape-ask', 'escape-won', 'tip-escape'
+    'game-escape', 'escape-ask', 'escape-won', 'tip-escape',
+    'game-run', 'run-danger', 'run-won', 'tip-run'
   ];
 
   var LESSONS = [

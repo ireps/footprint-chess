@@ -50,6 +50,7 @@
     { id: 'hop', row: 'reach', mission: 'game-hop', win: 'reach-won', tip: 'tip-hop', teams: false, kind: 'board' },
     { id: 'way', row: 'reach', mission: 'game-way', win: 'reach-won', tip: 'tip-way', teams: false, kind: 'board' },
     { id: 'whose', row: 'think', mission: 'game-whose', win: 'quiz-won', tip: 'tip-whose', teams: false, kind: 'quiz' },
+    { id: 'run', row: 'think', mission: 'game-run', win: 'run-won', tip: 'tip-run', teams: true, kind: 'board' },
     { id: 'stop', row: 'think', mission: 'game-stop', win: 'won', tip: 'tip-stop', teams: true, kind: 'board' },
     { id: 'safe', row: 'king', mission: 'game-safe', win: 'reach-won', tip: 'tip-safe', teams: false, kind: 'board' },
     { id: 'escape', row: 'king', mission: 'game-escape', win: 'escape-won', tip: 'tip-escape', teams: false, kind: 'board', lesson: 'check' }

@@ -121,6 +121,10 @@ naming a direction.
 | escape-ask | Check! Save your king. | చెక్! నీ రాజుని కాపాడు. | Clear, a little urgent; said as each Get out of check puzzle appears. |
 | escape-won | You kept your king safe every time! | ప్రతిసారీ నీ రాజుని కాపాడావు! | Big and celebratory; the Get out of check win line. |
 | tip-escape | Step away, block the line, or capture the attacker! | పక్కకి తప్పుకో, దారికి అడ్డం పెట్టు, లేదా దాడి చేసే పావుని పట్టుకో! | Three clear beats, one per way out, in time with the scene. |
+| game-run | Run away! Stay where the other piece cannot capture you. | పారిపో! శత్రువు పావు పట్టుకోలేని చోట ఉండు. | Playful and a little breathless; states the goal on the Mission card. |
+| run-danger | Not there! It could capture you there. | అక్కడ వద్దు! అక్కడ అది నిన్ను పట్టుకోగలదు. | Gentle and protective, never scolding; said when the child taps a square the chaser watches. |
+| run-won | You got away safely! | సురక్షితంగా తప్పించుకున్నావు! | Big and relieved; the Run away win line. |
+| tip-run | Look at its footprints, and stand where they are not! | దాని అడుగుల గుర్తులు చూడు, అవి లేని చోట నిలబడు! | Calm and clear, the key idea of the game. |
 | game-chain | Capture chain! Capture every pawn, one after another. | గొలుసు ఆట! శత్రువు భటులను ఒకరి తర్వాత ఒకరిని పట్టుకో! | Playful and energetic; states the goal on the Mission card. |
 | game-whose | Whose footprints? Tap the piece that made them! | ఎవరి అడుగులు? ఆ అడుగులు వేసిన పావుని నొక్కు! | Curious, like starting a guessing game; states the goal on the Mission card. |
 | quiz-ask | Whose footprints are these? | ఈ అడుగుల గుర్తులు ఎవరివి? | Curious and gentle, a real question; said as each quiz question appears. |

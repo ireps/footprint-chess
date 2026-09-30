@@ -219,6 +219,12 @@
       king.appendChild(B.pieceSvg('k', 'me'));
       pic.appendChild(king);
       pic.appendChild(B.pieceSvg('r', 'foe'));
+    } else if (id === 'run') {
+      // The child's rook hurrying away from an opponent knight.
+      pic.classList.add('game-pic-run');
+      pic.appendChild(B.pieceSvg('n', 'foe'));
+      pic.appendChild(el('span', 'speed-lines'));
+      pic.appendChild(B.pieceSvg('r', 'me'));
     } else if (id === 'escape') {
       // An opponent rook, a red line of danger, the child's king.
       var stack4 = el('div', 'game-pic-stack game-pic-tight game-pic-check');
@@ -571,6 +577,7 @@
   function gameOptions(id) {
     if (id === 'catch') return { type: lastNonPawn() };
     if (id === 'stop') return { type: homePieceIn(G.STOP_TYPES) };
+    if (id === 'run') return { type: lastNonPawn() };
     // Capture chain and Find the way: the first game uses the last piece
     // chosen on Home; each new one (Play again included) the next piece,
     // so every piece gets a turn.
@@ -801,7 +808,7 @@
       B.glow(G.dangerSquares(gstate, selected[0], selected[1]), DANGER);
       B.pulseFootprints();
       S.play('bonk');
-      V.say('king-danger', function () {});
+      V.say(gameId === 'run' ? 'run-danger' : 'king-danger', function () {});
     } else {
       var t = gstate.board[selected[0]][selected[1]].type;
       wrongTaps[t] = (wrongTaps[t] || 0) + 1;
@@ -1550,6 +1557,30 @@
         B.glow([]);
         king.classList.remove('selected');
         tipMove(ctx, board, king, [7, 4], [6, 5], null, done);
+      });
+    },
+    // Run away: the knight's footprints show; the squares the rook must
+    // not step to glow red; the rook steps to a safe one.
+    run: function (ctx, line) {
+      var board = R.emptyBoard();
+      board[7][2] = { type: 'r', team: 'me' };
+      board[4][4] = { type: 'n', team: 'foe' };
+      var rook = tipPiece('r', 7, 2);
+      tipFoe('n', 4, 4);
+      var done = join(2, ctx.end);
+      V.say(line, function () { if (ctx.alive()) done(); });
+      B.showFootprints('n', [4, 4], R.movesFor(board, 4, 4), {});
+      ctx.after(1600, function () {
+        var probe = { id: 'run', board: board, hero: [7, 2] };
+        var safe = G.legalMoves(Object.assign(probe, { over: false, turn: 'me' }), 7, 2);
+        rook.classList.add('selected');
+        B.showFootprints('r', [7, 2], safe, {});
+        B.glow(G.dangerSquares(probe, 7, 2), DANGER);
+        ctx.after(1800, function () {
+          B.glow([]);
+          rook.classList.remove('selected');
+          tipMove(ctx, board, rook, [7, 2], [7, 7], null, done);
+        });
       });
     },
     // Three ways out of check, one after another, in time with the line:

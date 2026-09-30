@@ -786,3 +786,65 @@ test('escape: a king step into check is never legal, and dangerSquares names it'
   const danger = G.dangerSquares(state, kr, kc).map(sq => sq.join(','));
   danger.forEach(d => assert.ok(!legal.includes(d)));
 });
+
+// ---- run: Run away (stage 7) ----------------------------------------------
+
+function chaserOf(state) {
+  return boardPieces(state.board).find(p => p.piece.team === 'foe');
+}
+
+test('create "run": a chaser of another kind, not watching the start square and not capturable; two safe first moves', () => {
+  for (const type of G.CHAIN_TYPES) {
+    for (let seed = 1; seed <= SEEDS; seed++) {
+      const state = G.create('run', { type }, seeded(seed));
+      const ch = chaserOf(state);
+      assert.equal(ch.piece.type, G.RUN_CHASER[type]);
+      assert.notEqual(ch.piece.type, type);
+      assert.ok(ch.r >= 1 && ch.r <= 3);
+      assert.ok(!R.attacks(state.board, ch.r, ch.c).some(sq => sq[0] === state.hero[0] && sq[1] === state.hero[1]));
+      assert.ok(G.legalMoves(state, state.hero[0], state.hero[1]).length >= 2);
+    }
+  }
+});
+
+test('legalMoves "run": never a square the chaser could capture on (checked by hand), and dangerSquares lists the rest', () => {
+  for (const type of G.CHAIN_TYPES) {
+    for (let seed = 1; seed <= 100; seed++) {
+      const rng = seeded(seed);
+      const state = G.create('run', { type }, rng);
+      for (let i = 0; i < 6 && !state.over; i++) {
+        const [hr, hc] = state.hero;
+        const legal = G.legalMoves(state, hr, hc);
+        const danger = G.dangerSquares(state, hr, hc).map(sq => sq.join(','));
+        const all = R.movesFor(state.board, hr, hc).map(m => m.r + ',' + m.c);
+        assert.deepEqual([...legal.map(m => m.r + ',' + m.c), ...danger].sort(), all.sort());
+        for (const m of legal) {
+          if (m.capture) continue;
+          const probe = R.cloneBoard(state.board);
+          probe[m.r][m.c] = probe[hr][hc];
+          probe[hr][hc] = null;
+          const ch = chaserOf({ board: probe });
+          assert.ok(!R.movesFor(probe, ch.r, ch.c).some(x => x.r === m.r && x.c === m.c), `${type} seed ${seed}: ${m.r},${m.c} is watched`);
+        }
+        G.applyMove(state, state.hero, [legal[0].r, legal[0].c]);
+        if (!state.over) G.botMove(state, rng);
+      }
+    }
+  }
+});
+
+test('guarantee "run": a random child always has a safe move, the chaser never captures, and it ends in six moves', () => {
+  for (const type of G.CHAIN_TYPES) {
+    for (let seed = 1; seed <= SEEDS; seed++) {
+      const out = playWith('run', { type }, seed, G.RUN_MOVES, greedyChildMove);
+      assert.ok(out.state.over && out.events.includes('run-won'), `${type} seed ${seed}`);
+      assert.equal(boardPieces(out.state.board).filter(p => p.piece.team === 'me').length, 1);
+    }
+  }
+});
+
+test('hint "run": a safe move', () => {
+  const state = G.create('run', { type: 'q' }, seeded(4));
+  const h = G.hint(state);
+  assert.ok(G.legalMoves(state, state.hero[0], state.hero[1]).some(m => m.r === h[0] && m.c === h[1]));
+});

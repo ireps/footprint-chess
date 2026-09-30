@@ -1363,6 +1363,13 @@ body {
 .check-line { width: 8px; height: 18px; border-radius: 4px; background: #e0604d; margin: 2px 0; }
 .game-pic-mini .check-line { height: 10px; width: 6px; }
 .game-pic-check svg.pc { width: 38px; height: 38px; }
+/* Run away: the knight, speed lines, the rook hurrying off. */
+.game-pic-run { gap: 2px; }
+.game-pic-run svg.pc { width: 46px; height: 46px; }
+.game-pic-mini.game-pic-run svg.pc { width: 34px; height: 34px; }
+.rbtn .game-pic-mini.game-pic-run svg.pc { width: 22px; height: 22px; }
+.speed-lines { width: 18px; height: 16px; flex: none; background: repeating-linear-gradient(180deg, #7a8699 0 3px, transparent 3px 6px); border-radius: 2px; }
+.game-pic-mini .speed-lines { width: 10px; height: 10px; }
 .game-pic-mini .game-pic-check svg.pc { width: 28px; height: 28px; }
 .rbtn .game-pic-mini .game-pic-check svg.pc { width: 18px; height: 18px; }
 .rbtn .game-pic-mini .check-line { height: 6px; width: 4px; }
@@ -2393,6 +2400,7 @@ body.theme-pirate {
 .no-flexgap .whose-mark > * + * { margin-left: 6px; }
 .no-flexgap .whose-feet > * + * { margin-left: 5px; }
 .no-flexgap .game-pic-chain > * + * { margin-left: 2px; }
+.no-flexgap .game-pic-run > * + * { margin-left: 2px; }
 .no-flexgap .game-pic-tight > * + * { margin-top: 0; }
 
 @media (orientation: portrait) {
