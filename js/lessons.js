@@ -181,6 +181,14 @@
     'run-danger': { en: 'Not there! It could capture you there.', te: 'అక్కడ వద్దు! అక్కడ అది నిన్ను పట్టుకోగలదు.' },
     'run-won': { en: 'You got away safely!', te: 'సురక్షితంగా తప్పించుకున్నావు!' },
     'tip-run': { en: 'Look at its footprints, and stand where they are not!', te: 'దాని అడుగుల గుర్తులు చూడు, అవి లేని చోట నిలబడు!' },
+    'mate-1': { en: 'This king is stuck behind his own pawns.', te: 'ఈ రాజు తన సొంత భటుల వెనక ఇరుక్కుపోయాడు.' },
+    'mate-2': { en: 'Slide the rook all the way to the other side!', te: 'ఏనుగుని అవతలి వైపు దాకా దూసుకుపోనివ్వు!' },
+    'mate-3': { en: 'Checkmate! The king has nowhere to go.', te: 'చెక్‌మేట్! రాజుకి ఎక్కడికీ వెళ్ళే దారి లేదు.' },
+    'game-mate': { en: 'Checkmate in one! Trap the king with one move.', te: 'ఒక్క ఎత్తులో చెక్‌మేట్! ఒకే కదలికతో రాజుని బంధించు.' },
+    'mate-ask': { en: 'Find the checkmate!', te: 'చెక్‌మేట్ కనుక్కో!' },
+    'mate-nearly': { en: 'Nearly! The king can still escape.', te: 'దాదాపు! రాజు ఇంకా తప్పించుకోగలడు.' },
+    'mate-won': { en: 'You found every checkmate!', te: 'అన్ని చెక్‌మేట్లూ కనుక్కున్నావు!' },
+    'tip-mate': { en: 'Check the king, and cover every square he could run to!', te: 'రాజుకి చెక్ పెట్టు, అతను పారిపోయే ప్రతి గడినీ కాపు కాయి!' },
     'tip-escape': { en: 'Step away, block the line, or capture the attacker!', te: 'పక్కకి తప్పుకో, దారికి అడ్డం పెట్టు, లేదా దాడి చేసే పావుని పట్టుకో!' },
     'game-chain': { en: 'Capture chain! Capture every pawn, one after another.', te: 'గొలుసు ఆట! శత్రువు భటులను ఒకరి తర్వాత ఒకరిని పట్టుకో!' },
     'game-whose': { en: 'Whose footprints? Tap the piece that made them!', te: 'ఎవరి అడుగులు? ఆ అడుగులు వేసిన పావుని నొక్కు!' },
@@ -291,7 +299,8 @@
     'game-hop', 'game-way', 'game-stop', 'game-safe', 'reach-won', 'king-danger',
     'tip-hop', 'tip-way', 'tip-stop', 'tip-safe',
     'game-escape', 'escape-ask', 'escape-won', 'tip-escape',
-    'game-run', 'run-danger', 'run-won', 'tip-run'
+    'game-run', 'run-danger', 'run-won', 'tip-run',
+    'game-mate', 'mate-ask', 'mate-nearly', 'mate-won', 'tip-mate'
   ];
 
   var LESSONS = [
@@ -633,6 +642,38 @@
     ],
     practice: [
       { to: [6, 5], accept: 'any' }
+    ]
+  });
+
+  /*
+   * Checkmate (stage 7): an opponent king stuck behind his own pawns; the
+   * rook slides to the far row and his last squares glow red. Played
+   * before the child's first Checkmate in one game.
+   */
+  LESSONS.push({
+    id: 'checkmate',
+    type: 'r',
+    title: 'Checkmate',
+    setup: { hero: [7, 0], foes: [{ at: [0, 6], type: 'k' }, [1, 5], [1, 6], [1, 7]] },
+    watch: [
+      { wait: 600 },
+      { say: 'mate-1' },
+      { glow: [[1, 5], [1, 6], [1, 7]] },
+      { waitVoice: true },
+      { glow: [] },
+      { select: true },
+      { say: 'mate-2' },
+      { hand: [0, 0] },
+      { move: [0, 0] },
+      { waitVoice: true },
+      { glow: [[0, 5], [0, 6], [0, 7]], color: 'danger' },
+      { say: 'mate-3' },
+      { waitVoice: true },
+      { wait: 400 },
+      { reset: true }
+    ],
+    practice: [
+      { to: [0, 0], accept: 'only' }
     ]
   });
 

@@ -225,6 +225,12 @@
       pic.appendChild(B.pieceSvg('n', 'foe'));
       pic.appendChild(el('span', 'speed-lines'));
       pic.appendChild(B.pieceSvg('r', 'me'));
+    } else if (id === 'mate') {
+      // The opponent king in a red ring, the child's queen beside him.
+      var cage = el('div', 'king-ring');
+      cage.appendChild(B.pieceSvg('k', 'foe'));
+      pic.appendChild(cage);
+      pic.appendChild(B.pieceSvg('q', 'me'));
     } else if (id === 'escape') {
       // An opponent rook, a red line of danger, the child's king.
       var stack4 = el('div', 'game-pic-stack game-pic-tight game-pic-check');
@@ -690,10 +696,8 @@
     if (gstate.turn === 'me') {
       B.setMode('play', modeTextPlay());
       S.play('your-turn');
-      if (gameId === 'escape') {
-        showAttackers();
-        V.sayAfter('escape-ask');
-      }
+      if (gameId === 'escape') showAttackers();
+      if (PUZZLE_LINES[gameId]) V.sayAfter(PUZZLE_LINES[gameId].ask);
       armIdle();
     } else {
       B.setMode('watch', modeTextWatch());
@@ -732,6 +736,9 @@
     if (gmode !== 'play' || !gstate || gstate.turn !== 'me' || busy) return;
     if (selected) {
       B.pulseFootprints();
+      // Checkmate in one: with the right piece selected, its square glows.
+      var target = gameId === 'mate' ? G.hint(gstate, selected) : null;
+      if (target && (target[0] !== selected[0] || target[1] !== selected[1])) B.glow([target]);
     } else {
       S.play('nudge');
       // A hint square glows: the next pawn of a capture chain, the next step
@@ -832,7 +839,25 @@
     B.moveHero(node, type, from, to, function () {
       if (myToken !== gameToken || !gstate) return;
       var res = G.applyMove(gstate, from, to);
+      if (res.reverted) {
+        takeBack(node, type, from, to, res);
+        return;
+      }
       commitMove(node, from, to, res, true);
+    });
+  }
+
+  // Checkmate in one: a move that is not checkmate goes back where it came
+  // from; the squares the king could still reach glow red.
+  function takeBack(node, type, from, to, res) {
+    var myToken = gameToken;
+    B.moveHero(node, type, to, from, function () {
+      if (myToken !== gameToken || !gstate) return;
+      B.glow(res.escapes || [], DANGER);
+      resetStreak();
+      busy = false;
+      V.say('mate-nearly', function () {});
+      armIdle();
     });
   }
 
@@ -889,8 +914,8 @@
       onGameOver();
       return;
     }
-    if (gstate.id === 'escape' && gstate.solved) {
-      nextEscapePuzzle();
+    if ((gstate.id === 'escape' || gstate.id === 'mate') && gstate.solved) {
+      nextPuzzleUI();
       return;
     }
     if (isChild) {
@@ -922,12 +947,21 @@
     B.glow(from, DANGER);
   }
 
-  function nextEscapePuzzle() {
+  // Get out of check and Checkmate in one: after a solved puzzle, its line,
+  // then the next puzzle and its question.
+  var PUZZLE_LINES = {
+    escape: { solved: 'check-3', ask: 'escape-ask' },
+    mate: { solved: 'mate-3', ask: 'mate-ask' }
+  };
+
+  function nextPuzzleUI() {
     busy = true;
     clearIdle();
     B.setMode('watch', modeTextWatch());
     var myToken = gameToken;
-    V.sayAfter('check-3', function () {
+    var lines = PUZZLE_LINES[gstate.id];
+    if (gstate.id === 'mate') glowKingCage();
+    V.sayAfter(lines.solved, function () {
       if (myToken !== gameToken || !gstate) return;
       // Pacing between puzzles, which reduced motion must not shorten.
       B.wait(function () {
@@ -938,11 +972,25 @@
         busy = false;
         B.setMode('play', modeTextPlay());
         S.play('your-turn');
-        showAttackers();
-        V.say('escape-ask', function () {});
+        if (gstate.id === 'escape') showAttackers();
+        V.say(lines.ask, function () {});
         armIdle();
       }, 400);
     });
+  }
+
+  // After a checkmate: the opponent king's square and every square around
+  // it glow red (he has nowhere to go).
+  function glowKingCage() {
+    var king = R.findKing(gstate.board, 'foe');
+    if (!king) return;
+    var sqs = [];
+    for (var dr = -1; dr <= 1; dr++) {
+      for (var dc = -1; dc <= 1; dc++) {
+        if (R.onBoard(king[0] + dr, king[1] + dc)) sqs.push([king[0] + dr, king[1] + dc]);
+      }
+    }
+    B.glow(sqs, DANGER);
   }
 
   /* ---------- the bot's turn ---------- */
@@ -1580,6 +1628,34 @@
           B.glow([]);
           rook.classList.remove('selected');
           tipMove(ctx, board, rook, [7, 2], [7, 7], null, done);
+        });
+      });
+    },
+    // Checkmate: the king is stuck behind his pawns; the rook slides to
+    // the far row; his squares glow red.
+    mate: function (ctx, line) {
+      var list = G.MATE_PUZZLES[0];
+      var board = G.puzzleBoard(list, false);
+      var nodes = {};
+      for (var r = 0; r < 8; r++) {
+        for (var c = 0; c < 8; c++) {
+          var p = board[r][c];
+          if (!p) continue;
+          if (p.team === 'me') nodes[key(r, c)] = tipPiece(p.type, r, c);
+          else tipFoe(p.type, r, c);
+        }
+      }
+      var done = join(2, ctx.end);
+      V.say(line, function () { if (ctx.alive()) done(); });
+      B.glow([[1, 5], [1, 6], [1, 7]]);
+      ctx.after(1400, function () {
+        B.glow([]);
+        tipPrints(board, [7, 0], {});
+        ctx.after(1000, function () {
+          tipMove(ctx, board, nodes['7,0'], [7, 0], [0, 0], null, function () {
+            B.glow([[0, 5], [0, 6], [0, 7]], DANGER);
+            ctx.after(1500, done);
+          });
         });
       });
     },

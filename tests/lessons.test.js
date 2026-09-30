@@ -281,7 +281,7 @@ test('lesson order is hello, rook, bishop, queen, king, knight, pawn, a capture 
   assert.deepEqual(L.LESSONS.map(l => l.id), [
     'hello', 'rook', 'bishop', 'queen', 'king', 'knight', 'pawn',
     'capture-r', 'capture-b', 'capture-q', 'capture-k', 'capture-n', 'pawn-capture',
-    'turns', 'check'
+    'turns', 'check', 'checkmate'
   ]);
 });
 
@@ -527,4 +527,15 @@ test('check lesson: the king starts in check, every watch and practice move gets
     assert.ok(legal, `${sq} is not a legal king move out of check`);
   }
   assert.deepEqual(L.foesOf(lesson), [{ at: [3, 4], type: 'r' }]);
+});
+
+test('checkmate lesson: the rook move is checkmate', () => {
+  const lesson = L.get('checkmate');
+  const start = L.boardFor(lesson);
+  assert.equal(R.inCheck(start.board, 'foe'), false);
+  const to = lesson.practice[0].to;
+  const b = start.board.map(row => row.slice());
+  b[to[0]][to[1]] = b[start.hero[0]][start.hero[1]];
+  b[start.hero[0]][start.hero[1]] = null;
+  assert.ok(R.isCheckmate(b, 'foe'));
 });
