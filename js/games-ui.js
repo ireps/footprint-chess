@@ -669,7 +669,7 @@
       // Checkmate in one and two, Checkmate not stalemate, Which capture is
       // best? and the growing battle: with a piece selected,
       // its best square glows.
-      var target = (gameId === 'mate' || gameId === 'mate2' || gameId === 'value' || gameId === 'stale' || gstate.army) ? G.hint(gstate, selected) : null;
+      var target = (gameId === 'mate' || gameId === 'mate2' || gameId === 'value' || gameId === 'stale' || gameId === 'opening' || gstate.army) ? G.hint(gstate, selected) : null;
       if (target && gstate.army) {
         B.glow([]);
         armyHelp();
@@ -797,9 +797,14 @@
     });
   }
 
-  // Which capture is best?: why the move was taken back.
+  // Which capture is best?, Checkmate not stalemate and Wake up your army:
+  // why the move was taken back.
   // Checkmate, not stalemate: a stalemate.
-  var VALUE_LINES = { none: 'value-find', smaller: 'value-bigger', back: 'value-back', stalemate: 'stale-oops' };
+  // Wake up your army: a queen, rook or king move.
+  var VALUE_LINES = {
+    none: 'value-find', smaller: 'value-bigger', back: 'value-back', stalemate: 'stale-oops',
+    queen: 'open-queen', rook: 'open-rook', king: 'open-king'
+  };
 
   function takeBackLine(res) {
     if (res.why && VALUE_LINES[res.why]) return VALUE_LINES[res.why];
@@ -843,6 +848,9 @@
     (events || []).forEach(function (ev) {
       if (ev === 'knight-tired') {
         V.sayAfter('knight-tired');
+      } else if (ev === 'ready') {
+        // Wake up your army: one more piece is out.
+        V.sayAfter('open-ready');
       } else if (ev === 'piece-back') {
         V.sayAfter('piece-back');
         syncNewPieces();

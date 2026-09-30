@@ -1113,3 +1113,87 @@ test('stale: a stalemate is taken back with the king, other non-mating moves wit
     assert.ok(state.over && state.winner === 'me');
   }
 });
+
+// ---- opening: Wake up your army --------------------------------------------------
+
+function openingRng(seed) {
+  let x = seed;
+  return () => { x = (x * 16807) % 2147483647; return x / 2147483647; };
+}
+
+test('opening: a real starting position, a team game, and the queen, rooks and king steps are taken back', () => {
+  const state = G.create('opening', {}, Math.random);
+  assert.equal(state.solo, false);
+  assert.deepEqual(state.board[7].map(p => p.type), ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r']);
+  assert.deepEqual(state.board[0].map(p => p.type), ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r']);
+  assert.ok(state.board[6].every(p => p.type === 'p' && p.team === 'me'));
+  // Open lines for the queen, a rook and the king, then try each.
+  state.board[6][3] = null;
+  state.board[6][0] = null;
+  state.board[6][4] = null;
+  const before = JSON.stringify(state.board);
+  assert.equal(G.applyMove(state, [7, 3], [6, 3]).why, 'queen');
+  assert.equal(G.applyMove(state, [7, 0], [6, 0]).why, 'rook');
+  assert.equal(G.applyMove(state, [7, 4], [6, 4]).why, 'king');
+  assert.equal(JSON.stringify(state.board), before);
+  assert.equal(state.turn, 'me');
+});
+
+test('opening: a middle pawn, both knights and bishops, then castling wins; the other side never captures, checks or watches the castling squares', () => {
+  for (let seed = 1; seed <= 40; seed++) {
+    const rng = openingRng(seed);
+    const state = G.create('opening', {}, rng);
+    if (seed % 2 === 0) { state.turn = 'foe'; G.botMove(state, rng); }
+    let moves = 0;
+    let castled = false;
+    while (!state.over && moves < 20) {
+      const piece = G.hint(state);
+      const to = G.hint(state, piece);
+      assert.ok(piece && to, `seed ${seed}: no hint`);
+      const res = G.applyMove(state, piece, to);
+      assert.ok(!res.reverted, `seed ${seed}: the hint was taken back`);
+      if (res.events.includes('castle')) castled = true;
+      moves++;
+      if (state.over) break;
+      const foesBefore = JSON.stringify(state.board.flat().filter(p => p && p.team === 'me'));
+      const mv = G.botMove(state, rng);
+      assert.ok(mv, `seed ${seed}: the other side has no move`);
+      assert.equal(mv.captured, null, `seed ${seed}: the other side captured`);
+      assert.equal(JSON.stringify(state.board.flat().filter(p => p && p.team === 'me')), foesBefore);
+      assert.equal(R.inCheck(state.board, 'me'), false, `seed ${seed}: check`);
+      const watched = R.attackedSquares(state.board, 'foe');
+      assert.ok(!['7,4', '7,5', '7,6'].some(k => watched[k]), `seed ${seed}: a castling square is watched`);
+    }
+    assert.ok(state.over && state.winner === 'me', `seed ${seed}: not won`);
+    assert.ok(castled, `seed ${seed}: won without castling`);
+    assert.deepEqual(G.openingLeft(state), []);
+    assert.ok(moves <= 9, `seed ${seed}: ${moves} moves`);
+  }
+});
+
+test('opening: after wandering moves, following the hints still wins', () => {
+  for (let seed = 1; seed <= 25; seed++) {
+    const rng = openingRng(seed);
+    const state = G.create('opening', {}, rng);
+    for (let k = 0; k < 15 && !state.over; k++) {
+      const all = [];
+      for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+        const p = state.board[r][c];
+        if (p && p.team === 'me') G.legalMoves(state, r, c).forEach(m => all.push([[r, c], [m.r, m.c]]));
+      }
+      const m = all[Math.floor(rng() * all.length)];
+      if (G.applyMove(state, m[0], m[1]).reverted) continue;
+      if (!state.over) G.botMove(state, rng);
+    }
+    let n = 0;
+    while (!state.over && n < 20) {
+      const piece = G.hint(state);
+      const to = G.hint(state, piece);
+      assert.ok(piece && to, `seed ${seed}: no hint`);
+      G.applyMove(state, piece, to);
+      n++;
+      if (!state.over) G.botMove(state, rng);
+    }
+    assert.ok(state.over && state.winner === 'me', `seed ${seed}: not won`);
+  }
+});

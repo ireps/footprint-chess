@@ -175,6 +175,13 @@ naming a direction.
 | stale-oops | Stalemate! He cannot move, but he is not in check. | స్టేల్‌మేట్! రాజు కదలలేడు, కానీ అతనికి చెక్ లేదు. | Surprised and gentle, never "wrong"; the move slides back and the king glows. |
 | stale-won | Checkmate every time! Well done! | ప్రతిసారీ చెక్‌మేట్! శభాష్! | Big and celebratory; the Checkmate, not stalemate win line. |
 | tip-stale | Always give check. No check and no moves is stalemate. | ఎప్పుడూ చెక్ పెట్టు. చెక్ లేకుండా కదలలేకపోతే స్టేల్‌మేట్. | Calm and clear, the difference in one line. |
+| game-opening | Wake up your army! Bring your pieces out, then castle. | నీ సైన్యాన్ని నిద్రలేపు! పావుల్ని బయటకు తెచ్చి, తర్వాత క్యాస్లింగ్ చెయ్యి. | Bright and energetic, like a morning call; states the goal on the Mission card. |
+| open-queen | Keep the queen at home for now. | ఇప్పటికి మంత్రిని తన చోటులోనే ఉంచు. | Gentle and wise, never "wrong"; the queen slides back. |
+| open-rook | The rooks wait until the king is safe. | రాజు సురక్షితంగా ఉండే వరకు ఏనుగులు ఆగుతాయి. | Calm; the rook slides back. |
+| open-king | Keep the king at home, then castle! | రాజుని తన చోటులోనే ఉంచు, తర్వాత క్యాస్లింగ్! | Warm; the king slides back. |
+| open-ready | Good! That piece is ready. | బాగుంది! ఆ పావు సిద్ధం. | Pleased; said when a middle pawn, knight or bishop comes out for the first time. |
+| open-won | Your army is awake, and your king is safe! | నీ సైన్యం మేల్కొంది, నీ రాజు సురక్షితం! | Big and proud; the Wake up your army win line. |
+| tip-opening | A middle pawn, knights and bishops out, then castle! | మధ్య భటుడు ముందుకు, గుర్రాలు ఒంటెలు బయటకు, తర్వాత క్యాస్లింగ్! | Calm and clear, the whole plan in one line. |
 | game-run | Run away! Stay where the other piece cannot capture you. | పారిపో! శత్రువు పావు పట్టుకోలేని చోట ఉండు. | Playful and a little breathless; states the goal on the Mission card. |
 | run-danger | Not there! It could capture you there. | అక్కడ వద్దు! అక్కడ అది నిన్ను పట్టుకోగలదు. | Gentle and protective, never scolding; said when the child taps a square the chaser watches. |
 | run-won | You got away safely! | సురక్షితంగా తప్పించుకున్నావు! | Big and relieved; the Run away win line. |

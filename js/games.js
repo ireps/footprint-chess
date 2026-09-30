@@ -48,6 +48,13 @@
  *              stalemating move is taken back ('stalemate', with the
  *              king's square); any other move that is not checkmate is
  *              taken back as in 'mate'.
+ *   'opening' - Wake up your army (a team game with every rule of chess):
+ *              from the start of a real game, move a middle pawn, bring
+ *              out both knights and both bishops, then castle. Queen and
+ *              rook moves, and king steps that are not castling, are
+ *              taken back ('queen', 'rook', 'king'). The other side
+ *              develops calmly: it never captures, never gives check and
+ *              never aims at the squares the child's king castles through.
  *   'escape' - Get out of check (stage 7, solo): five small puzzles, each
  *              with the child's king in check; any legal move ends the
  *              check (step away, block the line, or capture the attacker).
@@ -714,6 +721,7 @@
     if (state.id === 'mate' || state.id === 'stale') return state.solved ? null : mateHint(state, selected);
     if (state.id === 'mate2') return (state.solved || state.turn !== 'me') ? null : mate2Hint(state, selected);
     if (state.id === 'value') return state.solved ? null : valueHint(state, selected);
+    if (state.id === 'opening') return state.turn === 'me' ? openingHint(state, selected) : null;
     if (state.id === 'run') return runHint(state);
     if (state.id === 'chain') {
       // The next pawn of the chain when it is one move away; otherwise
@@ -1276,6 +1284,222 @@
     });
   }
 
+  // ---- opening: Wake up your army ---------------------------------------------
+
+  // What the child has to do, by the square each piece starts on: a middle
+  // pawn ('centre'), both knights, both bishops, then castling.
+  var OPENING_TASKS = ['centre', 'n1', 'n2', 'b1', 'b2', 'castle'];
+  var OPENING_FROM = { '6,3': 'centre', '6,4': 'centre', '7,1': 'n1', '7,6': 'n2', '7,2': 'b1', '7,5': 'b2' };
+  // The child's king castles toward the rook with two squares between.
+  var CASTLE_SQUARES = [[7, 4], [7, 5], [7, 6]];
+
+  function createOpening(options, rng) {
+    var board = R.emptyBoard();
+    for (var c = 0; c < R.SIZE; c++) {
+      board[6][c] = { type: 'p', team: 'me' };
+      board[1][c] = { type: 'p', team: 'foe' };
+      board[7][c] = { type: A.BACK_ROW[c], team: 'me' };
+      board[0][c] = { type: A.BACK_ROW[c], team: 'foe' };
+    }
+    return {
+      id: 'opening', board: board, info: R.newInfo(), turn: 'me', moveCount: 0, over: false, winner: null,
+      heroType: 'n', hero: null, solo: false, checkRules: true, full: true, done: {}
+    };
+  }
+
+  function openingMoves(state, r, c) {
+    return R.fullMoves(state.board, r, c, state.info);
+  }
+
+  function openingLeft(state) {
+    return OPENING_TASKS.filter(function (task) { return !state.done[task]; });
+  }
+
+  /* Why a move is taken back in Wake up your army, or null. */
+  function openingVerdict(board, from, to) {
+    var p = board[from[0]][from[1]];
+    if (p.type === 'q') return 'queen';
+    if (p.type === 'r') return 'rook';
+    if (p.type === 'k' && Math.abs(to[1] - from[1]) !== 2) return 'king';
+    return null;
+  }
+
+  function openingApply(state, from, to) {
+    var why = openingVerdict(state.board, from, to);
+    if (why) return { captured: null, events: ['nearly'], reverted: true, why: why, escapes: [] };
+    var res = R.playMove(state.board, from, to, state.info);
+    state.board = res.board;
+    state.info = res.info;
+    state.moveCount++;
+    var events = [];
+    var task = res.rook ? 'castle' : OPENING_FROM[key(from)];
+    if (res.rook) events.push('castle');
+    if (task && !state.done[task]) {
+      state.done[task] = true;
+      if (task !== 'castle') events.push('ready');
+    }
+    if (!openingLeft(state).length) {
+      state.over = true;
+      state.winner = 'me';
+      events.push('opening-won');
+    } else {
+      state.turn = 'foe';
+    }
+    return { captured: res.captured, capturedAt: res.capturedAt, rook: res.rook, events: events };
+  }
+
+  // Whether a sliding piece on (r, c) would reach a castling square of the
+  // child's if nothing stood in its way (so opening a line later can never
+  // block castling).
+  function eyesCastle(type, r, c) {
+    if (type === 'n' || type === 'p') return false;
+    return CASTLE_SQUARES.some(function (sq) {
+      var dr = sq[0] - r;
+      var dc = sq[1] - c;
+      var diag = Math.abs(dr) === Math.abs(dc);
+      var line = dr === 0 || dc === 0;
+      if (type === 'b') return diag;
+      if (type === 'r') return line;
+      return diag || line;
+    });
+  }
+
+  function centrality(r, c) {
+    return -(Math.abs(r - 3.5) + Math.abs(c - 3.5));
+  }
+
+  // The other side develops: middle pawns, knights and bishops out to its
+  // own half, and castling. Never a capture, a check, a square past its own
+  // half, or a slider looking at the child's castling squares.
+  function botOpening(state, rng) {
+    var board = state.board;
+    var options = [];
+    for (var r = 0; r < R.SIZE; r++) {
+      for (var c = 0; c < R.SIZE; c++) {
+        var p = board[r][c];
+        if (!p || p.team !== 'foe') continue;
+        R.fullMoves(board, r, c, state.info).forEach(function (m) {
+          var castle = p.type === 'k' && Math.abs(m.c - c) === 2;
+          var capture = !!board[m.r][m.c] || (p.type === 'p' && m.c !== c);
+          var next = R.playMove(board, [r, c], [m.r, m.c], state.info).board;
+          var calm = !capture && !R.inCheck(next, 'me') && m.r <= 3 && !eyesCastle(p.type, m.r, m.c);
+          var score = 0;
+          if (castle) score = 4;
+          else if ((p.type === 'n' || p.type === 'b') && r === 0) score = 3 + centrality(m.r, m.c) * 0.2;
+          else if (p.type === 'p' && r === 1 && (c === 3 || c === 4)) score = 2;
+          else if (p.type === 'p') score = 0.5;
+          else if (p.type === 'q' || p.type === 'r' || p.type === 'k') score = -5;
+          options.push({ from: [r, c], to: [m.r, m.c], calm: calm, score: score, capture: capture, check: R.inCheck(next, 'me') });
+        });
+      }
+    }
+    var pool = options.filter(function (o) { return o.calm && o.score > -5; });
+    if (!pool.length) pool = options.filter(function (o) { return !o.capture && o.to[0] <= 3 && !o.check; });
+    if (!pool.length) pool = options.filter(function (o) { return !o.capture && !o.check; });
+    if (!pool.length) pool = options.filter(function (o) { return !o.capture; });
+    if (!pool.length) pool = options;
+    state.turn = 'me';
+    if (!pool.length) return null;
+    var best = Math.max.apply(null, pool.map(function (o) { return o.score; }));
+    pool = pool.filter(function (o) { return o.score >= best - 0.3; });
+    var choice = pool[randInt(rng, pool.length)];
+    var res = R.playMove(board, choice.from, choice.to, state.info);
+    state.board = res.board;
+    state.info = res.info;
+    state.moveCount++;
+    var events = res.rook ? ['castle'] : [];
+    // No fail states: should the child ever be left with no move the game
+    // allows, the army counts as awake.
+    if (!openingAllowed(state.board, state.info).length) {
+      state.over = true;
+      state.winner = 'me';
+      events.push('opening-won');
+    }
+    return { from: choice.from, to: choice.to, captured: res.captured, capturedAt: res.capturedAt, rook: res.rook, events: events };
+  }
+
+  // The child's allowed moves in Wake up your army: [{ from, to }].
+  function openingAllowed(board, info) {
+    var out = [];
+    for (var r = 0; r < R.SIZE; r++) {
+      for (var c = 0; c < R.SIZE; c++) {
+        var p = board[r][c];
+        if (!p || p.team !== 'me') continue;
+        R.fullMoves(board, r, c, info).forEach(function (m) {
+          if (!openingVerdict(board, [r, c], [m.r, m.c])) out.push({ from: [r, c], to: [m.r, m.c] });
+        });
+      }
+    }
+    return out;
+  }
+
+  // How many of the tasks left could be done with the next move.
+  function openingDoable(board, info, done) {
+    var n = 0;
+    var home = { n1: [7, 1], n2: [7, 6], b1: [7, 2], b2: [7, 5] };
+    OPENING_TASKS.forEach(function (task) {
+      if (done[task]) return;
+      if (task === 'castle') {
+        var k = board[7][4];
+        if (k && k.type === 'k' && k.team === 'me' && R.fullMoves(board, 7, 4, info).some(function (m) { return m.c === 6; })) n++;
+      } else if (task === 'centre') {
+        if ([3, 4].some(function (c) { var p = board[6][c]; return p && p.type === 'p' && p.team === 'me' && R.fullMoves(board, 6, c, info).length; })) n++;
+      } else {
+        var sq = home[task];
+        var p = board[sq[0]][sq[1]];
+        if (p && p.team === 'me' && R.fullMoves(board, sq[0], sq[1], info).length) n++;
+      }
+    });
+    return n;
+  }
+
+  // Wake up your army hint: a move that does a task (a middle pawn first,
+  // then knights, bishops and castling); when none can, the move that best
+  // opens the way for one (looking two of the child's moves ahead).
+  function openingBest(state) {
+    var board = state.board;
+    var allowed = openingAllowed(board, state.info);
+    var best = null;
+    allowed.forEach(function (m) {
+      var p = board[m.from[0]][m.from[1]];
+      var task = OPENING_FROM[key(m.from)];
+      var score = 0;
+      if (p.type === 'k') score = 10;
+      else if (task === 'centre' && !state.done.centre) score = 8 + (Math.abs(m.to[0] - m.from[0]) === 2 ? 0.5 : 0);
+      else if (task && !state.done[task] && p.type === 'n') score = 6 + centrality(m.to[0], m.to[1]) * 0.1;
+      else if (task && !state.done[task] && p.type === 'b') score = 5.5 + centrality(m.to[0], m.to[1]) * 0.1 - (m.to[0] < 4 ? 0.5 : 0);
+      if (!best || score > best.score) best = { from: m.from, to: m.to, score: score };
+    });
+    // Every task move scores at least 4.
+    if (best && best.score >= 4) return best;
+    // No task can be done now: open the way.
+    best = null;
+    allowed.forEach(function (m) {
+      var after = R.playMove(board, m.from, m.to, state.info);
+      var now = openingDoable(after.board, after.info, state.done);
+      var later = 0;
+      openingAllowed(after.board, after.info).forEach(function (m2) {
+        var two = R.playMove(after.board, m2.from, m2.to, after.info);
+        later = Math.max(later, openingDoable(two.board, two.info, state.done));
+      });
+      var score = now * 2 + later;
+      if (!best || score > best.score) best = { from: m.from, to: m.to, score: score };
+    });
+    return best;
+  }
+
+  function openingHint(state, selected) {
+    var best = openingBest(state);
+    if (!best) return null;
+    if (selected) {
+      // With a piece selected: its best square, if it has a useful move.
+      var p = state.board[selected[0]][selected[1]];
+      if (p && p.team === 'me' && !(selected[0] === best.from[0] && selected[1] === best.from[1])) return null;
+      return best.to.slice();
+    }
+    return best.from.slice();
+  }
+
   // ---- shared API ------------------------------------------------------
 
   function create(id, options, rng) {
@@ -1294,6 +1518,7 @@
     if (id === 'mate2') return createMate2(options, rng);
     if (id === 'value') return createValue(options, rng);
     if (id === 'stale') return createStale(options, rng);
+    if (id === 'opening') return createOpening(options, rng);
     if (id === 'run') return createRun(options, rng);
     throw new Error('Unknown game id: ' + id);
   }
@@ -1303,6 +1528,8 @@
     if (state.over || state.turn !== 'me') return [];
     var piece = state.board[r][c];
     if (!piece || piece.team !== 'me') return [];
+    // Wake up your army: every rule of chess, castling included.
+    if (state.id === 'opening') return openingMoves(state, r, c);
     // Find the way: only the one piece moves; the child's pawns are in the way.
     if (state.heroOnly && (r !== state.hero[0] || c !== state.hero[1])) return [];
     if (PUZZLE_GAMES[state.id] && state.solved) return [];
@@ -1336,6 +1563,7 @@
     if ((state.id === 'mate' || state.id === 'stale') && !R.isCheckmate(afterMove(state.board, from, to), 'foe')) {
       return { captured: null, events: ['nearly'], reverted: true, escapes: kingEscapes(state.board, from, to) };
     }
+    if (state.id === 'opening') return openingApply(state, from, to);
     // Which capture is best? Anything but the best capture is taken back.
     if (state.id === 'value') {
       var verdict = valueVerdict(state.board, from, to);
@@ -1474,6 +1702,7 @@
     if (state.id === 'stop') return botStop(state, rng);
     if (state.id === 'run') return botRun(state, rng);
     if (state.id === 'mate2') return botMate2(state, rng);
+    if (state.id === 'opening') return botOpening(state, rng);
     return null;
   }
 
@@ -1490,6 +1719,7 @@
     if (id === 'mate2') return { kind: 'checkmate-in-two', count: MATE2_PUZZLES.length };
     if (id === 'value') return { kind: 'best-capture', count: VALUE_PUZZLES.length };
     if (id === 'stale') return { kind: 'checkmate', count: STALE_PUZZLES.length };
+    if (id === 'opening') return { kind: 'develop', tasks: OPENING_TASKS.slice() };
     if (id === 'run') return { kind: 'stay-safe', moves: RUN_MOVES };
     return null;
   }
@@ -1508,6 +1738,8 @@
     MATE_PUZZLES: MATE_PUZZLES,
     MATE2_PUZZLES: MATE2_PUZZLES,
     STALE_PUZZLES: STALE_PUZZLES,
+    OPENING_TASKS: OPENING_TASKS,
+    openingLeft: openingLeft,
     staleMoves: staleMoves,
     VALUE: VALUE,
     VALUE_PUZZLES: VALUE_PUZZLES,

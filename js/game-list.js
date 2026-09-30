@@ -64,6 +64,7 @@
     { id: 'danger', row: 'pond', mission: 'game-danger', win: 'danger-won', tip: 'tip-danger', teams: false, kind: 'pond', lesson: 'theirside' },
     { id: 'run', row: 'pond', mission: 'game-run', win: 'run-won', tip: 'tip-run', teams: true, kind: 'board' },
     { id: 'hands', row: 'think', mission: 'game-hands', win: 'hands-won', tip: 'tip-hands', teams: false, kind: 'hands', lesson: 'yourhands' },
+    { id: 'opening', row: 'think', mission: 'game-opening', win: 'open-won', tip: 'tip-opening', teams: true, kind: 'board' },
     { id: 'stop', row: 'think', mission: 'game-stop', win: 'won', tip: 'tip-stop', teams: true, kind: 'board' },
     { id: 'escape', row: 'king', mission: 'game-escape', win: 'escape-won', tip: 'tip-escape', teams: false, kind: 'board', lesson: 'check' },
     { id: 'mate', row: 'king', mission: 'game-mate', win: 'mate-won', tip: 'tip-mate', teams: false, kind: 'board', lesson: 'checkmate' },

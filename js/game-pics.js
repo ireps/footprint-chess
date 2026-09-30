@@ -117,6 +117,12 @@
       var prize = el('div', 'prize-ring');
       prize.appendChild(B.pieceSvg('q', 'foe'));
       pic.appendChild(prize);
+    } else if (id === 'opening') {
+      // The pieces that come out first, and the king that castles.
+      pic.classList.add('game-pic-3');
+      pic.appendChild(B.pieceSvg('n', 'me'));
+      pic.appendChild(B.pieceSvg('b', 'me'));
+      pic.appendChild(B.pieceSvg('k', 'me'));
     } else if (id === 'stale') {
       // The opponent king in a red ring beside the queen, and a king in a
       // grey dashed ring: checkmate, not stalemate.

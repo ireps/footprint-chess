@@ -20,6 +20,7 @@
  *     smaller or guarded capture taken back;
  *   - Checkmate, not stalemate played to its Won card, with one stalemate
  *     taken back;
+ *   - Wake up your army played to its Won card, castling included;
  *   - the grown-ups' corner listing a child's stored progress.
  *
  * Needs Playwright, which is not a dependency of the app:
@@ -338,6 +339,39 @@ async function testStale() {
   await done(page, name);
 }
 
+/* Wake up your army, played to its Won card by following the hints: the
+ * game's state is rebuilt from the board (the king and rooks never move
+ * before castling, so the castling rights are still whole). */
+async function testOpening() {
+  const name = 'wake up your army to the Won card';
+  const page = await newPage(LANDSCAPE);
+  await page.click('.games-entry');
+  await page.click('.game-card[aria-label="Wake up your army"]');
+  if (!(await reachTurn(page, name))) { await done(page, name); return; }
+  for (let move = 0; move < 20; move++) {
+    for (let w = 0; w < 240 && (await modeText(page)) !== 'Your turn!' && !(await page.$('#card .rbtn-home')); w++) await page.waitForTimeout(250);
+    if (await page.$('#card .rbtn-home')) break;
+    await page.waitForTimeout(400);
+    const board = await readBoard(page);
+    const mine = (r, c, t) => board[r][c] && board[r][c].team === 'me' && board[r][c].type === t;
+    const doneTasks = {
+      centre: !mine(6, 3, 'p') || !mine(6, 4, 'p'),
+      n1: !mine(7, 1, 'n'), n2: !mine(7, 6, 'n'), b1: !mine(7, 2, 'b'), b2: !mine(7, 5, 'b')
+    };
+    const state = { id: 'opening', board, info: R.newInfo(), turn: 'me', over: false, done: doneTasks };
+    const piece = G.hint(state);
+    const to = piece && G.hint(state, piece);
+    if (!to) { await page.waitForTimeout(1000); continue; }
+    await tapSquare(page, piece[0], piece[1]);
+    await page.waitForTimeout(250);
+    await tapSquare(page, to[0], to[1]);
+    await page.waitForTimeout(1500);
+  }
+  for (let w = 0; w < 80 && !(await page.$('#card .rbtn-home')); w++) await page.waitForTimeout(250);
+  if (!(await page.$('#card .rbtn-home'))) await fail(page, name, 'the Won card never showed');
+  await done(page, name);
+}
+
 /* The grown-ups' corner lists what each child has done, from the stored
  * progress: a won game shows up, and the next game to try is another. */
 async function testCorner() {
@@ -373,8 +407,9 @@ async function main() {
     await testMateInTwo();
     await testValue();
     await testStale();
+    await testOpening();
     await testCorner();
-    console.log('Browser tests: home and Games screen at both sizes, ' + n + ' games through their scenes to the first turn, the pawn battle, Checkmate in two, Which capture is best? and Checkmate, not stalemate to their Won cards, the grown-ups\' corner progress.');
+    console.log('Browser tests: home and Games screen at both sizes, ' + n + ' games through their scenes to the first turn, the pawn battle, Checkmate in two, Which capture is best?, Checkmate, not stalemate and Wake up your army to their Won cards, the grown-ups\' corner progress.');
   } finally {
     await browser.close();
     server.close();
