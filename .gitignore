@@ -2,3 +2,7 @@ node_modules/
 .DS_Store
 Thumbs.db
 *.log
+
+# Local Claude Code settings (machine-specific; not part of the project)
+.claude/settings.local.json
+.claude/launch.json
