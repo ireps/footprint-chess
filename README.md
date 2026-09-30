@@ -117,6 +117,8 @@ js/voice.js       Plays voice clips, with per-language speech and silent fallbac
 js/board.js       Board view: pieces, footprints, animations, ghost hand.
 js/player.js      Lesson player: runs a lesson's watch and practice parts.
 js/games-ui.js    Games screens and flow (Games button and screen, team card, games, quiz, tips, break card), capture juice, jar and stickers.
+js/game-pics.js   The pictures of the games and of the Games screen's rows.
+js/games-how.js   The "watch how to play" scene of each game, and the rule tip after a win.
 js/store.js       The progress store: children, progress, stickers, settings, backup code. Sanitizes everything it loads. No DOM access. Tested.
 js/stickers.js    Sticker art (a gold-rimmed badge in a theme's artwork), the Home shelf, stickers earned this visit.
 js/profile-ui.js  A child's picture, and the Who's playing screen.
@@ -131,7 +133,7 @@ sw.js             Service worker for offline play: keeps every file of the app i
 tools/make-voice.js  Dev tool: generates voice clips with Azure text-to-speech. Not loaded by the site.
 tools/make-offline.js  Dev tool: writes the offline file list and version into sw.js.
 tools/check.js    Dev tool: the project's rule checks, run by npm test and on every pull request.
-e2e/run.js        Browser tests: plays every game in headless Chromium (needs Playwright; not loaded by the site).
+e2e/run.js        Browser tests: plays every game and its "watch how to play" scene in headless Chromium (needs Playwright; not loaded by the site).
 package.json      Scripts only (npm test, npm run check, npm run offline); no dependencies.
 .github/          The test workflow, issue and pull request templates, and CODEOWNERS.
 tests/            Node test files.

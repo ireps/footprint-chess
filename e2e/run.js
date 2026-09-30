@@ -9,8 +9,9 @@
  *   - Home and the Games screen, at the tablet's landscape (1280x800) and
  *     portrait (800x1280) sizes, with touch;
  *   - every game on the Games screen, from its card through any first-time
- *     lesson, the Team card, the Mission card and the "watch how to play"
- *     scene, until the child's turn begins;
+ *     lesson (skipped), the Team card, the Mission card and the whole
+ *     "watch how to play" scene (js/games-how.js, watched to its end),
+ *     until the child's turn begins;
  *   - the pawn battle played to its Won card (the child follows the app's
  *     own hints; js/army.js decides the moves from what is on the board).
  *
@@ -89,15 +90,18 @@ async function visible(page, selector) {
   return !!(await page.$(selector + ':not([hidden])'));
 }
 
-/* From a game card to the child's first turn: skip lessons and scenes,
- * pick the first team, press Play. */
-async function reachTurn(page, name) {
-  for (let i = 0; i < 120; i++) {
+/* From a game card to the child's first turn: skip lessons, pick the first
+ * team, press Play. With watch set, the "watch how to play" scene after
+ * Play runs to its end instead of being skipped. */
+async function reachTurn(page, name, watch) {
+  let played = false;
+  for (let i = 0; i < 360; i++) {
     if (await page.$('.team-option')) {
       await page.click('.team-option');
     } else if (await page.$('#card .go-btn')) {
       await page.click('#card .go-btn');
-    } else if (await visible(page, '#tool-skip')) {
+      played = true;
+    } else if (await visible(page, '#tool-skip') && !(watch && played)) {
       await page.click('#tool-skip');
     } else if ((await modeText(page)) === 'Your turn!' && !(await visible(page, '#overlay'))) {
       return true;
@@ -154,14 +158,20 @@ async function testEveryGame() {
   await page0.click('.games-entry');
   const names = await page0.$$eval('#game-rows .game-card, #army-ladder .game-card', cards => cards.map(c => c.getAttribute('aria-label')));
   await done(page0, 'games list');
-  for (const game of names) {
-    const name = 'game ' + game;
-    const page = await newPage(LANDSCAPE);
-    await page.click('.games-entry');
-    await page.click('.game-card[aria-label="' + game.replace(/"/g, '\\"') + '"]');
-    await reachTurn(page, name);
-    await done(page, name);
+  // Four games at a time, each watching its scene to the end.
+  const queue = names.slice();
+  async function worker() {
+    while (queue.length) {
+      const game = queue.shift();
+      const name = 'game ' + game;
+      const page = await newPage(LANDSCAPE);
+      await page.click('.games-entry');
+      await page.click('.game-card[aria-label="' + game.replace(/"/g, '\\"') + '"]');
+      await reachTurn(page, name, true);
+      await done(page, name);
+    }
   }
+  await Promise.all([worker(), worker(), worker(), worker()]);
   return names.length;
 }
 
@@ -203,7 +213,7 @@ async function main() {
     await testScreens();
     const n = await testEveryGame();
     await testPawnBattle();
-    console.log('Browser tests: home and Games screen at both sizes, ' + n + ' games to the first turn, the pawn battle to its Won card.');
+    console.log('Browser tests: home and Games screen at both sizes, ' + n + ' games through their scenes to the first turn, the pawn battle to its Won card.');
   } finally {
     await browser.close();
     server.close();

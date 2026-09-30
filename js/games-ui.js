@@ -15,7 +15,9 @@
  * moveHero, showFootprints, team bars, ...) rather than touching the DOM
  * directly, the same way js/player.js and js/app.js already do. Depends on
  * FC.rules, FC.games, FC.quiz, FC.gameList, FC.lessons, FC.themes,
- * FC.sound, FC.voice, FC.board and FC.player (all loaded before this file); FC.app (js/app.js) is
+ * FC.sound, FC.voice, FC.board, FC.player, FC.gamePics (the pictures of the
+ * games, js/game-pics.js) and FC.gamesHow (the "watch how to play" scenes,
+ * js/games-how.js), all loaded before this file; FC.app (js/app.js) is
  * referenced only inside functions that run after user interaction, since
  * js/app.js itself loads after this file - see index.html's script order.
  *
@@ -38,20 +40,18 @@
   var V = FC.voice;
   var B = FC.board;
   var P = FC.player;
+  var H = FC.gamesHow;
+  var PICS = FC.gamePics;
 
   var IDLE_MS = 5000;
   var GOLDEN_CHANCE = 0.2;
   var JAR_MAX = 10;
-  // The quiz's footprints are all one colour, so their colour never gives
-  // the answer away (every theme but Classic colours footprints per piece).
-  var QUIZ_PRINT = '#7a8699';
-  // Squares the king may not step to (Keep the king safe).
-  var DANGER = '#e0604d';
-  // The other side's footprints (Mirror Pond games), and a "safe" ring.
-  var FOE_PRINT = '#3b4a5a';
-  // The other side's last move in the growing battle.
-  var LAST_MOVE = '#8a9bb0';
-  var SAFE = '#3dc46b';
+  // Colours shared with the "watch how to play" scenes (js/games-how.js).
+  var QUIZ_PRINT = H.COLORS.quizPrint;
+  var DANGER = H.COLORS.danger;       // squares a piece may not step to
+  var FOE_PRINT = H.COLORS.foePrint;  // the other side's footprints
+  var LAST_MOVE = H.COLORS.lastMove;  // the other side's last move (growing battle)
+  var SAFE = H.COLORS.safe;
 
   /*
    * Test hooks, both harmless and off by default:
@@ -180,186 +180,13 @@
    * Home: the games row
    * ===================================================================*/
 
-  // mini: a compact variant for small spots (the Won card's "next game"
-  // button and the panel's mission box).
-  function buildGamePic(id, mini) {
-    var pic = el('div', mini ? 'game-pic game-pic-mini' : 'game-pic');
-    if (id === 'turns') {
-      // The "turns" lesson's panel picture: the two teams' pawns.
-      pic.appendChild(B.pieceSvg('p', 'me'));
-      pic.appendChild(B.pieceSvg('p', 'foe'));
-    } else if (id === 'catch') {
-      var hand = B.svgUse('ic-hand');
-      hand.classList.add('ic-hand-static');
-      pic.appendChild(hand);
-      pic.appendChild(B.pieceSvg('n', 'foe'));
-    } else if (id === 'race') {
-      var stack = el('div', 'game-pic-stack');
-      stack.appendChild(el('div', 'finish-flag'));
-      var row = el('div', 'game-pic-row');
-      row.appendChild(B.pieceSvg('p', 'me'));
-      row.appendChild(B.pieceSvg('p', 'foe'));
-      stack.appendChild(row);
-      pic.appendChild(stack);
-    } else if (id === 'chain') {
-      // One piece, then pawns linked by footprint dots: capture after capture.
-      pic.classList.add('game-pic-3');
-      pic.classList.add('game-pic-chain');
-      pic.appendChild(B.pieceSvg('q', 'me'));
-      pic.appendChild(el('span', 'chain-dot'));
-      pic.appendChild(B.pieceSvg('p', 'foe'));
-      pic.appendChild(el('span', 'chain-dot'));
-      pic.appendChild(B.pieceSvg('p', 'foe'));
-    } else if (id === 'hop' || id === 'way') {
-      // A finish flag over the piece (and, for Find the way, one of the
-      // child's own pawns in its way).
-      var stack2 = el('div', 'game-pic-stack');
-      stack2.appendChild(el('div', 'finish-flag'));
-      var row2 = el('div', 'game-pic-row');
-      if (id === 'way') row2.appendChild(B.pieceSvg('p', 'me'));
-      row2.appendChild(B.pieceSvg(id === 'hop' ? 'n' : 'r', 'me'));
-      stack2.appendChild(row2);
-      pic.appendChild(stack2);
-    } else if (id === 'stop') {
-      // An opponent pawn marching down onto the child's rook.
-      var stack3 = el('div', 'game-pic-stack game-pic-tight');
-      stack3.appendChild(B.pieceSvg('p', 'foe'));
-      stack3.appendChild(B.pieceSvg('r', 'me'));
-      pic.appendChild(stack3);
-    } else if (id === 'safe') {
-      // The king, with a shield ring, beside a watching opponent rook.
-      var king = el('div', 'safe-king');
-      king.appendChild(B.pieceSvg('k', 'me'));
-      pic.appendChild(king);
-      pic.appendChild(B.pieceSvg('r', 'foe'));
-    } else if (id === 'run') {
-      // The child's rook hurrying away from an opponent knight.
-      pic.classList.add('game-pic-run');
-      pic.appendChild(B.pieceSvg('n', 'foe'));
-      pic.appendChild(el('span', 'speed-lines'));
-      pic.appendChild(B.pieceSvg('r', 'me'));
-    } else if (id === 'hands') {
-      // The two hand prints: left orange, right blue.
-      ['left', 'right'].forEach(function (side) {
-        var palm = el('div', 'palm palm-' + side);
-        palm.appendChild(B.svgUse('ic-palm'));
-        pic.appendChild(palm);
-      });
-    } else if (id === 'theirs') {
-      // Their pawn above its dark footprints, pointing toward your side.
-      var st5 = el('div', 'game-pic-stack game-pic-tight');
-      st5.appendChild(B.pieceSvg('p', 'foe'));
-      var feet = el('div', 'whose-feet their-feet');
-      feet.appendChild(el('span'));
-      feet.appendChild(el('span'));
-      st5.appendChild(feet);
-      pic.appendChild(st5);
-    } else if (id === 'danger') {
-      // An opponent rook looking at the child's piece in a red ring.
-      pic.appendChild(B.pieceSvg('r', 'foe'));
-      var ring5 = el('div', 'king-ring');
-      ring5.appendChild(B.pieceSvg('b', 'me'));
-      pic.appendChild(ring5);
-    } else if (id === 'mate') {
-      // The opponent king in a red ring, the child's queen beside him.
-      var cage = el('div', 'king-ring');
-      cage.appendChild(B.pieceSvg('k', 'foe'));
-      pic.appendChild(cage);
-      pic.appendChild(B.pieceSvg('q', 'me'));
-    } else if (id === 'escape') {
-      // An opponent rook, a red line of danger, the child's king.
-      var stack4 = el('div', 'game-pic-stack game-pic-tight game-pic-check');
-      stack4.appendChild(B.pieceSvg('r', 'foe'));
-      stack4.appendChild(el('div', 'check-line'));
-      stack4.appendChild(B.pieceSvg('k', 'me'));
-      pic.appendChild(stack4);
-    } else if (A.isArmy(id)) {
-      // The growing battle: the newest three kinds of piece in that
-      // battle, the newest one first.
-      var types = A.level(id).types.slice().reverse().slice(0, 3);
-      if (types.length === 1) types = ['p', 'p', 'p'];
-      pic.classList.add('game-pic-3');
-      if (A.level(id).full) {
-        // The full game: both kings, with the queen between them.
-        pic.appendChild(B.pieceSvg('k', 'me'));
-        pic.appendChild(B.pieceSvg('q', 'me'));
-        pic.appendChild(B.pieceSvg('k', 'foe'));
-      } else {
-        types.forEach(function (t) { pic.appendChild(B.pieceSvg(t, 'me')); });
-      }
-    } else if (id === 'whose') {
-      pic.appendChild(buildWhoseMark());
-      pic.appendChild(B.pieceSvg('n', 'me'));
-    } else if (id === 'games') {
-      // Home's Games button: the three rows' marks side by side.
-      pic.classList.add('game-pic-entry');
-      GL.ROWS.forEach(function (row) { pic.appendChild(buildRowMark(row)); });
-    } else {
-      pic.classList.add('game-pic-3');
-      pic.appendChild(B.pieceSvg('r', 'me'));
-      pic.appendChild(B.pieceSvg('p', 'foe'));
-      pic.appendChild(B.pieceSvg('p', 'foe'));
-    }
-    return pic;
-  }
-
-  // Two footprints and a question mark: the footprints quiz, and the mark of
-  // the thinking row.
-  function buildWhoseMark() {
-    var mark = el('div', 'whose-mark');
-    var feet = el('div', 'whose-feet');
-    feet.appendChild(el('span'));
-    feet.appendChild(el('span'));
-    mark.appendChild(feet);
-    mark.appendChild(textEl('div', 'whose-q', '?'));
-    return mark;
-  }
-
-  // The picture at the start of each row of the Games screen (no words):
-  // a pawn being captured, the finish flag, footprints with a question mark.
-  function buildRowMark(row) {
-    var mark = el('div', 'row-mark row-mark-' + row);
-    if (row === 'capture') {
-      mark.appendChild(el('div', 'row-burst'));
-      mark.appendChild(B.pieceSvg('p', 'foe'));
-    } else if (row === 'pond') {
-      // The pond: a pawn and its upside-down reflection in still water.
-      var water = el('div', 'pond-mark');
-      water.appendChild(B.pieceSvg('p', 'foe'));
-      var refl = B.pieceSvg('p', 'foe');
-      refl.classList.add('pond-mark-ref');
-      water.appendChild(refl);
-      mark.appendChild(water);
-    } else if (row === 'king') {
-      // The king in a red ring: games about keeping him safe.
-      var ring = el('div', 'king-ring');
-      ring.appendChild(B.pieceSvg('k', 'me'));
-      mark.appendChild(ring);
-    } else if (row === 'army') {
-      // The growing battle: a whole army, pawns in front of their pieces.
-      mark.classList.add('row-mark-army');
-      var back = el('div', 'army-mark-row');
-      ['r', 'k', 'b'].forEach(function (t) { back.appendChild(B.pieceSvg(t, 'me')); });
-      var front = el('div', 'army-mark-row');
-      ['p', 'p', 'p'].forEach(function (t) { front.appendChild(B.pieceSvg(t, 'me')); });
-      mark.appendChild(front);
-      mark.appendChild(back);
-    } else if (row === 'reach') {
-      mark.appendChild(el('div', 'finish-flag'));
-      mark.appendChild(B.pieceSvg('p', 'me'));
-    } else {
-      mark.appendChild(buildWhoseMark());
-    }
-    return mark;
-  }
-
   // Home: one Games button (the pictures of the three rows, no words).
   function renderHomeGames() {
     if (!dom.homeGames) return;
     clear(dom.homeGames);
     var card = el('button', 'game-card games-entry');
     card.type = 'button';
-    card.appendChild(buildGamePic('games'));
+    card.appendChild(PICS.game('games'));
     card.setAttribute('aria-label', 'Games');
     card.addEventListener('click', showGamesScreen);
     dom.homeGames.appendChild(card);
@@ -389,11 +216,11 @@
       var ladder = row === 'army';
       if (ladder && !dom.armyLadder) return;
       var rowEl = ladder ? dom.armyLadder : el('div', 'game-row');
-      rowEl.appendChild(buildRowMark(row));
+      rowEl.appendChild(PICS.rowMark(row));
       GL.inRow(row).forEach(function (g) {
         var card = el('button', 'game-card' + (g.id === suggested ? ' suggested' : ''));
         card.type = 'button';
-        card.appendChild(buildGamePic(g.id));
+        card.appendChild(PICS.game(g.id));
         var name = shortCaption(g.mission);
         card.appendChild(textEl('div', 'game-name', name));
         card.setAttribute('aria-label', name);
@@ -449,7 +276,7 @@
     var box = byId('mission-box');
     var old = byId('mission-pic');
     if (old) old.remove();
-    var pic = buildGamePic(id, true);
+    var pic = PICS.game(id, true);
     pic.id = 'mission-pic';
     pic.classList.add('mission-pic');
     box.insertBefore(pic, byId('game-jar'));
@@ -590,7 +417,7 @@
     var lineId = GL.get(gameId).mission;
     function build() {
       var frag = document.createDocumentFragment();
-      frag.appendChild(buildGamePic(gameId));
+      frag.appendChild(PICS.game(gameId));
       frag.appendChild(textEl('div', 'caption', LS.LINES[lineId][V.getLang()]));
       var row = el('div', 'btn-row');
       var go = el('button', 'go-btn');
@@ -1346,7 +1173,7 @@
       var drawn = isDraw();
       var trophy = el('div', drawn ? 'trophy trophy-calm' : 'trophy');
       if (!drawn) trophy.appendChild(el('div', 'ray'));
-      trophy.appendChild(buildGamePic(gameId));
+      trophy.appendChild(PICS.game(gameId));
       frag.appendChild(trophy);
 
       var row = el('div', 'btn-row');
@@ -1366,7 +1193,7 @@
       var next = el('button', 'rbtn');
       next.type = 'button';
       next.setAttribute('aria-label', 'Next game');
-      next.appendChild(buildGamePic(nextId, true));
+      next.appendChild(PICS.game(nextId, true));
       next.addEventListener('click', function (e) {
         e.stopPropagation();
         S.unlock();
@@ -1966,7 +1793,7 @@
 
   /* =====================================================================
    * Short "watch" scenes on the board: "watch how to play" (each game's
-   * own scene in HOW_TO, before its first game and from the light bulb on
+   * own scene in js/games-how.js, before its first game and from the light bulb on
    * its Mission and Won cards), and the rule tip after a win
    * (js/game-list.js pickTip), which shows one piece's footprints and says
    * its rule. Skip ends either at once.
@@ -2013,740 +1840,15 @@
       // Runs fn after ms, unless the tip was skipped or ended. Pacing, so
       // reduced motion must not shorten it.
       after: function (ms, fn) { B.wait(function () { if (alive()) fn(); }, ms); },
-      end: function () { ctx.after(700, finish); }
+      end: function () { ctx.after(700, finish); },
+      showPond: showPondStrip
     };
     V.say(lead, function () {
       if (!alive()) return;
-      if (tip.kind === 'rule') ruleTip(ctx, tip.type, tip.line);
-      else (HOW_TO[gameId] || ruleTipFallback)(ctx, tip.line);
+      H.play(ctx, tip, gameId, { me: childPieceSide(), foe: foePieceSide() });
     });
   }
 
-  function ruleTipFallback(ctx) { ctx.end(); }
-
-  // Calls fn once both the line and the scene are done.
-  function join(count, fn) {
-    var left = count;
-    return function () {
-      left -= 1;
-      if (left === 0) fn();
-    };
-  }
-
-  function tipPiece(type, r, c) {
-    var node = B.addPiece(type, r, c, childPieceSide());
-    B.replay(node, 'enter');
-    return node;
-  }
-  function tipFoe(type, r, c) {
-    return B.addItem(r, c, type, foePieceSide());
-  }
-
-  // Shows the footprints of the piece standing on `at` on `board`, with
-  // `items` (foe nodes by "r,c") ringed where it could capture.
-  function tipPrints(board, at, items) {
-    var p = board[at[0]][at[1]];
-    B.showFootprints(p.type, at, R.movesFor(board, at[0], at[1]), items || {});
-  }
-
-  // Moves a piece on the tip's board and in the picture; a captured foe
-  // piece poofs. Calls done when it lands.
-  function tipMove(ctx, board, node, from, to, items, done) {
-    B.hideFootprints(items || {});
-    var type = board[from[0]][from[1]].type;
-    B.moveHero(node, type, from, to, function () {
-      if (!ctx.alive()) return;
-      var k = key(to[0], to[1]);
-      if (items && items[k]) {
-        B.poof(items[k]);
-        delete items[k];
-        B.sparkle(to[0], to[1], 0);
-      }
-      board[to[0]][to[1]] = board[from[0]][from[1]];
-      board[from[0]][from[1]] = null;
-      done();
-    });
-  }
-
-  function ruleTip(ctx, type, line) {
-    var at = type === 'p' ? [6, 3] : [4, 3];
-    var board = R.emptyBoard();
-    board[at[0]][at[1]] = { type: type, team: 'me' };
-    var node = tipPiece(type, at[0], at[1]);
-    node.classList.add('selected');
-    tipPrints(board, at, {});
-    V.say(line, function () {
-      if (!ctx.alive()) return;
-      // Then it walks to the footprint nearest the other side.
-      var moves = R.movesFor(board, at[0], at[1]).sort(function (a, b) { return a.r - b.r || a.c - b.c; });
-      node.classList.remove('selected');
-      tipMove(ctx, board, node, at, [moves[0].r, moves[0].c], null, ctx.end);
-    });
-  }
-
-  // "Watch how to play" scenes, one per game (tip.line is the game's
-  // `tip` line in js/game-list.js).
-  var HOW_TO = {
-    // How to catch a knight that moves differently from your piece: see
-    // where it can hop, stand so your footprints cover those squares, and
-    // capture it when it lands on one.
-    catch: function (ctx) {
-      var board = R.emptyBoard();
-      board[7][2] = { type: 'r', team: 'me' };
-      board[3][4] = { type: 'n', team: 'foe' };
-      var items = {};
-      var rook = tipPiece('r', 7, 2);
-      items['3,4'] = tipFoe('n', 3, 4);
-      var hops = R.movesFor(board, 3, 4);
-      B.showFootprints('n', [3, 4], hops, {});
-      V.say('how-catch-1', function () {
-        if (!ctx.alive()) return;
-        tipMove(ctx, board, rook, [7, 2], [5, 2], null, function () {
-          // The rook's footprints now cover some of the knight's hops: they glow.
-          var covered = R.movesFor(board, 5, 2).filter(function (m) {
-            return hops.some(function (h) { return h.r === m.r && h.c === m.c; });
-          }).map(function (m) { return [m.r, m.c]; });
-          tipPrints(board, [5, 2], {});
-          B.glow(covered);
-          V.say('how-catch-2', function () {
-            if (!ctx.alive()) return;
-            B.glow([]);
-            B.hideFootprints({});
-            // The knight hops onto one of them...
-            var knight = items['3,4'];
-            delete items['3,4'];
-            B.moveHero(knight, 'n', [3, 4], [4, 2], function () {
-              if (!ctx.alive()) return;
-              board[4][2] = board[3][4];
-              board[3][4] = null;
-              items['4,2'] = knight;
-              tipPrints(board, [5, 2], items);
-              // ...and the rook captures it.
-              V.say('how-catch-3', function () {
-                if (!ctx.alive()) return;
-                tipMove(ctx, board, rook, [5, 2], [4, 2], items, ctx.end);
-              });
-            });
-          });
-        });
-      });
-    },
-    // Pawn battle: a pawn protected by another pawn is captured, and the
-    // other pawn captures back.
-    army1: function (ctx, line) {
-      var board = R.emptyBoard();
-      [[5, 3], [6, 4], [6, 1], [6, 6]].forEach(function (sq) { board[sq[0]][sq[1]] = { type: 'p', team: 'me' }; });
-      board[4][2] = { type: 'p', team: 'foe' };
-      board[1][5] = { type: 'p', team: 'foe' };
-      var mine = {};
-      [[5, 3], [6, 4], [6, 1], [6, 6]].forEach(function (sq) { mine[key(sq[0], sq[1])] = tipPiece('p', sq[0], sq[1]); });
-      var foe = tipFoe('p', 4, 2);
-      tipFoe('p', 1, 5);
-      var done = join(2, ctx.end);
-      V.say(line, function () { if (ctx.alive()) done(); });
-      // The pawn behind watches over the one in front.
-      B.glow([[5, 3]], SAFE);
-      ctx.after(2200, function () {
-        B.glow([]);
-        B.moveHero(foe, 'p', [4, 2], [5, 3], function () {
-          if (!ctx.alive()) return;
-          B.poof(mine['5,3']);
-          board[5][3] = board[4][2];
-          board[4][2] = null;
-          var items = { '5,3': foe };
-          ctx.after(600, function () {
-            var back = mine['6,4'];
-            back.classList.add('selected');
-            tipPrints(board, [6, 4], items);
-            ctx.after(900, function () {
-              back.classList.remove('selected');
-              tipMove(ctx, board, back, [6, 4], [5, 3], items, done);
-            });
-          });
-        });
-      });
-    },
-    // Pawns and rooks: one pawn is protected (red), the other is not
-    // (gold), and the rook captures the free one.
-    army2: function (ctx, line) {
-      var board = R.emptyBoard();
-      board[7][0] = { type: 'r', team: 'me' };
-      board[7][7] = { type: 'r', team: 'me' };
-      [1, 2, 5, 6].forEach(function (c) { board[6][c] = { type: 'p', team: 'me' }; });
-      [[3, 0], [2, 1], [3, 7], [1, 4]].forEach(function (sq) { board[sq[0]][sq[1]] = { type: 'p', team: 'foe' }; });
-      var rookA = tipPiece('r', 7, 0);
-      var rookB = tipPiece('r', 7, 7);
-      [1, 2, 5, 6].forEach(function (c) { tipPiece('p', 6, c); });
-      var items = {};
-      [[3, 0], [2, 1], [3, 7], [1, 4]].forEach(function (sq) { items[key(sq[0], sq[1])] = tipFoe('p', sq[0], sq[1]); });
-      var done = join(2, ctx.end);
-      V.say(line, function () { if (ctx.alive()) done(); });
-      rookA.classList.add('selected');
-      tipPrints(board, [7, 0], items);
-      ctx.after(1400, function () {
-        // That pawn is protected: the pawn beside it could capture back.
-        B.glow([[3, 0], [2, 1]], DANGER);
-        ctx.after(1600, function () {
-          rookA.classList.remove('selected');
-          rookB.classList.add('selected');
-          tipPrints(board, [7, 7], items);
-          B.glow([[3, 7]]);
-          ctx.after(1600, function () {
-            B.glow([]);
-            rookB.classList.remove('selected');
-            tipMove(ctx, board, rookB, [7, 7], [3, 7], items, done);
-          });
-        });
-      });
-    },
-    // Pawns, rooks and bishops: the bishop starts shut in behind its pawns;
-    // a pawn steps out of the way and the bishop comes out.
-    army3: function (ctx, line) {
-      var board = R.emptyBoard();
-      board[7][2] = { type: 'b', team: 'me' };
-      board[7][0] = { type: 'r', team: 'me' };
-      var pawns = {};
-      for (var c = 0; c < 8; c++) {
-        board[6][c] = { type: 'p', team: 'me' };
-        board[1][c] = { type: 'p', team: 'foe' };
-      }
-      var bishop = tipPiece('b', 7, 2);
-      tipPiece('r', 7, 0);
-      for (var c2 = 0; c2 < 8; c2++) {
-        pawns[c2] = tipPiece('p', 6, c2);
-        tipFoe('p', 1, c2);
-      }
-      var done = join(2, ctx.end);
-      V.say(line, function () { if (ctx.alive()) done(); });
-      // Stuck: no footprints at all.
-      bishop.classList.add('selected');
-      B.replay(bishop, 'wiggle');
-      B.glow([[6, 1], [6, 3]], DANGER);
-      ctx.after(2000, function () {
-        bishop.classList.remove('selected');
-        B.glow([]);
-        pawns[3].classList.add('selected');
-        tipPrints(board, [6, 3], {});
-        ctx.after(1000, function () {
-          pawns[3].classList.remove('selected');
-          tipMove(ctx, board, pawns[3], [6, 3], [4, 3], null, function () {
-            bishop.classList.add('selected');
-            tipPrints(board, [7, 2], {});
-            ctx.after(1200, function () {
-              bishop.classList.remove('selected');
-              tipMove(ctx, board, bishop, [7, 2], [4, 5], null, done);
-            });
-          });
-        });
-      });
-    },
-    // Knights: the knight hops out over its own pawns, then lands where it
-    // attacks two of the other side's pieces at once, and captures one.
-    army4: function (ctx, line) {
-      var board = R.emptyBoard();
-      board[7][1] = { type: 'n', team: 'me' };
-      board[2][5] = { type: 'r', team: 'foe' };
-      board[1][2] = { type: 'b', team: 'foe' };
-      var knight = tipPiece('n', 7, 1);
-      for (var c = 0; c < 8; c++) {
-        board[6][c] = { type: 'p', team: 'me' };
-        tipPiece('p', 6, c);
-      }
-      var items = { '2,5': tipFoe('r', 2, 5), '1,2': tipFoe('b', 1, 2) };
-      [[1, 0], [1, 6], [1, 7]].forEach(function (sq) {
-        board[sq[0]][sq[1]] = { type: 'p', team: 'foe' };
-        items[key(sq[0], sq[1])] = tipFoe('p', sq[0], sq[1]);
-      });
-      var done = join(2, ctx.end);
-      V.say(line, function () { if (ctx.alive()) done(); });
-      knight.classList.add('selected');
-      tipPrints(board, [7, 1], items);
-      ctx.after(1200, function () {
-        knight.classList.remove('selected');
-        tipMove(ctx, board, knight, [7, 1], [5, 2], items, function () {
-          ctx.after(500, function () {
-            tipMove(ctx, board, knight, [5, 2], [3, 3], items, function () {
-              // Two pieces in reach at once.
-              knight.classList.add('selected');
-              tipPrints(board, [3, 3], items);
-              B.glow([[2, 5], [1, 2]]);
-              ctx.after(1800, function () {
-                B.glow([]);
-                knight.classList.remove('selected');
-                tipMove(ctx, board, knight, [3, 3], [2, 5], items, done);
-              });
-            });
-          });
-        });
-      });
-    },
-    // Queens: the queen could capture a pawn that is protected (red: she
-    // would be captured back) or a knight nobody protects (gold).
-    army5: function (ctx, line) {
-      var board = R.emptyBoard();
-      board[4][3] = { type: 'q', team: 'me' };
-      var queen = tipPiece('q', 4, 3);
-      [[6, 1], [6, 5], [7, 4]].forEach(function (sq) {
-        var t = sq[0] === 7 ? 'k' : 'p';
-        board[sq[0]][sq[1]] = { type: t, team: 'me' };
-        tipPiece(t, sq[0], sq[1]);
-      });
-      var items = {};
-      [[2, 3, 'p'], [1, 2, 'p'], [4, 6, 'n'], [1, 6, 'p'], [0, 4, 'k']].forEach(function (x) {
-        board[x[0]][x[1]] = { type: x[2], team: 'foe' };
-        items[key(x[0], x[1])] = tipFoe(x[2], x[0], x[1]);
-      });
-      var done = join(2, ctx.end);
-      V.say(line, function () { if (ctx.alive()) done(); });
-      queen.classList.add('selected');
-      tipPrints(board, [4, 3], items);
-      ctx.after(1800, function () {
-        // That pawn is protected: capturing it loses the queen.
-        B.glow([[2, 3], [1, 2]], DANGER);
-        ctx.after(1800, function () {
-          B.glow([[4, 6]]);
-          ctx.after(1200, function () {
-            B.glow([]);
-            queen.classList.remove('selected');
-            tipMove(ctx, board, queen, [4, 3], [4, 6], items, done);
-          });
-        });
-      });
-    },
-    // The whole army: check and checkmate with many pieces. First the
-    // child's king is in check and a pawn blocks the line; then the rook
-    // and queen work together to checkmate the other king.
-    army6: function (ctx, line) {
-      var board = R.emptyBoard();
-      var mine = {};
-      function put(list, team) {
-        list.forEach(function (x) {
-          board[x[0]][x[1]] = { type: x[2], team: team };
-          var n = team === 'me' ? tipPiece(x[2], x[0], x[1]) : tipFoe(x[2], x[0], x[1]);
-          if (team === 'me') mine[key(x[0], x[1])] = n;
-        });
-      }
-      put([[7, 4, 'k'], [7, 3, 'q'], [7, 0, 'r'], [6, 0, 'p'], [6, 1, 'p'], [6, 2, 'p'], [6, 4, 'p'], [6, 5, 'p'], [6, 6, 'p'], [6, 7, 'p']], 'me');
-      put([[4, 1, 'b'], [0, 4, 'k'], [0, 7, 'r'], [1, 5, 'p'], [1, 6, 'p'], [2, 3, 'p']], 'foe');
-      V.say(line, function () {
-        if (!ctx.alive()) return;
-        // Check: the bishop's line to the king glows red.
-        B.glow([[4, 1], [5, 2], [6, 3], [7, 4]], DANGER);
-        V.say('army-how-1', function () {
-          if (!ctx.alive()) return;
-          tipMove(ctx, board, mine['6,2'], [6, 2], [5, 2], null, function () {
-            B.glow([[7, 4]], SAFE);
-            V.say('army-how-2', function () {
-              if (!ctx.alive()) return;
-              ctx.after(400, secondPart);
-            });
-          });
-        });
-      });
-      // Checkmate: a new position.
-      function secondPart() {
-        B.glow([]);
-        B.clearAll();
-        board = R.emptyBoard();
-        mine = {};
-        put([[7, 5, 'r'], [4, 1, 'q'], [7, 4, 'k'], [6, 0, 'p'], [6, 2, 'p'], [5, 3, 'p'], [6, 6, 'p']], 'me');
-        put([[0, 6, 'k'], [1, 6, 'p'], [1, 7, 'p'], [4, 7, 'n'], [3, 4, 'p']], 'foe');
-        V.say('army-how-3', function () {
-          if (!ctx.alive()) return;
-          tipMove(ctx, board, mine['7,5'], [7, 5], [4, 5], null, function () {
-            // The rook now watches his escape squares.
-            B.glow([[1, 5], [0, 5]], DANGER);
-            ctx.after(900, function () {
-              tipMove(ctx, board, mine['4,1'], [4, 1], [0, 1], null, function () {
-                var cage = [];
-                for (var dr = -1; dr <= 1; dr++) {
-                  for (var dc = -1; dc <= 1; dc++) {
-                    if (R.onBoard(0 + dr, 6 + dc)) cage.push([dr, 6 + dc]);
-                  }
-                }
-                B.glow(cage, DANGER);
-                V.say('mate-3', function () { if (ctx.alive()) ctx.end(); });
-              });
-            });
-          });
-        });
-      }
-    },
-    // The full game: castling (the king steps two squares and the rook
-    // jumps beside him), then a pawn reaching the other side becomes a
-    // queen.
-    army7: function (ctx, line) {
-      var board = R.emptyBoard();
-      var mine = {};
-      function put(list, team) {
-        list.forEach(function (x) {
-          board[x[0]][x[1]] = { type: x[2], team: team };
-          var n = team === 'me' ? tipPiece(x[2], x[0], x[1]) : tipFoe(x[2], x[0], x[1]);
-          if (team === 'me') mine[key(x[0], x[1])] = n;
-        });
-      }
-      put([[7, 4, 'k'], [7, 7, 'r'], [7, 0, 'r'], [7, 2, 'b'], [6, 0, 'p'], [6, 1, 'p'], [6, 5, 'p'], [6, 6, 'p'], [6, 7, 'p'], [5, 5, 'n'], [1, 2, 'p']], 'me');
-      put([[0, 4, 'k'], [1, 5, 'p'], [1, 6, 'p'], [2, 0, 'p'], [0, 7, 'r']], 'foe');
-      var king = mine['7,4'];
-      king.classList.add('selected');
-      B.showFootprints('k', [7, 4], R.fullMoves(board, 7, 4, R.newInfo()), {});
-      B.glow([[7, 6]]);
-      V.say(line, function () {
-        if (!ctx.alive()) return;
-        B.glow([]);
-        king.classList.remove('selected');
-        B.hideFootprints({});
-        // The king and the rook move together.
-        B.moveHero(mine['7,7'], 'r', [7, 7], [7, 5], function () {});
-        tipMove(ctx, board, king, [7, 4], [7, 6], null, function () {
-          board[7][5] = board[7][7];
-          board[7][7] = null;
-          V.say('army-castle', function () {
-            if (!ctx.alive()) return;
-            // A pawn on the other side becomes a queen.
-            var pawn = mine['1,2'];
-            tipMove(ctx, board, pawn, [1, 2], [0, 2], null, function () {
-              var queen = B.addPiece('q', 0, 2, childPieceSide());
-              B.replay(queen, 'enter');
-              B.sparkle(0, 2, 0);
-              pawn.remove();
-              V.say('army-queen', function () { if (ctx.alive()) ctx.end(); });
-            });
-          });
-        });
-      });
-    },
-    // The pawn's first step: two squares.
-    race: function (ctx, line) {
-      var board = R.emptyBoard();
-      board[6][3] = { type: 'p', team: 'me' };
-      board[1][5] = { type: 'p', team: 'foe' };
-      var pawn = tipPiece('p', 6, 3);
-      tipFoe('p', 1, 5);
-      var done = join(2, ctx.end);
-      V.say(line, function () { if (ctx.alive()) done(); });
-      pawn.classList.add('selected');
-      tipPrints(board, [6, 3], {});
-      ctx.after(1800, function () {
-        pawn.classList.remove('selected');
-        tipMove(ctx, board, pawn, [6, 3], [4, 3], null, done);
-      });
-    },
-    // Two pieces, each with its own footprints.
-    battle: function (ctx, line) {
-      var board = R.emptyBoard();
-      board[7][1] = { type: 'r', team: 'me' };
-      board[7][5] = { type: 'b', team: 'me' };
-      board[3][1] = { type: 'p', team: 'foe' };
-      board[4][2] = { type: 'p', team: 'foe' };
-      var items = {};
-      var rook = tipPiece('r', 7, 1);
-      var bishop = tipPiece('b', 7, 5);
-      items['3,1'] = tipFoe('p', 3, 1);
-      items['4,2'] = tipFoe('p', 4, 2);
-      var done = join(2, ctx.end);
-      V.say(line, function () { if (ctx.alive()) done(); });
-      rook.classList.add('selected');
-      tipPrints(board, [7, 1], items);
-      ctx.after(1600, function () {
-        rook.classList.remove('selected');
-        bishop.classList.add('selected');
-        tipPrints(board, [7, 5], items);
-        ctx.after(1600, function () {
-          bishop.classList.remove('selected');
-          tipMove(ctx, board, bishop, [7, 5], [4, 2], items, done);
-        });
-      });
-    },
-    // Capture, then the next pawn is already one move away.
-    chain: function (ctx, line) {
-      var board = R.emptyBoard();
-      board[7][2] = { type: 'r', team: 'me' };
-      board[3][2] = { type: 'p', team: 'foe' };
-      board[3][6] = { type: 'p', team: 'foe' };
-      var items = {};
-      var rook = tipPiece('r', 7, 2);
-      items['3,2'] = tipFoe('p', 3, 2);
-      items['3,6'] = tipFoe('p', 3, 6);
-      var done = join(2, ctx.end);
-      V.say(line, function () { if (ctx.alive()) done(); });
-      tipPrints(board, [7, 2], items);
-      ctx.after(1000, function () {
-        tipMove(ctx, board, rook, [7, 2], [3, 2], items, function () {
-          ctx.after(300, function () {
-            tipPrints(board, [3, 2], items);
-            ctx.after(1000, function () {
-              tipMove(ctx, board, rook, [3, 2], [3, 6], items, done);
-            });
-          });
-        });
-      });
-    },
-    // The knight hops to the footprints nearest the other side, twice.
-    hop: function (ctx, line) {
-      var board = R.emptyBoard();
-      board[7][2] = { type: 'n', team: 'me' };
-      var knight = tipPiece('n', 7, 2);
-      var done = join(2, ctx.end);
-      V.say(line, function () { if (ctx.alive()) done(); });
-      function hopFrom(at, to, then) {
-        tipPrints(board, at, {});
-        var best = R.movesFor(board, at[0], at[1]).filter(function (m) {
-          return m.r === at[0] - 2;
-        }).map(function (m) { return [m.r, m.c]; });
-        B.glow(best);
-        ctx.after(1400, function () {
-          B.glow([]);
-          tipMove(ctx, board, knight, at, to, null, then);
-        });
-      }
-      hopFrom([7, 2], [5, 3], function () {
-        ctx.after(300, function () { hopFrom([5, 3], [3, 4], done); });
-      });
-    },
-    // The rook's footprints stop at its own pawn; it goes around.
-    way: function (ctx, line) {
-      var board = R.emptyBoard();
-      board[7][3] = { type: 'r', team: 'me' };
-      board[4][3] = { type: 'p', team: 'me' };
-      var rook = tipPiece('r', 7, 3);
-      tipPiece('p', 4, 3);
-      var done = join(2, ctx.end);
-      V.say(line, function () { if (ctx.alive()) done(); });
-      tipPrints(board, [7, 3], {});
-      B.glow([[4, 3]], DANGER);
-      ctx.after(1800, function () {
-        B.glow([]);
-        tipMove(ctx, board, rook, [7, 3], [7, 5], null, function () {
-          ctx.after(300, function () {
-            tipPrints(board, [7, 5], {});
-            ctx.after(1000, function () {
-              tipMove(ctx, board, rook, [7, 5], [0, 5], null, done);
-            });
-          });
-        });
-      });
-    },
-    // The rook stands in front of a marching pawn, which cannot go on;
-    // then captures it.
-    stop: function (ctx, line) {
-      var board = R.emptyBoard();
-      board[7][4] = { type: 'r', team: 'me' };
-      board[2][4] = { type: 'p', team: 'foe' };
-      var items = {};
-      var rook = tipPiece('r', 7, 4);
-      items['2,4'] = tipFoe('p', 2, 4);
-      var done = join(2, ctx.end);
-      V.say(line, function () { if (ctx.alive()) done(); });
-      ctx.after(600, function () {
-        tipMove(ctx, board, rook, [7, 4], [3, 4], null, function () {
-          B.glow([[2, 4]]);
-          ctx.after(1800, function () {
-            B.glow([]);
-            tipMove(ctx, board, rook, [3, 4], [2, 4], items, done);
-          });
-        });
-      });
-    },
-    // The king's footprints skip the squares the rook watches, which glow
-    // red; he steps the safe way.
-    safe: function (ctx, line) {
-      var board = R.emptyBoard();
-      board[7][4] = { type: 'k', team: 'me' };
-      board[2][3] = { type: 'r', team: 'foe' };
-      var king = tipPiece('k', 7, 4);
-      tipFoe('r', 2, 3);
-      var done = join(2, ctx.end);
-      V.say(line, function () { if (ctx.alive()) done(); });
-      king.classList.add('selected');
-      var safeMoves = [[6, 4], [6, 5], [7, 5]].map(function (sq) { return { r: sq[0], c: sq[1], capture: false }; });
-      B.showFootprints('k', [7, 4], safeMoves, {});
-      B.glow([[6, 3], [7, 3]], DANGER);
-      ctx.after(2200, function () {
-        B.glow([]);
-        king.classList.remove('selected');
-        tipMove(ctx, board, king, [7, 4], [6, 5], null, done);
-      });
-    },
-    // Run away: the knight's footprints show; the squares the rook must
-    // not step to glow red; the rook steps to a safe one.
-    run: function (ctx, line) {
-      var board = R.emptyBoard();
-      board[7][2] = { type: 'r', team: 'me' };
-      board[4][4] = { type: 'n', team: 'foe' };
-      var rook = tipPiece('r', 7, 2);
-      tipFoe('n', 4, 4);
-      var done = join(2, ctx.end);
-      V.say(line, function () { if (ctx.alive()) done(); });
-      B.showFootprints('n', [4, 4], R.movesFor(board, 4, 4), {});
-      ctx.after(1600, function () {
-        var probe = { id: 'run', board: board, hero: [7, 2] };
-        var safe = G.legalMoves(Object.assign(probe, { over: false, turn: 'me' }), 7, 2);
-        rook.classList.add('selected');
-        B.showFootprints('r', [7, 2], safe, {});
-        B.glow(G.dangerSquares(probe, 7, 2), DANGER);
-        ctx.after(1800, function () {
-          B.glow([]);
-          rook.classList.remove('selected');
-          tipMove(ctx, board, rook, [7, 2], [7, 7], null, done);
-        });
-      });
-    },
-    // The two hand prints glow in turn, then the rook slides toward the
-    // left hand and back toward the right.
-    hands: function (ctx, line) {
-      var board = R.emptyBoard();
-      board[4][4] = { type: 'r', team: 'me' };
-      var rook = tipPiece('r', 4, 4);
-      B.showHandPrints(true);
-      var done = join(2, ctx.end);
-      V.say(line, function () { if (ctx.alive()) done(); });
-      ctx.after(1400, function () {
-        B.flashHandPrint('left');
-        ctx.after(1600, function () {
-          B.flashHandPrint('right');
-          ctx.after(1600, function () {
-            B.flashHandPrint('left');
-            tipMove(ctx, board, rook, [4, 4], [4, 1], null, function () {
-              ctx.after(500, function () {
-                B.flashHandPrint('right');
-                tipMove(ctx, board, rook, [4, 1], [4, 6], null, done);
-              });
-            });
-          });
-        });
-      });
-    },
-    // Their pawn's footprints point toward your side; it marches down.
-    theirs: function (ctx, line) {
-      var board = R.emptyBoard();
-      board[2][3] = { type: 'p', team: 'foe' };
-      board[3][4] = { type: 'n', team: 'me' };
-      var pawn = tipFoe('p', 2, 3);
-      tipPiece('n', 3, 4);
-      showPondStrip(board);
-      var done = join(2, ctx.end);
-      V.say(line, function () { if (ctx.alive()) done(); });
-      B.glow([[2, 3]]);
-      ctx.after(800, function () {
-        B.showFootprints('p', [2, 3], R.movesFor(board, 2, 3), {}, FOE_PRINT);
-        ctx.after(2200, function () {
-          B.glow([]);
-          B.hideFootprints({});
-          B.moveHero(pawn, 'p', [2, 3], [3, 3], function () { if (ctx.alive()) done(); });
-        });
-      });
-    },
-    // Their rook's footprints reach one of your pieces: it glows red and
-    // moves to safety.
-    danger: function (ctx, line) {
-      var board = R.emptyBoard();
-      board[1][1] = { type: 'r', team: 'foe' };
-      board[6][1] = { type: 'r', team: 'me' };
-      board[5][5] = { type: 'b', team: 'me' };
-      tipFoe('r', 1, 1);
-      var rook = tipPiece('r', 6, 1);
-      tipPiece('b', 5, 5);
-      showPondStrip(board);
-      var done = join(2, ctx.end);
-      V.say(line, function () { if (ctx.alive()) done(); });
-      ctx.after(800, function () {
-        B.showFootprints('r', [1, 1], R.movesFor(board, 1, 1), {}, FOE_PRINT);
-        B.glow([[6, 1]], DANGER);
-        ctx.after(2000, function () {
-          B.glow([]);
-          B.hideFootprints({});
-          tipMove(ctx, board, rook, [6, 1], [6, 3], null, done);
-        });
-      });
-    },
-    // Checkmate: the king is stuck behind his pawns; the rook slides to
-    // the far row; his squares glow red.
-    mate: function (ctx, line) {
-      var list = G.MATE_PUZZLES[0];
-      var board = G.puzzleBoard(list, false);
-      var nodes = {};
-      for (var r = 0; r < 8; r++) {
-        for (var c = 0; c < 8; c++) {
-          var p = board[r][c];
-          if (!p) continue;
-          if (p.team === 'me') nodes[key(r, c)] = tipPiece(p.type, r, c);
-          else tipFoe(p.type, r, c);
-        }
-      }
-      var done = join(2, ctx.end);
-      V.say(line, function () { if (ctx.alive()) done(); });
-      B.glow([[1, 5], [1, 6], [1, 7]]);
-      ctx.after(1400, function () {
-        B.glow([]);
-        tipPrints(board, [7, 0], {});
-        ctx.after(1000, function () {
-          tipMove(ctx, board, nodes['7,0'], [7, 0], [0, 0], null, function () {
-            B.glow([[0, 5], [0, 6], [0, 7]], DANGER);
-            ctx.after(1500, done);
-          });
-        });
-      });
-    },
-    // Three ways out of check, one after another, in time with the line:
-    // step away, block the line, capture the attacker.
-    escape: function (ctx, line) {
-      var step = Math.max(1800, Math.round(LS.LINES[line].ms / 3));
-      var done = join(2, ctx.end);
-      V.say(line, function () { if (ctx.alive()) done(); });
-      var scenes = [
-        { list: G.ESCAPE_PUZZLES.step[0], from: [7, 4], to: [7, 5] },
-        { list: G.ESCAPE_PUZZLES.block[0], from: [3, 2], to: [7, 2] },
-        { list: G.ESCAPE_PUZZLES.capture[0], from: [2, 1], to: [7, 1] }
-      ];
-      function play(i) {
-        if (i >= scenes.length) { done(); return; }
-        var sc = scenes[i];
-        B.clearAll();
-        var board = G.puzzleBoard(sc.list, false);
-        var nodes = {};
-        var items = {};
-        for (var r = 0; r < 8; r++) {
-          for (var c = 0; c < 8; c++) {
-            var p = board[r][c];
-            if (!p) continue;
-            if (p.team === 'me') nodes[key(r, c)] = tipPiece(p.type, r, c);
-            else items[key(r, c)] = tipFoe(p.type, r, c);
-          }
-        }
-        var king = R.findKing(board, 'me');
-        B.glow(Object.keys(items).map(function (k) { return k.split(',').map(Number); }).filter(function (sq) {
-          return R.attacks(board, sq[0], sq[1]).some(function (a) { return a[0] === king[0] && a[1] === king[1]; });
-        }), DANGER);
-        ctx.after(600, function () {
-          B.glow([]);
-          tipMove(ctx, board, nodes[key(sc.from[0], sc.from[1])], sc.from, sc.to, items, function () {
-            ctx.after(Math.max(300, step - 1400), function () { play(i + 1); });
-          });
-        });
-      }
-      play(0);
-    },
-    // Rook, bishop, queen in turn on the same square, each with its own
-    // footprints, in time with the line.
-    whose: function (ctx, line) {
-      var at = [3, 3];
-      var step = Math.max(1500, Math.round(LS.LINES[line].ms / 3));
-      var done = join(2, ctx.end);
-      V.say(line, function () { if (ctx.alive()) done(); });
-      var types = ['r', 'b', 'q'];
-      function show(i) {
-        if (i >= types.length) { done(); return; }
-        B.clearAll();
-        var board = R.emptyBoard();
-        board[at[0]][at[1]] = { type: types[i], team: 'me' };
-        tipPiece(types[i], at[0], at[1]);
-        tipPrints(board, at, {});
-        ctx.after(step, function () { show(i + 1); });
-      }
-      show(0);
-    }
-  };
 
   /* ---------- break reminder ---------- */
 
