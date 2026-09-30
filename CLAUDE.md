@@ -8,7 +8,7 @@ Footprint Chess: a chess-learning web app for a 6-year-old, and for young childr
 
 The public docs are README.md, SECURITY.md, PRIVACY.md, docs/DESIGN.md and docs/SETUP.md. Keep them accurate when behaviour changes.
 
-License: PolyForm Noncommercial 1.0.0 (owner's choice: credit required, no commercial use without permission; source-available, not open source). `LICENSE` holds the owner's `Required Notice:` lines followed by the official license text, unchanged; `NOTICE` explains credit, the unlicensed name "Footprint Chess", and that versions published before the change stay MIT. Never add code, art, fonts or audio whose own license conflicts with this (for example, anything that requires a more permissive or a copyleft license for the whole project), and never describe the project as "open source".
+License: PolyForm Noncommercial 1.0.0 (owner's choice: credit required, no commercial use without permission; source-available, not open source). `LICENSE` holds the owner's `Required Notice:` lines followed by the official license text, unchanged; `NOTICE` explains credit, the unlicensed name "Footprint Chess", and that versions published before the change stay MIT. Never add code, art, fonts or audio whose own license conflicts with this (for example, anything that requires a more permissive or a copyleft license for the whole project), and never describe the project as "open source". The voice clips in `audio/voice/` are generated programmatically for now; the owner has decided no licensing action is needed for them, so do not raise it again. When real recordings replace them, add a license clause covering the recordings (owner's plan).
 
 ## Target platform facts (researched)
 
