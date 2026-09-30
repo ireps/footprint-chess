@@ -666,9 +666,10 @@
     if (gmode !== 'play' || !gstate || gstate.turn !== 'me' || busy) return;
     if (selected) {
       B.pulseFootprints();
-      // Checkmate in one and two, and the growing battle: with a piece selected,
+      // Checkmate in one and two, Which capture is best? and the growing
+      // battle: with a piece selected,
       // its best square glows.
-      var target = (gameId === 'mate' || gameId === 'mate2' || gstate.army) ? G.hint(gstate, selected) : null;
+      var target = (gameId === 'mate' || gameId === 'mate2' || gameId === 'value' || gstate.army) ? G.hint(gstate, selected) : null;
       if (target && gstate.army) {
         B.glow([]);
         armyHelp();
@@ -796,9 +797,19 @@
     });
   }
 
+  // Which capture is best?: why the move was taken back.
+  var VALUE_LINES = { none: 'value-find', smaller: 'value-bigger', back: 'value-back' };
+
+  function takeBackLine(res) {
+    if (res.why && VALUE_LINES[res.why]) return VALUE_LINES[res.why];
+    // Checkmate in two: a first move that does not lead to checkmate.
+    return res.first ? 'mate2-nearly' : 'mate-nearly';
+  }
+
   // Checkmate in one (and the checkmate of Checkmate in two): a move that
   // is not checkmate goes back where it came from; the squares the king
-  // could still reach glow red.
+  // could still reach glow red. Which capture is best?: the move goes back,
+  // and the pieces that could capture it back glow red.
   function takeBack(node, type, from, to, res) {
     var myToken = gameToken;
     B.moveHero(node, type, to, from, function () {
@@ -806,8 +817,7 @@
       B.glow(res.escapes || [], DANGER);
       resetStreak();
       busy = false;
-      // Checkmate in two: a first move that does not lead to checkmate.
-      V.say(res.first ? 'mate2-nearly' : 'mate-nearly', function () {});
+      V.say(takeBackLine(res), function () {});
       armIdle();
     });
   }
@@ -901,7 +911,7 @@
       onGameOver();
       return;
     }
-    if ((gstate.id === 'escape' || gstate.id === 'mate' || gstate.id === 'mate2') && gstate.solved) {
+    if (G.isPuzzle(gstate.id) && gstate.solved) {
       nextPuzzleUI();
       return;
     }
@@ -1019,7 +1029,8 @@
   var PUZZLE_LINES = {
     escape: { solved: 'check-3', ask: 'escape-ask' },
     mate: { solved: 'mate-3', ask: 'mate-ask' },
-    mate2: { solved: 'mate-3', ask: 'mate2-ask' }
+    mate2: { solved: 'mate-3', ask: 'mate2-ask' },
+    value: { solved: 'value-yes', ask: 'value-ask' }
   };
 
   function nextPuzzleUI() {

@@ -998,3 +998,66 @@ test('mate2: every answer to every first move leaves a checkmate, and a non-mati
     });
   });
 });
+
+// ---- value: Which capture is best? -------------------------------------------
+
+test('value puzzles: no kings, one best capture, and at least one other capture on offer', () => {
+  G.VALUE_PUZZLES.forEach((list, n) => {
+    for (const mirror of [false, true]) {
+      const board = G.puzzleBoard(list, mirror);
+      const tag = `puzzle ${n}${mirror ? ' mirrored' : ''}`;
+      assert.equal(R.findKing(board, 'me'), null, `${tag}: a king`);
+      const options = G.captureOptions(board);
+      const best = G.bestCapture(board);
+      assert.ok(best, `${tag}: no capture`);
+      assert.equal(options.filter(o => o.gain === best.gain).length, 1, `${tag}: more than one best capture`);
+      assert.ok(options.length >= 2, `${tag}: only one capture`);
+      assert.equal(best.back.length, 0, `${tag}: the best capture can be captured back`);
+      for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+        const p = board[r][c];
+        if (p && p.type === 'p') assert.ok(p.team === 'foe' ? r < 7 : r > 0 && r < 7, `${tag}: a pawn on its last row`);
+      }
+    }
+  });
+  // Both ideas are taught: a bigger prize, and a capture that would be captured back.
+  const all = G.VALUE_PUZZLES.map(l => G.captureOptions(G.puzzleBoard(l, false)));
+  assert.ok(all.some(o => o.some(x => x.back.length)), 'no guarded capture anywhere');
+  assert.ok(all.some(o => o.every(x => !x.back.length)), 'no puzzle of plain bigger prizes');
+});
+
+test('value: a move that captures nothing, a smaller prize and a guarded capture are taken back; the best capture solves; five win', () => {
+  for (let seed = 1; seed <= 20; seed++) {
+    const state = G.create('value', {}, seeded(seed));
+    assert.equal(state.puzzles.length, 5);
+    assert.ok(state.solo);
+    for (let i = 0; i < 5; i++) {
+      const best = G.bestCapture(state.board);
+      const before = JSON.stringify(state.board);
+      for (const o of G.captureOptions(state.board)) {
+        if (o.gain === best.gain) continue;
+        const res = G.applyMove(state, o.from, o.to);
+        assert.ok(res.reverted);
+        assert.equal(res.why, o.back.length ? 'back' : 'smaller');
+        assert.deepEqual(res.escapes, o.back);
+        assert.equal(JSON.stringify(state.board), before);
+      }
+      // A quiet move, when there is one.
+      let quiet = null;
+      for (let r = 0; r < 8 && !quiet; r++) for (let c = 0; c < 8 && !quiet; c++) {
+        const p = state.board[r][c];
+        if (!p || p.team !== 'me') continue;
+        const m = G.legalMoves(state, r, c).find(x => !x.capture);
+        if (m) quiet = { from: [r, c], to: [m.r, m.c] };
+      }
+      if (quiet) assert.equal(G.applyMove(state, quiet.from, quiet.to).why, 'none');
+      assert.deepEqual(G.hint(state), best.from);
+      assert.deepEqual(G.hint(state, best.from), best.to);
+      const res = G.applyMove(state, best.from, best.to);
+      assert.ok(res.events.includes('best'));
+      assert.ok(res.captured && res.captured.team === 'foe');
+      assert.equal(state.turn, 'me');
+      if (i < 4) assert.ok(G.nextPuzzle(state));
+    }
+    assert.ok(state.over && state.winner === 'me');
+  }
+});

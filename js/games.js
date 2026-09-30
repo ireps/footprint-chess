@@ -36,6 +36,12 @@
  *              the other side answers, and the child gives checkmate (a
  *              move that is not checkmate is taken back, as in 'mate').
  *              The only solo game whose rules hand a move to the other side.
+ *   'value'  - Which capture is best? (solo): five hand-made puzzles with
+ *              several captures on offer. The best one takes the biggest
+ *              prize that cannot be captured straight back (VALUE, never
+ *              shown). Any other move is taken back: a smaller prize
+ *              ('smaller'), a capture that could be captured back ('back',
+ *              with the pieces that could do it), or no capture ('none').
  *   'escape' - Get out of check (stage 7, solo): five small puzzles, each
  *              with the child's king in check; any legal move ends the
  *              check (step away, block the line, or capture the attacker).
@@ -701,6 +707,7 @@
     if (state.id === 'escape') return state.solved ? null : escapeHint(state);
     if (state.id === 'mate') return state.solved ? null : mateHint(state, selected);
     if (state.id === 'mate2') return (state.solved || state.turn !== 'me') ? null : mate2Hint(state, selected);
+    if (state.id === 'value') return state.solved ? null : valueHint(state, selected);
     if (state.id === 'run') return runHint(state);
     if (state.id === 'chain') {
       // The next pawn of the chain when it is one move away; otherwise
@@ -916,13 +923,17 @@
     return state;
   }
 
+  // The games made of puzzles, one after another (nextPuzzle).
+  var PUZZLE_GAMES = { escape: true, mate: true, mate2: true, value: true };
+
   /* After a solved puzzle ('escaped' event), the next one. */
   function nextPuzzle(state) {
-    if ((state.id !== 'escape' && state.id !== 'mate' && state.id !== 'mate2') || !state.solved || state.over) return false;
+    if (!PUZZLE_GAMES[state.id] || !state.solved || state.over) return false;
     state.index++;
     state.solved = false;
     if (state.id === 'mate') loadMate(state);
     else if (state.id === 'mate2') loadMate2(state);
+    else if (state.id === 'value') loadValue(state);
     else loadEscape(state);
     return true;
   }
@@ -1115,6 +1126,106 @@
     return { from: mv.from, to: mv.to, captured: captured || null, events: [] };
   }
 
+  // ---- value: Which capture is best? -----------------------------------------
+
+  // How big a prize each piece is. Never shown to the child.
+  var VALUE = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
+
+  /* Hand-made, easiest first (notation as in MATE_PUZZLES; no kings). In
+   * each, exactly one capture is best and at least one other capture is on
+   * offer (tests/games.test.js). */
+  var VALUE_PUZZLES = [
+    // The rook can capture a pawn or the queen: the queen is the bigger prize.
+    [[6, 3, 'r'], [2, 3, 'xP'], [6, 6, 'xQ']],
+    // The bishop can capture a free rook, or a pawn the rook guards.
+    [[5, 2, 'b'], [3, 4, 'xP'], [3, 0, 'xR'], [1, 6, 'xP']],
+    // The queen could capture a pawn, but its partner pawn would capture her
+    // back; the knight is free.
+    [[6, 4, 'q'], [3, 4, 'xP'], [2, 3, 'xP'], [6, 1, 'xN']],
+    // The rook could capture a guarded knight and be captured; the pawn is free.
+    [[5, 0, 'r'], [2, 0, 'xN'], [1, 1, 'xP'], [5, 5, 'xP']],
+    // Two pieces: the bishop can capture a free rook, the rook a guarded pawn.
+    [[6, 1, 'b'], [7, 6, 'r'], [2, 5, 'xR'], [2, 6, 'xP'], [1, 7, 'xP']]
+  ];
+
+  // The foe squares that could capture a piece standing on sq.
+  function capturersOf(board, sq) {
+    var out = [];
+    for (var r = 0; r < R.SIZE; r++) {
+      for (var c = 0; c < R.SIZE; c++) {
+        var p = board[r][c];
+        if (!p || p.team !== 'foe') continue;
+        if (R.attacks(board, r, c).some(function (a) { return a[0] === sq[0] && a[1] === sq[1]; })) out.push([r, c]);
+      }
+    }
+    return out;
+  }
+
+  /* Every capture of the child's: [{ from, to, gain, back }], where back
+   * lists the pieces that could capture the capturer straight back. */
+  function captureOptions(board) {
+    var out = [];
+    for (var r = 0; r < R.SIZE; r++) {
+      for (var c = 0; c < R.SIZE; c++) {
+        var p = board[r][c];
+        if (!p || p.team !== 'me') continue;
+        R.movesFor(board, r, c).forEach(function (m) {
+          if (!m.capture) return;
+          var next = afterMove(board, [r, c], [m.r, m.c]);
+          var back = capturersOf(next, [m.r, m.c]);
+          var gain = VALUE[board[m.r][m.c].type] - (back.length ? VALUE[p.type] : 0);
+          out.push({ from: [r, c], to: [m.r, m.c], gain: gain, back: back });
+        });
+      }
+    }
+    return out;
+  }
+
+  /* The best capture ({ from, to, gain, back }), or null. */
+  function bestCapture(board) {
+    var best = null;
+    captureOptions(board).forEach(function (o) { if (!best || o.gain > best.gain) best = o; });
+    return best;
+  }
+
+  function loadValue(state) {
+    var p = state.puzzles[state.index];
+    state.board = puzzleBoard(VALUE_PUZZLES[p.n], p.mirror);
+    state.turn = 'me';
+  }
+
+  function createValue(options, rng) {
+    var puzzles = VALUE_PUZZLES.map(function (list, n) { return { n: n, mirror: rng() < 0.5 }; });
+    var state = {
+      id: 'value', board: null, turn: 'me', moveCount: 0, over: false, winner: null,
+      heroType: 'r', hero: null, solo: true, puzzles: puzzles, index: 0, solved: false
+    };
+    loadValue(state);
+    return state;
+  }
+
+  // Which capture is best? hint: the piece of the best capture, then its square.
+  function valueHint(state, selected) {
+    var best = bestCapture(state.board);
+    if (!best) return null;
+    if (selected && selected[0] === best.from[0] && selected[1] === best.from[1]) return best.to.slice();
+    return best.from.slice();
+  }
+
+  /* Why a move is not the best capture: null when it is, else
+   * { why: 'none' | 'smaller' | 'back', back: [squares] }. */
+  function valueVerdict(board, from, to) {
+    var best = bestCapture(board);
+    var mine = null;
+    captureOptions(board).forEach(function (o) {
+      if (o.from[0] === from[0] && o.from[1] === from[1] && o.to[0] === to[0] && o.to[1] === to[1]) mine = o;
+    });
+    if (!mine) return { why: 'none', back: [] };
+    if (best && mine.gain === best.gain) return null;
+    if (mine.back.length) return { why: 'back', back: mine.back };
+    return { why: 'smaller', back: [] };
+  }
+
   // ---- shared API ------------------------------------------------------
 
   function create(id, options, rng) {
@@ -1131,6 +1242,7 @@
     if (id === 'escape') return createEscape(options, rng);
     if (id === 'mate') return createMate(options, rng);
     if (id === 'mate2') return createMate2(options, rng);
+    if (id === 'value') return createValue(options, rng);
     if (id === 'run') return createRun(options, rng);
     throw new Error('Unknown game id: ' + id);
   }
@@ -1142,7 +1254,7 @@
     if (!piece || piece.team !== 'me') return [];
     // Find the way: only the one piece moves; the child's pawns are in the way.
     if (state.heroOnly && (r !== state.hero[0] || c !== state.hero[1])) return [];
-    if ((state.id === 'escape' || state.id === 'mate' || state.id === 'mate2') && state.solved) return [];
+    if (PUZZLE_GAMES[state.id] && state.solved) return [];
     // The check games use the full rule (never a move that leaves the
     // child's own king in check); the earlier games keep plain moves, so a
     // king there may still capture a protected pawn.
@@ -1168,6 +1280,11 @@
     // Checkmate in one: a move that is not checkmate is taken back.
     if (state.id === 'mate' && !R.isCheckmate(afterMove(state.board, from, to), 'foe')) {
       return { captured: null, events: ['nearly'], reverted: true, escapes: kingEscapes(state.board, from, to) };
+    }
+    // Which capture is best? Anything but the best capture is taken back.
+    if (state.id === 'value') {
+      var verdict = valueVerdict(state.board, from, to);
+      if (verdict) return { captured: null, events: ['nearly'], reverted: true, why: verdict.why, escapes: verdict.back };
     }
     // Checkmate in two: a first move that does not force checkmate next
     // move, or a second move that is not checkmate, is taken back.
@@ -1241,6 +1358,14 @@
         state.winner = 'me';
         events.push('mate-won');
       }
+    } else if (state.id === 'value') {
+      state.solved = true;
+      events.push('best');
+      if (state.index === state.puzzles.length - 1) {
+        state.over = true;
+        state.winner = 'me';
+        events.push('value-won');
+      }
     } else if (state.id === 'mate2') {
       if (state.step === 1) {
         // Check: the other side answers next.
@@ -1308,6 +1433,7 @@
     if (id === 'escape') return { kind: 'escape-check', count: ESCAPE_KINDS.length };
     if (id === 'mate') return { kind: 'checkmate', count: MATE_PUZZLES.length };
     if (id === 'mate2') return { kind: 'checkmate-in-two', count: MATE2_PUZZLES.length };
+    if (id === 'value') return { kind: 'best-capture', count: VALUE_PUZZLES.length };
     if (id === 'run') return { kind: 'stay-safe', moves: RUN_MOVES };
     return null;
   }
@@ -1325,6 +1451,11 @@
     ESCAPE_PUZZLES: ESCAPE_PUZZLES,
     MATE_PUZZLES: MATE_PUZZLES,
     MATE2_PUZZLES: MATE2_PUZZLES,
+    VALUE: VALUE,
+    VALUE_PUZZLES: VALUE_PUZZLES,
+    captureOptions: captureOptions,
+    bestCapture: bestCapture,
+    isPuzzle: function (id) { return !!PUZZLE_GAMES[id]; },
     mateMoves: mateMoves,
     mateInTwoMoves: mateInTwoMoves,
     puzzleBoard: puzzleBoard,
