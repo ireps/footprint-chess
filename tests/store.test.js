@@ -423,3 +423,18 @@ test('progressOf returns a copy of any child\'s progress, and null for an unknow
     assert.equal(s.progressOf(bad), null, String(bad));
   }
 });
+
+test('markWin: the golden king comes with any three different games in a theme (stage 6), once', () => {
+  const s = ST.create(memBackend());
+  s.addProfile(PIC, 'A');
+  assert.equal(s.markWin('space', 'chain'), false);
+  assert.equal(s.markWin('space', 'whose'), false);
+  assert.equal(s.markWin('space', 'catch'), true);
+  assert.equal(s.markWin('space', 'race'), false);
+  assert.equal(s.markWin('space', 'battle'), false);
+  assert.deepEqual(Object.keys(s.progress().wins).sort(), ['space:battle', 'space:catch', 'space:chain', 'space:race', 'space:whose']);
+});
+
+test('GAME_IDS follows the game list', () => {
+  assert.deepEqual(ST.GAME_IDS, require('../js/game-list.js').ids());
+});

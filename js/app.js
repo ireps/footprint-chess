@@ -484,6 +484,7 @@
 
   function hideScreens() {
     dom.homescreen.hidden = true;
+    if (FC.gamesUI && FC.gamesUI.hideGamesScreen) FC.gamesUI.hideGamesScreen();
     FC.profileUI.hide();
     FC.bookUI.close();
   }

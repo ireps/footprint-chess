@@ -1268,6 +1268,108 @@ body {
 
 .game-name { font-size: 18px; font-weight: bold; color: var(--ink); text-align: center; }
 
+/* ---------- Games (stage 6): the Games button, the Games screen ---------- */
+
+/* Home: one wide Games button showing the three rows' marks, no words. */
+.game-card.games-entry { width: 330px; height: 150px; }
+.game-pic-entry { width: auto; height: auto; gap: 18px; }
+
+.gamescreen {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gamescreen[hidden] { display: none; }
+
+.games-home { position: absolute; left: 26px; top: 24px; }
+
+.game-rows { display: flex; flex-direction: column; gap: 22px; }
+
+.game-row { display: flex; align-items: center; gap: 22px; }
+
+.game-row .game-card { height: 186px; position: relative; }
+.game-row .game-pic { height: 96px; }
+
+.game-card.suggested {
+  box-shadow: 0 8px 0 #9fd8d0, 0 0 0 6px var(--gold), 0 0 26px 6px rgba(255, 201, 60, 0.6);
+}
+
+/* The picture that starts each row, a rounded tile so it reads as a label
+   and not as a button. */
+.row-mark {
+  width: 104px;
+  height: 104px;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 4px dashed rgba(29, 43, 54, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  position: relative;
+  flex: none;
+}
+
+.row-mark svg.pc { width: 56px; height: 56px; }
+.row-mark .finish-flag { width: 60px; height: 12px; }
+
+/* A capture: a burst of rays behind an opponent pawn. */
+.row-burst {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  bottom: 12px;
+  left: 12px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(rgba(245, 158, 46, 0.55) 0 14deg, transparent 14deg 30deg);
+}
+.row-mark-capture svg.pc { position: relative; }
+
+.game-pic-entry .row-mark { width: 88px; height: 88px; }
+.game-pic-entry .row-mark svg.pc { width: 46px; height: 46px; }
+
+/* Footprints and a question mark: the footprints quiz. */
+.whose-mark { display: flex; align-items: center; gap: 6px; }
+.whose-feet { display: flex; gap: 5px; }
+.whose-feet span { width: 14px; height: 24px; border-radius: 50%; background: #7a8699; display: block; }
+.whose-feet span:nth-child(2) { margin-top: 14px; }
+.whose-q { font-size: 44px; font-weight: bold; line-height: 1; color: var(--ink); }
+.game-pic-mini .whose-q { font-size: 30px; }
+.game-pic-mini .whose-feet span { width: 10px; height: 17px; }
+.rbtn .game-pic-mini .whose-q { font-size: 22px; }
+.rbtn .game-pic-mini .whose-feet span { width: 7px; height: 12px; }
+
+/* Capture chain: footprint dots link the pawns. */
+.chain-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--q); flex: none; }
+.game-pic-chain { gap: 2px; }
+/* Stop the pawns: the pawn stands just above the rook. */
+.game-pic-tight { gap: 0; }
+.game-pic-tight svg.pc { width: 50px; height: 50px; }
+.game-pic-mini .game-pic-tight svg.pc { width: 34px; height: 34px; }
+.rbtn .game-pic-mini .game-pic-tight svg.pc { width: 24px; height: 24px; }
+/* Keep the king safe: a shield ring round the king. */
+.safe-king { border: 4px solid #3dc46b; border-radius: 50%; padding: 4px; display: flex; }
+.safe-king svg.pc { width: 46px; height: 46px; }
+.game-pic-mini .safe-king { border-width: 3px; padding: 2px; }
+.game-pic-mini .safe-king svg.pc { width: 34px; height: 34px; }
+.rbtn .game-pic-mini .safe-king svg.pc { width: 22px; height: 22px; }
+.game-pic-chain svg.pc { width: 36px; height: 36px; }
+.game-pic-mini.game-pic-chain svg.pc { width: 30px; height: 30px; }
+.rbtn .game-pic-mini.game-pic-chain svg.pc { width: 20px; height: 20px; }
+.rbtn .game-pic-mini .chain-dot { width: 5px; height: 5px; }
+
+/* The Won card's tip button. */
+.rbtn.rbtn-tip { background: #fff8d6; color: var(--ink); }
+
 /* ---------- theme picker (home screen) ---------- */
 
 /* No visible text, ever: each swatch is only its own theme's knight on its
@@ -2168,6 +2270,9 @@ body.theme-pirate {
   .team-bar-name { font-size: 14px; }
   .team-bar-pawn { width: calc(var(--cell) * 0.4); height: calc(var(--cell) * 0.4); }
   .game-card { width: 150px; }
+  .game-card.games-entry { width: 330px; }
+  .game-row .game-card { width: 140px; }
+  .row-mark { width: 88px; height: 88px; }
   /* flex-wrap, not a fixed-column grid: Skip only shows during a lesson,
      so the tools row has 4 or 5 buttons depending on mode. */
   .tools { grid-area: tools; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
@@ -2270,6 +2375,14 @@ body.theme-pirate {
 .no-flexgap .game-pic-3 > * + * { margin-left: 0; }
 .no-flexgap .game-pic-mini > * + * { margin-left: 4px; }
 .no-flexgap .game-pic-mini .game-pic-stack > * + * { margin-top: 4px; }
+.no-flexgap .game-rows > * + * { margin-top: 22px; }
+.no-flexgap .game-row > * + * { margin-left: 22px; }
+.no-flexgap .row-mark > * + * { margin-top: 4px; }
+.no-flexgap .game-pic-entry > * + * { margin-left: 18px; }
+.no-flexgap .whose-mark > * + * { margin-left: 6px; }
+.no-flexgap .whose-feet > * + * { margin-left: 5px; }
+.no-flexgap .game-pic-chain > * + * { margin-left: 2px; }
+.no-flexgap .game-pic-tight > * + * { margin-top: 0; }
 
 @media (orientation: portrait) {
   .no-flexgap .app > * + * { margin-left: 0; margin-top: 12px; }

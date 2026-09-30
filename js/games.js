@@ -1,10 +1,27 @@
 /*
  * Footprint Chess: mini-games (stage 3).
  *
- * Pure game logic, no DOM. Three gentle games built on top of js/rules.js:
+ * Pure game logic, no DOM. Gentle games built on top of js/rules.js:
  *   'catch'  - Catch the knight: the child's piece chases a foe knight.
  *   'race'   - Pawn race: three child pawns race three foe pawns to the far edge.
  *   'battle' - Little battle: the child's piece(s) clear four foe pawns.
+ *   'chain'  - Capture chain (stage 6): one piece and four still foe pawns,
+ *              placed so each capture lands where the next pawn is one move
+ *              away. A solo game: the turn never passes to the other side.
+ *   'hop'    - Knight hop (stage 6, solo): the knight reaches the other side,
+ *              hopping over (or capturing) three still pawns.
+ *   'way'    - Find the way (stage 6, solo): one piece reaches the other side
+ *              around the child's own pawns, which it can neither jump nor
+ *              capture (only the one piece moves).
+ *   'stop'   - Stop the pawns (stage 6): three foe pawns march toward the
+ *              child's side, one step a turn, never capturing and never
+ *              past row 6; the child's piece captures them all. Standing in
+ *              front of a pawn stops it.
+ *   'safe'   - Keep the king safe (stage 6, solo): the king walks to the
+ *              other side past a still rook and bishop; it can never step
+ *              onto a square either of them could capture on.
+ * The list of games shown to the child (names, rows, pictures) lives in
+ * js/game-list.js; the footprints quiz is in js/quiz.js.
  *
  * The bot never plays to win. Every game design keeps a "no fail state"
  * guarantee (see docs/DESIGN.md): the child always finishes, the bot never
@@ -30,6 +47,13 @@
   var RACE_PAWNS = 3;
   var BATTLE_PAWNS = 4;
   var TIRED_AFTER = 6;
+  var CHAIN_PAWNS = 4;
+  var CHAIN_TYPES = ['r', 'b', 'q', 'k', 'n'];
+  var WAY_TYPES = ['r', 'b', 'q', 'k'];
+  var WAY_BLOCKERS = 5;
+  var HOP_PAWNS = 3;
+  var STOP_PAWNS = 3;
+  var STOP_TYPES = ['r', 'q', 'k', 'n'];
 
   function randInt(rng, n) {
     return Math.floor(rng() * n);
@@ -343,6 +367,310 @@
     return { from: chosen.from, to: chosen.to, captured: captured || null, events: events };
   }
 
+  // ---- chain: Capture chain -----------------------------------------------
+
+  /* Replays the chain on a copy of the board: from the hero's square, each
+   * pawn in order must be a legal capture from where the previous capture
+   * landed. */
+  function chainWorks(board, hero, pawns) {
+    var work = R.cloneBoard(board);
+    var cur = hero;
+    for (var i = 0; i < pawns.length; i++) {
+      var next = pawns[i];
+      var ok = R.movesFor(work, cur[0], cur[1]).some(function (m) {
+        return m.capture && m.r === next[0] && m.c === next[1];
+      });
+      if (!ok) return false;
+      work[next[0]][next[1]] = work[cur[0]][cur[1]];
+      work[cur[0]][cur[1]] = null;
+      cur = next;
+    }
+    return true;
+  }
+
+  function capturableCount(board, hero) {
+    return R.movesFor(board, hero[0], hero[1]).filter(function (m) { return m.capture; }).length;
+  }
+
+  /* One attempt at a chain: each next pawn goes on a square the piece could
+   * move to from the previous square (rows 1 to 6, not next to the square it
+   * came from unless the piece is the king), with every pawn in place. */
+  function tryChain(type, rng, strict) {
+    var board = R.emptyBoard();
+    var hero = [7, randInt(rng, 8)];
+    board[hero[0]][hero[1]] = { type: type, team: 'me' };
+    var pawns = [];
+    var cur = hero;
+    for (var i = 0; i < CHAIN_PAWNS; i++) {
+      var work = R.cloneBoard(board);
+      pawns.forEach(function (p) { work[p[0]][p[1]] = null; });
+      work[hero[0]][hero[1]] = null;
+      work[cur[0]][cur[1]] = { type: type, team: 'me' };
+      var from = cur;
+      var options = R.movesFor(work, from[0], from[1]).filter(function (m) {
+        if (m.capture || m.r < 1 || m.r > 6) return false;
+        if (board[m.r][m.c]) return false;
+        if (type !== 'k' && Math.max(Math.abs(m.r - from[0]), Math.abs(m.c - from[1])) < 2) return false;
+        return true;
+      });
+      if (!options.length) return null;
+      var pick = options[randInt(rng, options.length)];
+      pawns.push([pick.r, pick.c]);
+      board[pick.r][pick.c] = { type: 'p', team: 'foe' };
+      cur = [pick.r, pick.c];
+    }
+    if (!chainWorks(board, hero, pawns)) return null;
+    // Strict: at the start only the first pawn of the chain can be
+    // captured, so the chain is the obvious way through.
+    if (strict && capturableCount(board, hero) !== 1) return null;
+    return { board: board, hero: hero, pawns: pawns };
+  }
+
+  function createChain(options, rng) {
+    var type = (options && CHAIN_TYPES.indexOf(options.type) !== -1) ? options.type : 'r';
+    var made = null;
+    for (var attempt = 0; attempt < MAX_ATTEMPTS * 4 && !made; attempt++) {
+      made = tryChain(type, rng, attempt < MAX_ATTEMPTS * 3);
+    }
+    if (!made) throw new Error('chain: could not build a chain for ' + type);
+    return {
+      id: 'chain',
+      board: made.board,
+      turn: 'me',
+      moveCount: 0,
+      over: false,
+      winner: null,
+      heroType: type,
+      hero: made.hero,
+      chain: made.pawns,
+      foePawns: CHAIN_PAWNS,
+      solo: true
+    };
+  }
+
+  /* The next pawn of the chain still on the board, or null. */
+  function nextInChain(state) {
+    if (!state.chain) return null;
+    for (var i = 0; i < state.chain.length; i++) {
+      var sq = state.chain[i];
+      var p = state.board[sq[0]][sq[1]];
+      if (p && p.team === 'foe') return sq.slice();
+    }
+    return null;
+  }
+
+  // ---- helpers for the "reach the other side" games ------------------------
+
+  /* Shortest path for the one piece on `from` to a square where goal(r, c)
+   * is true, every other piece standing still (a capture only removes the
+   * captured piece from the square being stood on, as in FC.rules.reachable).
+   * accept(work, from, move), if given, can refuse a move. Returns the list
+   * of squares after `from`, ending on the goal, or null. */
+  function heroPath(board, from, goal, accept) {
+    var piece = board[from[0]][from[1]];
+    if (!piece) return null;
+    var work = R.cloneBoard(board);
+    work[from[0]][from[1]] = null;
+    var prev = {};
+    prev[key(from)] = null;
+    var queue = [from];
+    while (queue.length) {
+      var cur = queue.shift();
+      if ((cur[0] !== from[0] || cur[1] !== from[1]) && goal(cur[0], cur[1])) {
+        var path = [];
+        for (var k = cur; k; k = prev[key(k)]) path.unshift(k);
+        return path.slice(1);
+      }
+      var original = work[cur[0]][cur[1]];
+      work[cur[0]][cur[1]] = piece;
+      var moves = R.movesFor(work, cur[0], cur[1]);
+      var ok = accept ? moves.filter(function (m) { return accept(work, cur, m); }) : moves;
+      work[cur[0]][cur[1]] = original;
+      ok.forEach(function (m) {
+        var nk = m.r + ',' + m.c;
+        if (prev[nk] !== undefined) return;
+        prev[nk] = cur;
+        queue.push([m.r, m.c]);
+      });
+    }
+    return null;
+  }
+
+  function isFarRow(r) { return r === 0; }
+
+  /* The squares the king on (r, c) could step to that the other side could
+   * capture on: computed with the king lifted off the board, so it cannot
+   * hide behind itself along a line. */
+  function kingDanger(board, r, c) {
+    var work = R.cloneBoard(board);
+    var king = work[r][c];
+    work[r][c] = null;
+    var attacked = R.attackedSquares(work, 'foe');
+    work[r][c] = king;
+    return R.movesFor(work, r, c).filter(function (m) { return attacked[m.r + ',' + m.c]; });
+  }
+
+  function placeAt(board, rows, rng, type, team) {
+    for (var i = 0; i < 100; i++) {
+      var r = rows[0] + randInt(rng, rows[1] - rows[0] + 1);
+      var c = randInt(rng, 8);
+      if (!board[r][c]) {
+        board[r][c] = { type: type, team: team };
+        return [r, c];
+      }
+    }
+    return null;
+  }
+
+  // ---- hop: Knight hop -----------------------------------------------------
+
+  function createHop(options, rng) {
+    var board = R.emptyBoard();
+    var hero = [7, randInt(rng, 8)];
+    board[hero[0]][hero[1]] = { type: 'n', team: 'me' };
+    for (var i = 0; i < HOP_PAWNS; i++) placeAt(board, [2, 5], rng, 'p', 'foe');
+    return {
+      id: 'hop', board: board, turn: 'me', moveCount: 0, over: false, winner: null,
+      heroType: 'n', hero: hero, solo: true
+    };
+  }
+
+  // ---- way: Find the way ---------------------------------------------------
+
+  function createWay(options, rng) {
+    var type = (options && WAY_TYPES.indexOf(options.type) !== -1) ? options.type : 'r';
+    // The king always needs seven steps, so it only needs a few blockers.
+    var blockers = type === 'k' ? 3 : WAY_BLOCKERS;
+    var minSteps = type === 'k' ? 7 : (type === 'b' ? 2 : 3);
+    var made = null;
+    for (var attempt = 0; attempt < MAX_ATTEMPTS * 4 && !made; attempt++) {
+      var board = R.emptyBoard();
+      var hero = [7, randInt(rng, 8)];
+      board[hero[0]][hero[1]] = { type: type, team: 'me' };
+      for (var i = 0; i < blockers; i++) placeAt(board, [1, 6], rng, 'p', 'me');
+      var path = heroPath(board, hero, isFarRow);
+      var need = attempt < MAX_ATTEMPTS * 3 ? minSteps : 2;
+      if (path && path.length >= need) made = { board: board, hero: hero };
+    }
+    if (!made) throw new Error('way: could not build a board for ' + type);
+    return {
+      id: 'way', board: made.board, turn: 'me', moveCount: 0, over: false, winner: null,
+      heroType: type, hero: made.hero, solo: true, heroOnly: true
+    };
+  }
+
+  // ---- stop: Stop the pawns --------------------------------------------------
+
+  function createStop(options, rng) {
+    // Not the bishop: a pawn that stops on row 6 on the other colour could
+    // never be captured by it.
+    var type = (options && STOP_TYPES.indexOf(options.type) !== -1) ? options.type : 'r';
+    var board = R.emptyBoard();
+    var hero = [7, randInt(rng, 8)];
+    board[hero[0]][hero[1]] = { type: type, team: 'me' };
+    shuffle(rng, [0, 1, 2, 3, 4, 5, 6, 7]).slice(0, STOP_PAWNS).forEach(function (c) {
+      board[1][c] = { type: 'p', team: 'foe' };
+    });
+    return {
+      id: 'stop', board: board, turn: 'me', moveCount: 0, over: false, winner: null,
+      heroType: type, hero: hero, foePawns: STOP_PAWNS
+    };
+  }
+
+  // One pawn marches one step toward the child's side; never a capture,
+  // never onto row 7. A pawn with the child's piece in front of it is stopped.
+  function botStop(state, rng) {
+    var board = state.board;
+    var steps = [];
+    collectPositions(board, 'p', 'foe').forEach(function (pos) {
+      singleStepMoves(board, pos[0], pos[1], 6).forEach(function (m) {
+        if (!m.capture) steps.push({ from: pos, to: [m.r, m.c] });
+      });
+    });
+    state.turn = 'me';
+    if (!steps.length) return null;
+    var chosen = steps[randInt(rng, steps.length)];
+    board[chosen.to[0]][chosen.to[1]] = board[chosen.from[0]][chosen.from[1]];
+    board[chosen.from[0]][chosen.from[1]] = null;
+    state.moveCount++;
+    return { from: chosen.from, to: chosen.to, captured: null, events: [] };
+  }
+
+  // ---- safe: Keep the king safe ------------------------------------------------
+
+  function createSafe(options, rng) {
+    var made = null;
+    for (var attempt = 0; attempt < MAX_ATTEMPTS * 4 && !made; attempt++) {
+      var board = R.emptyBoard();
+      var hero = [7, randInt(rng, 8)];
+      board[hero[0]][hero[1]] = { type: 'k', team: 'me' };
+      if (!placeAt(board, [1, 5], rng, 'r', 'foe') || !placeAt(board, [1, 5], rng, 'b', 'foe')) continue;
+      var start = R.cloneBoard(board);
+      start[hero[0]][hero[1]] = null;
+      if (R.attackedSquares(start, 'foe')[key(hero)]) continue;
+      var danger = kingDanger(board, hero[0], hero[1]);
+      // Strict at first: the guards already watch at least two of the
+      // king's first steps, so the idea shows at once.
+      if (attempt < MAX_ATTEMPTS * 3 && danger.length < 2) continue;
+      var path = heroPath(board, hero, isFarRow, safeAccept());
+      if (path) made = { board: board, hero: hero };
+    }
+    if (!made) throw new Error('safe: could not build a board');
+    return {
+      id: 'safe', board: made.board, turn: 'me', moveCount: 0, over: false, winner: null,
+      heroType: 'k', hero: made.hero, solo: true
+    };
+  }
+
+  // For heroPath: the king never steps onto a square the guards watch
+  // (guards stand still; one that is captured stops watching).
+  function safeAccept() {
+    return function (work, cur, m) {
+      var lifted = R.cloneBoard(work);
+      lifted[cur[0]][cur[1]] = null;
+      return !R.attackedSquares(lifted, 'foe')[m.r + ',' + m.c];
+    };
+  }
+
+  /* A square to glow as a hint, or null: the next pawn of a capture chain,
+   * (else the first step toward the nearest pawn), the first step toward
+   * the nearest pawn (Stop the pawns), or the next
+   * step of a shortest way to the other side. */
+  function hint(state) {
+    if (state.over) return null;
+    if (state.id === 'chain') {
+      // The next pawn of the chain when it is one move away; otherwise
+      // (the child left the chain) the first step toward the nearest pawn.
+      var next = nextInChain(state);
+      var here = state.hero;
+      if (next && R.movesFor(state.board, here[0], here[1]).some(function (m) {
+        return m.r === next[0] && m.c === next[1];
+      })) return next;
+    }
+    if (state.id === 'chain' || state.id === 'stop') {
+      // The first step toward the nearest pawn to capture.
+      var board = state.board;
+      var toPawn = heroPath(board, state.hero, function (r, c) {
+        var p = board[r][c];
+        return !!p && p.team === 'foe';
+      });
+      return toPawn ? toPawn[0] : null;
+    }
+    if (state.id === 'hop' || state.id === 'way' || state.id === 'safe') {
+      var path = heroPath(state.board, state.hero, isFarRow, state.id === 'safe' ? safeAccept() : null);
+      return path ? path[0] : null;
+    }
+    return null;
+  }
+
+  /* 'safe' only: the squares next to the king it may not step to. */
+  function dangerSquares(state, r, c) {
+    if (state.id !== 'safe') return [];
+    var p = state.board[r][c];
+    if (!p || p.type !== 'k' || p.team !== 'me') return [];
+    return kingDanger(state.board, r, c).map(function (m) { return [m.r, m.c]; });
+  }
+
   // ---- shared API ------------------------------------------------------
 
   function create(id, options, rng) {
@@ -350,6 +678,11 @@
     if (id === 'catch') return createCatch(options, rng);
     if (id === 'race') return createRace(options, rng);
     if (id === 'battle') return createBattle(options, rng);
+    if (id === 'chain') return createChain(options, rng);
+    if (id === 'hop') return createHop(options, rng);
+    if (id === 'way') return createWay(options, rng);
+    if (id === 'stop') return createStop(options, rng);
+    if (id === 'safe') return createSafe(options, rng);
     throw new Error('Unknown game id: ' + id);
   }
 
@@ -357,7 +690,15 @@
     if (state.over || state.turn !== 'me') return [];
     var piece = state.board[r][c];
     if (!piece || piece.team !== 'me') return [];
-    return R.movesFor(state.board, r, c);
+    // Find the way: only the one piece moves; the child's pawns are in the way.
+    if (state.heroOnly && (r !== state.hero[0] || c !== state.hero[1])) return [];
+    var moves = R.movesFor(state.board, r, c);
+    if (state.id === 'safe') {
+      var danger = {};
+      kingDanger(state.board, r, c).forEach(function (m) { danger[m.r + ',' + m.c] = true; });
+      moves = moves.filter(function (m) { return !danger[m.r + ',' + m.c]; });
+    }
+    return moves;
   }
 
   function applyMove(state, from, to) {
@@ -403,9 +744,27 @@
           events.push('battle-won');
         }
       }
+    } else if (state.id === 'hop' || state.id === 'way' || state.id === 'safe') {
+      state.hero = [to[0], to[1]];
+      if (to[0] === 0) {
+        state.over = true;
+        state.winner = 'me';
+        events.push('reach-won');
+      }
+    } else if (state.id === 'chain' || state.id === 'stop') {
+      state.hero = [to[0], to[1]];
+      if (captured && captured.type === 'p') {
+        state.foePawns--;
+        if (state.foePawns === 0) {
+          state.over = true;
+          state.winner = 'me';
+          events.push(state.id + '-won');
+        }
+      }
     }
 
-    state.turn = state.over ? state.turn : 'foe';
+    // A solo game ('chain') never hands the turn to the other side.
+    state.turn = (state.over || state.solo) ? state.turn : 'foe';
     return { captured: captured || null, events: events };
   }
 
@@ -415,6 +774,7 @@
     if (state.id === 'catch') return botCatch(state, rng);
     if (state.id === 'race') return botRace(state, rng);
     if (state.id === 'battle') return botBattle(state, rng);
+    if (state.id === 'stop') return botStop(state, rng);
     return null;
   }
 
@@ -422,6 +782,9 @@
     if (id === 'catch') return { kind: 'capture', target: 'n' };
     if (id === 'race') return { kind: 'reach-row', row: 0 };
     if (id === 'battle') return { kind: 'capture-all', target: 'p', count: BATTLE_PAWNS };
+    if (id === 'chain') return { kind: 'capture-all', target: 'p', count: CHAIN_PAWNS };
+    if (id === 'stop') return { kind: 'capture-all', target: 'p', count: STOP_PAWNS };
+    if (id === 'hop' || id === 'way' || id === 'safe') return { kind: 'reach-row', row: 0 };
     return null;
   }
 
@@ -430,7 +793,13 @@
     legalMoves: legalMoves,
     applyMove: applyMove,
     botMove: botMove,
-    goalOf: goalOf
+    goalOf: goalOf,
+    nextInChain: nextInChain,
+    hint: hint,
+    dangerSquares: dangerSquares,
+    CHAIN_TYPES: CHAIN_TYPES,
+    WAY_TYPES: WAY_TYPES,
+    STOP_TYPES: STOP_TYPES
   };
 
   if (isNode) {
