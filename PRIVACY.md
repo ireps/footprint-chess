@@ -23,6 +23,8 @@ For offline play the browser also keeps a copy of the app's own files (pages, st
 
 ## The backup code
 
+The grown-ups' corner lists what each child has done (lessons started, games won), read from the same data on the device; it stores nothing more.
+
 The grown-ups' corner can show a backup code, so that progress can be moved to another device by copying the code by hand. The code contains the same data as above, including any names, and it is not encrypted. Share it only between your own devices. The app never sends the code anywhere.
 
 ## Deleting the data
