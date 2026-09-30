@@ -1377,6 +1377,12 @@ body {
 .king-ring { border: 4px solid #e0604d; border-radius: 50%; padding: 4px; display: flex; }
 .king-ring svg.pc { width: 50px; height: 50px; }
 .game-pic-entry .king-ring svg.pc { width: 40px; height: 40px; }
+/* Checkmate in one: the ringed king and the queen side by side. */
+.game-pic .king-ring svg.pc { width: 44px; height: 44px; }
+.game-pic .king-ring + svg.pc { width: 50px; height: 50px; }
+.game-pic-mini .king-ring { border-width: 3px; padding: 2px; }
+.game-pic-mini .king-ring svg.pc, .game-pic-mini .king-ring + svg.pc { width: 32px; height: 32px; }
+.rbtn .game-pic-mini .king-ring svg.pc, .rbtn .game-pic-mini .king-ring + svg.pc { width: 20px; height: 20px; }
 .game-pic-mini .safe-king { border-width: 3px; padding: 2px; }
 .game-pic-mini .safe-king svg.pc { width: 34px; height: 34px; }
 .rbtn .game-pic-mini .safe-king svg.pc { width: 22px; height: 22px; }

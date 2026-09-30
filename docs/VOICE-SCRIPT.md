@@ -121,6 +121,14 @@ naming a direction.
 | escape-ask | Check! Save your king. | చెక్! నీ రాజుని కాపాడు. | Clear, a little urgent; said as each Get out of check puzzle appears. |
 | escape-won | You kept your king safe every time! | ప్రతిసారీ నీ రాజుని కాపాడావు! | Big and celebratory; the Get out of check win line. |
 | tip-escape | Step away, block the line, or capture the attacker! | పక్కకి తప్పుకో, దారికి అడ్డం పెట్టు, లేదా దాడి చేసే పావుని పట్టుకో! | Three clear beats, one per way out, in time with the scene. |
+| mate-1 | This king is stuck behind his own pawns. | ఈ రాజు తన సొంత భటుల వెనక ఇరుక్కుపోయాడు. | Curious, pointing at the glowing pawns in front of the king. |
+| mate-2 | Slide the rook all the way to the other side! | ఏనుగుని అవతలి వైపు దాకా దూసుకుపోనివ్వు! | Bright, matching the rook's long glide. |
+| mate-3 | Checkmate! The king has nowhere to go. | చెక్‌మేట్! రాజుకి ఎక్కడికీ వెళ్ళే దారి లేదు. | Big and proud; also said after each solved Checkmate in one puzzle. |
+| game-mate | Checkmate in one! Trap the king with one move. | ఒక్క ఎత్తులో చెక్‌మేట్! ఒకే కదలికతో రాజుని బంధించు. | Excited, like a treasure hunt; states the goal on the Mission card. |
+| mate-ask | Find the checkmate! | చెక్‌మేట్ కనుక్కో! | Inviting, a small puzzle to solve; said as each puzzle appears. |
+| mate-nearly | Nearly! The king can still escape. | దాదాపు! రాజు ఇంకా తప్పించుకోగలడు. | Warm and encouraging, never "wrong"; the squares he could reach glow red. |
+| mate-won | You found every checkmate! | అన్ని చెక్‌మేట్లూ కనుక్కున్నావు! | Big and celebratory; the Checkmate in one win line. |
+| tip-mate | Check the king, and cover every square he could run to! | రాజుకి చెక్ పెట్టు, అతను పారిపోయే ప్రతి గడినీ కాపు కాయి! | Calm and clear, the whole idea of checkmate in one line. |
 | game-run | Run away! Stay where the other piece cannot capture you. | పారిపో! శత్రువు పావు పట్టుకోలేని చోట ఉండు. | Playful and a little breathless; states the goal on the Mission card. |
 | run-danger | Not there! It could capture you there. | అక్కడ వద్దు! అక్కడ అది నిన్ను పట్టుకోగలదు. | Gentle and protective, never scolding; said when the child taps a square the chaser watches. |
 | run-won | You got away safely! | సురక్షితంగా తప్పించుకున్నావు! | Big and relieved; the Run away win line. |

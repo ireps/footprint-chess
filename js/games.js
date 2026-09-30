@@ -26,6 +26,10 @@
  *              (those squares glow red); after six safe moves it has got
  *              away. The chaser never captures and always leaves at least
  *              two safe squares.
+ *   'mate'   - Checkmate in one (stage 7, solo): five hand-made puzzles,
+ *              easiest first; any move that gives checkmate solves one. A
+ *              move that does not is taken back ("nearly"), with the
+ *              squares the king could still reach.
  *   'escape' - Get out of check (stage 7, solo): five small puzzles, each
  *              with the child's king in check; any legal move ends the
  *              check (step away, block the line, or capture the attacker).
@@ -677,10 +681,13 @@
    * (else the first step toward the nearest pawn), the first step toward
    * the nearest pawn (Stop the pawns), or the next
    * step of a shortest way to the other side. */
-  function hint(state) {
+  /* selected (optional): the square of the piece the child has selected;
+   * Checkmate in one then hints that piece's mating square. */
+  function hint(state, selected) {
     if (state.over) return null;
     if (state.id === 'catch') return catchHint(state);
     if (state.id === 'escape') return state.solved ? null : escapeHint(state);
+    if (state.id === 'mate') return state.solved ? null : mateHint(state, selected);
     if (state.id === 'run') return runHint(state);
     if (state.id === 'chain') {
       // The next pawn of the chain when it is one move away; otherwise
@@ -897,11 +904,90 @@
 
   /* After a solved puzzle ('escaped' event), the next one. */
   function nextPuzzle(state) {
-    if (state.id !== 'escape' || !state.solved || state.over) return false;
+    if ((state.id !== 'escape' && state.id !== 'mate') || !state.solved || state.over) return false;
     state.index++;
     state.solved = false;
-    loadEscape(state);
+    if (state.id === 'mate') loadMate(state); else loadEscape(state);
     return true;
+  }
+
+  // ---- mate: Checkmate in one ------------------------------------------------
+
+  /* Hand-made, easiest first (same notation as ESCAPE_PUZZLES: 'xK' is the
+   * opponent's king). Each has at least one move that gives checkmate,
+   * and the opponent is not in check at the start (tests/games.test.js). */
+  var MATE_PUZZLES = [
+    // A rook slides to the far row: the king is stuck behind his own pawns.
+    [[0, 6, 'xK'], [1, 5, 'xP'], [1, 6, 'xP'], [1, 7, 'xP'], [7, 0, 'r'], [7, 6, 'K']],
+    // The queen steps next to the king, guarded by her own king.
+    [[0, 4, 'xK'], [2, 4, 'K'], [1, 0, 'q']],
+    // Two rooks: one guards a row, the other gives check on the next.
+    [[0, 3, 'xK'], [1, 0, 'r'], [5, 7, 'r'], [7, 4, 'K']],
+    // The queen in the corner, guarded by her king.
+    [[0, 0, 'xK'], [2, 1, 'K'], [4, 7, 'q']],
+    // The knight: the king is boxed in by his own pieces.
+    [[0, 7, 'xK'], [0, 6, 'xR'], [1, 6, 'xP'], [1, 7, 'xP'], [3, 6, 'n'], [7, 4, 'K']]
+  ];
+
+  function loadMate(state) {
+    var p = state.puzzles[state.index];
+    state.board = puzzleBoard(MATE_PUZZLES[p.n], p.mirror);
+    state.hero = R.findKing(state.board, 'me');
+    state.turn = 'me';
+  }
+
+  function createMate(options, rng) {
+    var puzzles = MATE_PUZZLES.map(function (list, n) { return { n: n, mirror: rng() < 0.5 }; });
+    var state = {
+      id: 'mate', board: null, turn: 'me', moveCount: 0, over: false, winner: null,
+      heroType: 'q', hero: null, solo: true, checkRules: true, puzzles: puzzles, index: 0, solved: false
+    };
+    loadMate(state);
+    return state;
+  }
+
+  function afterMove(board, from, to) {
+    var next = R.cloneBoard(board);
+    next[to[0]][to[1]] = next[from[0]][from[1]];
+    next[from[0]][from[1]] = null;
+    return next;
+  }
+
+  /* Every checkmating move in the position: [{ from, to }]. */
+  function mateMoves(board) {
+    var out = [];
+    for (var r = 0; r < R.SIZE; r++) {
+      for (var c = 0; c < R.SIZE; c++) {
+        var p = board[r][c];
+        if (!p || p.team !== 'me') continue;
+        R.legalMoves(board, r, c).forEach(function (m) {
+          if (R.isCheckmate(afterMove(board, [r, c], [m.r, m.c]), 'foe')) out.push({ from: [r, c], to: [m.r, m.c] });
+        });
+      }
+    }
+    return out;
+  }
+
+  /* After a move that is not checkmate: where the opponent's king could
+   * still go (for the "nearly" glow). */
+  function kingEscapes(board, from, to) {
+    var next = afterMove(board, from, to);
+    var king = R.findKing(next, 'foe');
+    if (!king) return [];
+    return R.legalMoves(next, king[0], king[1]).map(function (m) { return [m.r, m.c]; });
+  }
+
+  // Checkmate hint: the piece that gives mate, then (when that piece is
+  // selected) its square.
+  function mateHint(state, selected) {
+    var moves = mateMoves(state.board);
+    if (!moves.length) return null;
+    if (selected) {
+      for (var i = 0; i < moves.length; i++) {
+        if (moves[i].from[0] === selected[0] && moves[i].from[1] === selected[1]) return moves[i].to.slice();
+      }
+    }
+    return moves[0].from.slice();
   }
 
   // Escape hint: the piece to move for this puzzle's way out.
@@ -935,6 +1021,7 @@
     if (id === 'stop') return createStop(options, rng);
     if (id === 'safe') return createSafe(options, rng);
     if (id === 'escape') return createEscape(options, rng);
+    if (id === 'mate') return createMate(options, rng);
     if (id === 'run') return createRun(options, rng);
     throw new Error('Unknown game id: ' + id);
   }
@@ -945,7 +1032,7 @@
     if (!piece || piece.team !== 'me') return [];
     // Find the way: only the one piece moves; the child's pawns are in the way.
     if (state.heroOnly && (r !== state.hero[0] || c !== state.hero[1])) return [];
-    if (state.id === 'escape' && state.solved) return [];
+    if ((state.id === 'escape' || state.id === 'mate') && state.solved) return [];
     // The check games use the full rule (never a move that leaves the
     // child's own king in check); the earlier games keep plain moves, so a
     // king there may still capture a protected pawn.
@@ -966,6 +1053,11 @@
     var moves = legalMoves(state, from[0], from[1]);
     var valid = moves.some(function (m) { return m.r === to[0] && m.c === to[1]; });
     if (!valid) throw new Error('applyMove: illegal move from ' + key(from) + ' to ' + key(to));
+
+    // Checkmate in one: a move that is not checkmate is taken back.
+    if (state.id === 'mate' && !R.isCheckmate(afterMove(state.board, from, to), 'foe')) {
+      return { captured: null, events: ['nearly'], reverted: true, escapes: kingEscapes(state.board, from, to) };
+    }
 
     var board = state.board;
     var piece = board[from[0]][from[1]];
@@ -1018,6 +1110,14 @@
         state.winner = 'me';
         events.push('run-won');
       }
+    } else if (state.id === 'mate') {
+      state.solved = true;
+      events.push('mated');
+      if (state.index === state.puzzles.length - 1) {
+        state.over = true;
+        state.winner = 'me';
+        events.push('mate-won');
+      }
     } else if (state.id === 'escape') {
       if (piece.type === 'k') state.hero = [to[0], to[1]];
       // Every legal move ends the check.
@@ -1064,6 +1164,7 @@
     if (id === 'stop') return { kind: 'capture-all', target: 'p', count: STOP_PAWNS };
     if (id === 'hop' || id === 'way' || id === 'safe') return { kind: 'reach-row', row: 0 };
     if (id === 'escape') return { kind: 'escape-check', count: ESCAPE_KINDS.length };
+    if (id === 'mate') return { kind: 'checkmate', count: MATE_PUZZLES.length };
     if (id === 'run') return { kind: 'stay-safe', moves: RUN_MOVES };
     return null;
   }
@@ -1079,6 +1180,8 @@
     dangerSquares: dangerSquares,
     nextPuzzle: nextPuzzle,
     ESCAPE_PUZZLES: ESCAPE_PUZZLES,
+    MATE_PUZZLES: MATE_PUZZLES,
+    mateMoves: mateMoves,
     puzzleBoard: puzzleBoard,
     CHAIN_TYPES: CHAIN_TYPES,
     WAY_TYPES: WAY_TYPES,

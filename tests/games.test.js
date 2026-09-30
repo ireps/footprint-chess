@@ -848,3 +848,51 @@ test('hint "run": a safe move', () => {
   const h = G.hint(state);
   assert.ok(G.legalMoves(state, state.hero[0], state.hero[1]).some(m => m.r === h[0] && m.c === h[1]));
 });
+
+// ---- mate: Checkmate in one (stage 7) --------------------------------------
+
+test('mate puzzles: legal positions, the opponent not yet in check, and at least one checkmate in one', () => {
+  G.MATE_PUZZLES.forEach((list, n) => {
+    for (const mirror of [false, true]) {
+      const board = G.puzzleBoard(list, mirror);
+      const tag = `puzzle ${n}${mirror ? ' mirrored' : ''}`;
+      assert.ok(R.findKing(board, 'foe') && R.findKing(board, 'me'), `${tag}: both kings`);
+      assert.equal(R.inCheck(board, 'foe'), false, `${tag}: already check`);
+      assert.equal(R.inCheck(board, 'me'), false, `${tag}: the child is in check`);
+      assert.ok(G.mateMoves(board).length >= 1, `${tag}: no checkmate in one`);
+    }
+  });
+});
+
+test('mate: a move that is not checkmate is taken back with the king\'s escapes; checkmate solves; five puzzles win', () => {
+  for (let seed = 1; seed <= 30; seed++) {
+    const state = G.create('mate', {}, seeded(seed));
+    assert.equal(state.puzzles.length, 5);
+    for (let i = 0; i < 5; i++) {
+      const mates = G.mateMoves(state.board);
+      // Find a legal move that is not mate, try it first.
+      let wrong = null;
+      for (let r = 0; r < 8 && !wrong; r++) for (let c = 0; c < 8 && !wrong; c++) {
+        const p = state.board[r][c];
+        if (!p || p.team !== 'me') continue;
+        const m = G.legalMoves(state, r, c).find(x => !mates.some(mm => mm.from[0] === r && mm.from[1] === c && mm.to[0] === x.r && mm.to[1] === x.c));
+        if (m) wrong = { from: [r, c], to: [m.r, m.c] };
+      }
+      if (wrong) {
+        const before = JSON.stringify(state.board);
+        const res = G.applyMove(state, wrong.from, wrong.to);
+        assert.ok(res.reverted && res.events.includes('nearly'));
+        assert.ok(Array.isArray(res.escapes));
+        assert.equal(JSON.stringify(state.board), before, 'the board is unchanged');
+      }
+      const h = G.hint(state);
+      assert.deepEqual(h, mates[0].from);
+      assert.deepEqual(G.hint(state, h), mates[0].to);
+      const res = G.applyMove(state, mates[0].from, mates[0].to);
+      assert.ok(res.events.includes('mated'));
+      assert.ok(R.isCheckmate(state.board, 'foe'));
+      if (i < 4) assert.ok(G.nextPuzzle(state));
+    }
+    assert.ok(state.over && state.winner === 'me');
+  }
+});
