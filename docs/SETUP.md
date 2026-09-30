@@ -41,4 +41,6 @@ For the GitHub account that owns the repository: turn on two-factor authenticati
 
 **There is no sound.** Tap the board once, because browsers block sound until the first tap. Check that the speaker button in the side bar is on, and check the tablet volume.
 
-**Changes do not appear on the tablet.** GitHub Pages can take a few minutes to update. Then reload the page in Silk.
+**Changes do not appear on the tablet.** GitHub Pages can take a few minutes to update. The app keeps its files on the tablet for offline play, so open it once online (it fetches the new version in the background), then reload the page in Silk to use the new version.
+
+**The app does not open offline.** It must first be opened once with the internet on, over `https://` (the `github.io` address). The device check page shows whether the browser supports service workers.

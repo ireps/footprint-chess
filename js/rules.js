@@ -7,8 +7,11 @@
  *         'x' junk (a static obstacle that can be captured but never moves).
  *   team: 'me' moves toward row 0, 'foe' moves toward row 7.
  *
- * Scope (stage 1): piece movement, blocking and captures.
- * Not implemented: check, checkmate, castling, en passant, promotion.
+ * Scope: piece movement, blocking and captures (stage 1); attacks, check,
+ * checkmate and stalemate, and legal moves that never leave a team's own
+ * king in check (stage 7). A board without a king for a team (every game
+ * before stage 7) is never in check, so legalMoves equals movesFor there.
+ * Not implemented: castling, en passant, promotion.
  *
  * Classic script: exposes window.FC.rules in the browser and module.exports in Node.
  * Keep to ES2017 syntax (see README, "Browser support and coding rules").
@@ -162,6 +165,59 @@
     return set;
   }
 
+  function otherTeam(team) { return team === 'me' ? 'foe' : 'me'; }
+
+  /* [r, c] of `team`'s king, or null when it has none. */
+  function findKing(board, team) {
+    for (var r = 0; r < SIZE; r++) {
+      for (var c = 0; c < SIZE; c++) {
+        var p = board[r][c];
+        if (p && p.type === 'k' && p.team === team) return [r, c];
+      }
+    }
+    return null;
+  }
+
+  /* True when `team`'s king stands on a square the other team attacks. */
+  function inCheck(board, team) {
+    var king = findKing(board, team);
+    if (!king) return false;
+    return !!attackedSquares(board, otherTeam(team))[king[0] + ',' + king[1]];
+  }
+
+  /* movesFor, without the moves that would leave the mover's own king in
+   * check (moving into check, or moving a piece that shields the king). */
+  function legalMoves(board, r, c) {
+    var piece = board[r][c];
+    if (!piece) return [];
+    return movesFor(board, r, c).filter(function (m) {
+      var next = cloneBoard(board);
+      next[m.r][m.c] = piece;
+      next[r][c] = null;
+      return !inCheck(next, piece.team);
+    });
+  }
+
+  function hasLegalMove(board, team) {
+    for (var r = 0; r < SIZE; r++) {
+      for (var c = 0; c < SIZE; c++) {
+        var p = board[r][c];
+        if (p && p.team === team && legalMoves(board, r, c).length) return true;
+      }
+    }
+    return false;
+  }
+
+  /* In check with no legal move: the game is over for `team`. */
+  function isCheckmate(board, team) {
+    return inCheck(board, team) && !hasLegalMove(board, team);
+  }
+
+  /* Not in check, but no legal move either (a draw in real chess). */
+  function isStalemate(board, team) {
+    return !!findKing(board, team) && !inCheck(board, team) && !hasLegalMove(board, team);
+  }
+
   /*
    * Squares the piece on (r, c) can reach in any number of moves, with every
    * other piece standing still. Captured pieces are only removed from the
@@ -203,6 +259,12 @@
     movesFor: movesFor,
     attacks: attacks,
     attackedSquares: attackedSquares,
+    findKing: findKing,
+    inCheck: inCheck,
+    legalMoves: legalMoves,
+    hasLegalMove: hasLegalMove,
+    isCheckmate: isCheckmate,
+    isStalemate: isStalemate,
     reachable: reachable
   };
 

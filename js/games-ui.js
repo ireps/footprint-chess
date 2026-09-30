@@ -95,7 +95,7 @@
 
   var active = false;        // true from a game card tap until Home
   var gameId = null;         // an id from js/game-list.js
-  var gmode = 'none';        // 'turns' | 'team' | 'mission' | 'play' | 'quiz' | 'tip' | 'won' | 'break'
+  var gmode = 'none';        // 'lesson' | 'team' | 'mission' | 'play' | 'quiz' | 'tip' | 'won' | 'break'
   var childSide = null;      // 'a' | 'b': the team the child is playing (set at the Team card, kept for Again / next game)
   var gstate = null;         // FC.games state (board games)
   var qstate = null;         // FC.quiz state (the footprints quiz)
@@ -219,6 +219,19 @@
       king.appendChild(B.pieceSvg('k', 'me'));
       pic.appendChild(king);
       pic.appendChild(B.pieceSvg('r', 'foe'));
+    } else if (id === 'run') {
+      // The child's rook hurrying away from an opponent knight.
+      pic.classList.add('game-pic-run');
+      pic.appendChild(B.pieceSvg('n', 'foe'));
+      pic.appendChild(el('span', 'speed-lines'));
+      pic.appendChild(B.pieceSvg('r', 'me'));
+    } else if (id === 'escape') {
+      // An opponent rook, a red line of danger, the child's king.
+      var stack4 = el('div', 'game-pic-stack game-pic-tight game-pic-check');
+      stack4.appendChild(B.pieceSvg('r', 'foe'));
+      stack4.appendChild(el('div', 'check-line'));
+      stack4.appendChild(B.pieceSvg('k', 'me'));
+      pic.appendChild(stack4);
     } else if (id === 'whose') {
       pic.appendChild(buildWhoseMark());
       pic.appendChild(B.pieceSvg('n', 'me'));
@@ -254,6 +267,11 @@
     if (row === 'capture') {
       mark.appendChild(el('div', 'row-burst'));
       mark.appendChild(B.pieceSvg('p', 'foe'));
+    } else if (row === 'king') {
+      // The king in a red ring: games about keeping him safe.
+      var ring = el('div', 'king-ring');
+      ring.appendChild(B.pieceSvg('k', 'me'));
+      mark.appendChild(ring);
     } else if (row === 'reach') {
       mark.appendChild(el('div', 'finish-flag'));
       mark.appendChild(B.pieceSvg('p', 'me'));
@@ -394,31 +412,44 @@
     enterGame();
   }
 
-  // Team games start with the "Taking turns" lesson (once per child) and
-  // the Team card, unless a team is already chosen; solo games (Capture
-  // chain, the quiz) go straight to their Mission card.
+  // A game with its own lesson (js/game-list.js `lesson`, the "check"
+  // lesson before Get out of check) plays it first, once per child. Team
+  // games then start with the "Taking turns" lesson (once per child) and
+  // the Team card, unless a team is already chosen; solo games go straight
+  // to their Mission card.
   function enterGame() {
-    if (!GL.get(gameId).teams || childSide) {
+    var game = GL.get(gameId);
+    var p = progress();
+    if (game.lesson && !(p && p.seen[game.lesson])) {
+      if (store) store.markSeen(game.lesson);
+      startGameLesson(game.lesson, enterGame);
+      return;
+    }
+    if (!game.teams || childSide) {
       showMissionCard();
       return;
     }
-    var p = progress();
     if (!(p && p.seen.turns)) {
       if (store) store.markSeen('turns');
-      startTurnsLesson();
+      startGameLesson('turns', showTeamCard);
     } else {
       showTeamCard();
     }
   }
 
-  function startTurnsLesson() {
-    gmode = 'turns';
-    setPanel('turns');
+  // Plays a lesson inside the games flow (Skip and Replay work as in any
+  // lesson), then calls next.
+  var lessonRun = null;      // { id, next } while a lesson plays in the games flow
+  function startGameLesson(id, next) {
+    gmode = 'lesson';
+    lessonRun = { id: id, next: next };
+    setPanel(id === 'turns' ? 'turns' : gameId);
     if (dom.toolSkip) dom.toolSkip.hidden = false;
-    P.start(LS.get('turns'), {
+    P.start(LS.get(id), {
       onDone: function () {
         if (dom.toolSkip) dom.toolSkip.hidden = true;
-        showTeamCard();
+        lessonRun = null;
+        next();
       }
     });
   }
@@ -480,14 +511,49 @@
       var frag = document.createDocumentFragment();
       frag.appendChild(buildGamePic(gameId));
       frag.appendChild(textEl('div', 'caption', LS.LINES[lineId][V.getLang()]));
+      var row = el('div', 'btn-row');
       var go = el('button', 'go-btn');
       go.type = 'button';
+      go.setAttribute('aria-label', 'Play');
       go.appendChild(B.svgUse('play-tri'));
-      frag.appendChild(go);
+      row.appendChild(go);
+      // "Watch how to play", whenever the child wants it; then back here.
+      var how = el('button', 'rbtn rbtn-tip');
+      how.type = 'button';
+      how.setAttribute('aria-label', 'Watch how to play');
+      how.appendChild(B.svgUse('ic-bulb'));
+      how.addEventListener('click', function (e) {
+        e.stopPropagation();
+        S.unlock();
+        FC.app.hideCard();
+        playHow(showMissionCard);
+      });
+      row.appendChild(how);
+      frag.appendChild(row);
       return frag;
     }
-    FC.app.showCustomCard(build, startGame);
+    FC.app.showCustomCard(build, startOrHow);
     V.sayAfter(lineId);
+  }
+
+  // The first time a child plays a game, its "watch how to play" scene
+  // comes first (saved as seen 'how-<game>'), then the game.
+  function startOrHow() {
+    var p = progress();
+    var key = 'how-' + gameId;
+    if (p && p.seen[key]) {
+      startGame();
+      return;
+    }
+    if (store) store.markSeen(key);
+    playHow(function () {
+      prepared = false; // the scene used the board; set the game up again
+      startGame();
+    });
+  }
+
+  function playHow(done) {
+    playTip({ kind: 'how', line: GL.get(gameId).tip }, done, 'how-look');
   }
 
   /* =====================================================================
@@ -511,6 +577,7 @@
   function gameOptions(id) {
     if (id === 'catch') return { type: lastNonPawn() };
     if (id === 'stop') return { type: homePieceIn(G.STOP_TYPES) };
+    if (id === 'run') return { type: lastNonPawn() };
     // Capture chain and Find the way: the first game uses the last piece
     // chosen on Home; each new one (Play again included) the next piece,
     // so every piece gets a turn.
@@ -623,6 +690,10 @@
     if (gstate.turn === 'me') {
       B.setMode('play', modeTextPlay());
       S.play('your-turn');
+      if (gameId === 'escape') {
+        showAttackers();
+        V.sayAfter('escape-ask');
+      }
       armIdle();
     } else {
       B.setMode('watch', modeTextWatch());
@@ -701,7 +772,7 @@
   }
 
   function handleTap(r, c) {
-    if (gmode === 'turns') { P.handleTap(r, c); return; }
+    if (gmode === 'lesson') { P.handleTap(r, c); return; }
     if (gmode === 'quiz') { onQuizTap(r, c); return; }
     if (gmode === 'tip') { B.nudgeMode(); return; }
     if (gmode !== 'play' || !gstate || gstate.over) return;
@@ -737,7 +808,7 @@
       B.glow(G.dangerSquares(gstate, selected[0], selected[1]), DANGER);
       B.pulseFootprints();
       S.play('bonk');
-      V.say('king-danger', function () {});
+      V.say(gameId === 'run' ? 'run-danger' : 'king-danger', function () {});
     } else {
       var t = gstate.board[selected[0]][selected[1]].type;
       wrongTaps[t] = (wrongTaps[t] || 0) + 1;
@@ -818,6 +889,10 @@
       onGameOver();
       return;
     }
+    if (gstate.id === 'escape' && gstate.solved) {
+      nextEscapePuzzle();
+      return;
+    }
     if (isChild) {
       armIdle();
       botTurn();
@@ -828,6 +903,46 @@
       V.sayAfter('turn-me');
       armIdle();
     }
+  }
+
+  /* ---------- Get out of check: one puzzle after another ---------- */
+
+  // The squares of the opponent pieces giving check glow red.
+  function showAttackers() {
+    var king = R.findKing(gstate.board, 'me');
+    if (!king) return;
+    var from = [];
+    for (var r = 0; r < 8; r++) {
+      for (var c = 0; c < 8; c++) {
+        var p = gstate.board[r][c];
+        if (!p || p.team !== 'foe') continue;
+        if (R.attacks(gstate.board, r, c).some(function (sq) { return sq[0] === king[0] && sq[1] === king[1]; })) from.push([r, c]);
+      }
+    }
+    B.glow(from, DANGER);
+  }
+
+  function nextEscapePuzzle() {
+    busy = true;
+    clearIdle();
+    B.setMode('watch', modeTextWatch());
+    var myToken = gameToken;
+    V.sayAfter('check-3', function () {
+      if (myToken !== gameToken || !gstate) return;
+      // Pacing between puzzles, which reduced motion must not shorten.
+      B.wait(function () {
+        if (myToken !== gameToken || !gstate) return;
+        G.nextPuzzle(gstate);
+        B.clearAll();
+        renderGame();
+        busy = false;
+        B.setMode('play', modeTextPlay());
+        S.play('your-turn');
+        showAttackers();
+        V.say('escape-ask', function () {});
+        armIdle();
+      }, 400);
+    });
   }
 
   /* ---------- the bot's turn ---------- */
@@ -899,15 +1014,13 @@
   // After the win line: a tip on the board when one is due (js/game-list.js
   // pickTip), then the Won card (or the Break card).
   function afterWin() {
-    var p = progress();
     var misses = gmodeIsQuiz() ? qstate.misses : wrongTaps;
-    var tip = GL.pickTip(gameId, misses, !!(p && p.seen['tip-' + gameId]));
+    var tip = GL.pickTip(gameId, misses);
     if (!tip) {
       showGameWonOrBreak();
       return;
     }
-    if (tip.kind === 'strategy' && store) store.markSeen('tip-' + gameId);
-    playTip(tip, showGameWonOrBreak);
+    playTip(tip, showGameWonOrBreak, 'tip-look');
   }
 
   function gmodeIsQuiz() {
@@ -964,16 +1077,16 @@
       });
       row.appendChild(next);
 
-      // The game's tip, on the board, whenever the child wants it again.
+      // "Watch how to play" again, on the board, whenever the child wants it.
       var tipBtn = el('button', 'rbtn rbtn-tip');
       tipBtn.type = 'button';
-      tipBtn.setAttribute('aria-label', 'Tip');
+      tipBtn.setAttribute('aria-label', 'Watch how to play');
       tipBtn.appendChild(B.svgUse('ic-bulb'));
       tipBtn.addEventListener('click', function (e) {
         e.stopPropagation();
         S.unlock();
         FC.app.hideCard();
-        playTip({ kind: 'strategy', line: GL.get(gameId).tip }, showGameWon);
+        playHow(showGameWon);
       });
       row.appendChild(tipBtn);
 
@@ -1129,13 +1242,17 @@
   }
 
   /* =====================================================================
-   * Tips after a game: a short "watch" on the board (js/game-list.js
-   * pickTip chooses which). A rule tip shows one piece's footprints and
-   * says its rule; a strategy tip plays the game's own little scene. Skip
-   * ends it at once.
+   * Short "watch" scenes on the board: "watch how to play" (each game's
+   * own scene in HOW_TO, before its first game and from the light bulb on
+   * its Mission and Won cards), and the rule tip after a win
+   * (js/game-list.js pickTip), which shows one piece's footprints and says
+   * its rule. Skip ends either at once.
    * ===================================================================*/
 
-  function playTip(tip, done) {
+  // lead: the line said first ('tip-look' after a win, 'how-look' before
+  // a "watch how to play" scene).
+  function playTip(tip, done, lead) {
+    lead = lead || 'tip-look';
     gmode = 'tip';
     clearIdle();
     busy = false;
@@ -1174,10 +1291,10 @@
       after: function (ms, fn) { B.wait(function () { if (alive()) fn(); }, ms); },
       end: function () { ctx.after(700, finish); }
     };
-    V.say('tip-look', function () {
+    V.say(lead, function () {
       if (!alive()) return;
       if (tip.kind === 'rule') ruleTip(ctx, tip.type, tip.line);
-      else (STRATEGY_TIPS[gameId] || ruleTipFallback)(ctx, tip.line);
+      else (HOW_TO[gameId] || ruleTipFallback)(ctx, tip.line);
     });
   }
 
@@ -1243,22 +1360,49 @@
     });
   }
 
-  var STRATEGY_TIPS = {
-    // The piece comes closer, then the knight's own footprints show where
-    // it can hop.
-    catch: function (ctx, line) {
+  // "Watch how to play" scenes, one per game (tip.line is the game's
+  // `tip` line in js/game-list.js).
+  var HOW_TO = {
+    // How to catch a knight that moves differently from your piece: see
+    // where it can hop, stand so your footprints cover those squares, and
+    // capture it when it lands on one.
+    catch: function (ctx) {
       var board = R.emptyBoard();
-      board[7][1] = { type: 'r', team: 'me' };
+      board[7][2] = { type: 'r', team: 'me' };
       board[3][4] = { type: 'n', team: 'foe' };
-      var rook = tipPiece('r', 7, 1);
-      tipFoe('n', 3, 4);
-      var done = join(2, ctx.end);
-      V.say(line, function () { if (ctx.alive()) done(); });
-      ctx.after(600, function () {
-        tipMove(ctx, board, rook, [7, 1], [5, 1], null, function () {
-          ctx.after(300, function () {
-            B.showFootprints('n', [3, 4], R.movesFor(board, 3, 4), {});
-            ctx.after(1500, done);
+      var items = {};
+      var rook = tipPiece('r', 7, 2);
+      items['3,4'] = tipFoe('n', 3, 4);
+      var hops = R.movesFor(board, 3, 4);
+      B.showFootprints('n', [3, 4], hops, {});
+      V.say('how-catch-1', function () {
+        if (!ctx.alive()) return;
+        tipMove(ctx, board, rook, [7, 2], [5, 2], null, function () {
+          // The rook's footprints now cover some of the knight's hops: they glow.
+          var covered = R.movesFor(board, 5, 2).filter(function (m) {
+            return hops.some(function (h) { return h.r === m.r && h.c === m.c; });
+          }).map(function (m) { return [m.r, m.c]; });
+          tipPrints(board, [5, 2], {});
+          B.glow(covered);
+          V.say('how-catch-2', function () {
+            if (!ctx.alive()) return;
+            B.glow([]);
+            B.hideFootprints({});
+            // The knight hops onto one of them...
+            var knight = items['3,4'];
+            delete items['3,4'];
+            B.moveHero(knight, 'n', [3, 4], [4, 2], function () {
+              if (!ctx.alive()) return;
+              board[4][2] = board[3][4];
+              board[3][4] = null;
+              items['4,2'] = knight;
+              tipPrints(board, [5, 2], items);
+              // ...and the rook captures it.
+              V.say('how-catch-3', function () {
+                if (!ctx.alive()) return;
+                tipMove(ctx, board, rook, [5, 2], [4, 2], items, ctx.end);
+              });
+            });
           });
         });
       });
@@ -1414,6 +1558,69 @@
         king.classList.remove('selected');
         tipMove(ctx, board, king, [7, 4], [6, 5], null, done);
       });
+    },
+    // Run away: the knight's footprints show; the squares the rook must
+    // not step to glow red; the rook steps to a safe one.
+    run: function (ctx, line) {
+      var board = R.emptyBoard();
+      board[7][2] = { type: 'r', team: 'me' };
+      board[4][4] = { type: 'n', team: 'foe' };
+      var rook = tipPiece('r', 7, 2);
+      tipFoe('n', 4, 4);
+      var done = join(2, ctx.end);
+      V.say(line, function () { if (ctx.alive()) done(); });
+      B.showFootprints('n', [4, 4], R.movesFor(board, 4, 4), {});
+      ctx.after(1600, function () {
+        var probe = { id: 'run', board: board, hero: [7, 2] };
+        var safe = G.legalMoves(Object.assign(probe, { over: false, turn: 'me' }), 7, 2);
+        rook.classList.add('selected');
+        B.showFootprints('r', [7, 2], safe, {});
+        B.glow(G.dangerSquares(probe, 7, 2), DANGER);
+        ctx.after(1800, function () {
+          B.glow([]);
+          rook.classList.remove('selected');
+          tipMove(ctx, board, rook, [7, 2], [7, 7], null, done);
+        });
+      });
+    },
+    // Three ways out of check, one after another, in time with the line:
+    // step away, block the line, capture the attacker.
+    escape: function (ctx, line) {
+      var step = Math.max(1800, Math.round(LS.LINES[line].ms / 3));
+      var done = join(2, ctx.end);
+      V.say(line, function () { if (ctx.alive()) done(); });
+      var scenes = [
+        { list: G.ESCAPE_PUZZLES.step[0], from: [7, 4], to: [7, 5] },
+        { list: G.ESCAPE_PUZZLES.block[0], from: [3, 2], to: [7, 2] },
+        { list: G.ESCAPE_PUZZLES.capture[0], from: [2, 1], to: [7, 1] }
+      ];
+      function play(i) {
+        if (i >= scenes.length) { done(); return; }
+        var sc = scenes[i];
+        B.clearAll();
+        var board = G.puzzleBoard(sc.list, false);
+        var nodes = {};
+        var items = {};
+        for (var r = 0; r < 8; r++) {
+          for (var c = 0; c < 8; c++) {
+            var p = board[r][c];
+            if (!p) continue;
+            if (p.team === 'me') nodes[key(r, c)] = tipPiece(p.type, r, c);
+            else items[key(r, c)] = tipFoe(p.type, r, c);
+          }
+        }
+        var king = R.findKing(board, 'me');
+        B.glow(Object.keys(items).map(function (k) { return k.split(',').map(Number); }).filter(function (sq) {
+          return R.attacks(board, sq[0], sq[1]).some(function (a) { return a[0] === king[0] && a[1] === king[1]; });
+        }), DANGER);
+        ctx.after(600, function () {
+          B.glow([]);
+          tipMove(ctx, board, nodes[key(sc.from[0], sc.from[1])], sc.from, sc.to, items, function () {
+            ctx.after(Math.max(300, step - 1400), function () { play(i + 1); });
+          });
+        });
+      }
+      play(0);
     },
     // Rook, bishop, queen in turn on the same square, each with its own
     // footprints, in time with the line.
@@ -1654,17 +1861,19 @@
   }
 
   function onSkip() {
-    if (gmode === 'turns') {
+    if (gmode === 'lesson' && lessonRun) {
+      var next = lessonRun.next;
+      lessonRun = null;
       P.stop();
       if (dom.toolSkip) dom.toolSkip.hidden = true;
-      showTeamCard();
+      next();
     } else if (gmode === 'tip' && tipDone) {
       tipDone();
     }
   }
 
   function onReplay() {
-    if (gmode === 'turns') startTurnsLesson();
+    if (gmode === 'lesson' && lessonRun) startGameLesson(lessonRun.id, lessonRun.next);
     else if (gmode === 'quiz' && !busy) V.say('quiz-ask', function () {});
   }
 

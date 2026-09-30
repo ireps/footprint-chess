@@ -10,6 +10,11 @@
 <link rel="stylesheet" href="css/help.css">
 </head>
 <body>
+<!-- Always at the top, and stays there while the page scrolls. -->
+<nav class="topbar" aria-label="Page">
+  <a class="back" href="./">Back to the game</a>
+  <a class="back" href="index.html#grownups">Open the grown-ups corner</a>
+</nav>
 <main>
   <h1>Footprint Chess</h1>
   <p class="lede">A quick guide for the grown-up in the room.</p>
@@ -115,10 +120,11 @@
     <h2>Games</h2>
     <p>
       Below the six piece cards on the home screen is one Games button. It
-      opens the Games screen, where the games sit in three rows, each marked
+      opens the Games screen, where the games sit in four rows, each marked
       with a picture instead of a word: capture games (a pawn in a burst),
-      games about reaching the other side (a finish flag) and thinking games
-      (footprints with a question mark). Every game can be tapped; the first
+      games about reaching the other side (a finish flag), thinking games
+      (footprints with a question mark) and king games (the king in a red
+      ring). Every game can be tapped; the first
       game not yet won in the current theme glows, and a game already won
       has a green tick. The team games are played against a gentle opponent:
       it never plays to win, so the child always finishes. No game has
@@ -171,6 +177,20 @@
         that stand still. The king's footprints only show safe squares; the
         squares he may not step to glow red, and tapping one says why. This is
         the idea behind check, without the word.</dd>
+      <dt>Run away</dt>
+      <dd>The child's piece is chased by an opponent piece that moves
+        differently, taking turns. The piece can never step where the other
+        piece could capture it: when it is selected, those squares glow red,
+        and tapping one says why. After six safe moves it has got away. The
+        other piece never captures and always leaves a safe square.</dd>
+      <dt>Get out of check</dt>
+      <dd>The first time, a short "Check" lesson comes first: a rook looks
+        at the king along a red line ("Check!"), and the king steps out of
+        it. Then five small puzzles, each with the king in check and the
+        attacking piece glowing red. The three ways out each appear: the
+        king steps away, a piece blocks the line, or the attacker is
+        captured. Only moves that save the king have footprints, so every
+        move the child can make is a right one.</dd>
     </dl>
     <p>
       In the games without an opponent's turn (and in Stop the pawns), if
@@ -183,17 +203,24 @@
       and the other games without an opponent's turn skip both. After that a Mission card
       names the goal, out loud and in a picture, and a tap starts the game.
       A finished game shows the same kind of card as a round: play again,
-      the next game, a light bulb for the game's tip, or home.
+      the next game, a light bulb to watch how to play, or home.
     </p>
     <p>
-      <strong>Tips after a game.</strong> After a win the board can show a
-      short tip (Skip ends it). If the child kept tapping squares a piece
-      cannot reach (two or more times with one piece, or two wrong answers
-      about one piece in the quiz), that piece's footprints are shown again
-      with its rule. Otherwise, the first time a child wins each game, the
-      game's own tip plays, for example "Before you capture, look for the
-      next pawn!" with a short example on the board. The light bulb on the
-      finished-game card plays the game's tip again at any time.
+      <strong>Watch how to play.</strong> The first time a child plays each
+      game, a short example plays on the board before it starts (Skip ends
+      it). For Catch the knight it shows how to catch a piece that moves
+      differently from yours: the knight's hops appear, the child's piece
+      moves so its footprints cover some of them, the knight lands on one,
+      and it is captured. The light bulb on the Mission card and on the
+      finished-game card plays the example again at any time. If the child
+      waits during Catch the knight, a square glows: the knight when it can
+      be captured, or a good square to wait on.
+    </p>
+    <p>
+      <strong>Tips after a game.</strong> If the child kept tapping squares
+      a piece cannot reach (two or more times with one piece, or two wrong
+      answers about one piece in the quiz), that piece's footprints and rule
+      are shown again after the win (Skip ends it).
     </p>
   </section>
 
@@ -393,10 +420,18 @@
     </p>
   </section>
 
-  <p>
-    <a class="back" href="./">Back to the game</a>
-    <a class="back" href="index.html#grownups">Open the grown-ups corner</a>
-  </p>
+  <section class="card">
+    <h2>Playing without the internet</h2>
+    <p>
+      After the app has been opened once with the internet on, it keeps its
+      own files, including the voice clips, on the tablet, and then opens and
+      plays with no internet at all. When a new version is published, the
+      tablet fetches it the next time the app is opened online, and uses it
+      from the load after that. Clearing the site's data in the browser
+      settings also removes these files; the app then fetches them again on
+      its next online visit.
+    </p>
+  </section>
 </main>
 </body>
 </html>

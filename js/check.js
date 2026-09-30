@@ -47,7 +47,7 @@
   yesNo('Pointer events', 'PointerEvent' in window);
   yesNo('Web Animations', typeof document.documentElement.animate === 'function');
   yesNo('Web Audio', !!(window.AudioContext || window.webkitAudioContext));
-  yesNo('Service worker (offline mode, later stage)', 'serviceWorker' in navigator);
+  yesNo('Service worker (offline mode)', 'serviceWorker' in navigator);
 
   var storageOk = false;
   try {

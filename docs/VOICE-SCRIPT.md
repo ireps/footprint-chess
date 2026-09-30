@@ -114,13 +114,27 @@ naming a direction.
 | break | Great playing! Time for a little break? | బాగా ఆడావు! కొంచెం విశ్రాంతి తీసుకుందామా? | Warm and gentle, never scolding; offered, not required. |
 | who | Who's playing? | ఎవరు ఆడుతున్నారు? | Warm and curious, like asking a friend; said on the Who's playing screen, and shown there as its heading. |
 | games-pick | Pick a game! | ఒక ఆట ఎంచుకో! | Warm and inviting; said when the Games screen opens. |
+| check-1 | Check! The rook could capture your king. | చెక్! ఏనుగు నీ రాజుని పట్టుకోగలదు. | Clear and a little urgent, not scary; the red line on the board shows the danger. |
+| check-2 | Move your king out of danger! | నీ రాజుని ప్రమాదం నుంచి తప్పించు! | Calm instruction; the king then steps out of the line. |
+| check-3 | Your king is safe now! | ఇప్పుడు నీ రాజు క్షేమంగా ఉన్నాడు! | Relieved and warm; also said after each solved Get out of check puzzle. |
+| game-escape | Get out of check! Save your king every time. | చెక్ నుంచి తప్పించుకో! ప్రతిసారీ నీ రాజుని కాపాడు. | Brave and energetic; states the goal on the Mission card. |
+| escape-ask | Check! Save your king. | చెక్! నీ రాజుని కాపాడు. | Clear, a little urgent; said as each Get out of check puzzle appears. |
+| escape-won | You kept your king safe every time! | ప్రతిసారీ నీ రాజుని కాపాడావు! | Big and celebratory; the Get out of check win line. |
+| tip-escape | Step away, block the line, or capture the attacker! | పక్కకి తప్పుకో, దారికి అడ్డం పెట్టు, లేదా దాడి చేసే పావుని పట్టుకో! | Three clear beats, one per way out, in time with the scene. |
+| game-run | Run away! Stay where the other piece cannot capture you. | పారిపో! శత్రువు పావు పట్టుకోలేని చోట ఉండు. | Playful and a little breathless; states the goal on the Mission card. |
+| run-danger | Not there! It could capture you there. | అక్కడ వద్దు! అక్కడ అది నిన్ను పట్టుకోగలదు. | Gentle and protective, never scolding; said when the child taps a square the chaser watches. |
+| run-won | You got away safely! | సురక్షితంగా తప్పించుకున్నావు! | Big and relieved; the Run away win line. |
+| tip-run | Look at its footprints, and stand where they are not! | దాని అడుగుల గుర్తులు చూడు, అవి లేని చోట నిలబడు! | Calm and clear, the key idea of the game. |
 | game-chain | Capture chain! Capture every pawn, one after another. | గొలుసు ఆట! శత్రువు భటులను ఒకరి తర్వాత ఒకరిని పట్టుకో! | Playful and energetic; states the goal on the Mission card. |
 | game-whose | Whose footprints? Tap the piece that made them! | ఎవరి అడుగులు? ఆ అడుగులు వేసిన పావుని నొక్కు! | Curious, like starting a guessing game; states the goal on the Mission card. |
 | quiz-ask | Whose footprints are these? | ఈ అడుగుల గుర్తులు ఎవరివి? | Curious and gentle, a real question; said as each quiz question appears. |
 | quiz-again | Its footprints look different. Try again! | దాని అడుగులు వేరేలా ఉంటాయి. మళ్ళీ చూడు! | Kind and encouraging, never "wrong"; said after the child taps a piece that is not the answer. |
 | quiz-won | You know your pieces so well! | నీకు పావులన్నీ బాగా తెలుసు! | Big and celebratory; the quiz's win line. |
 | tip-look | Here is a little tip! | ఇదిగో, ఒక చిన్న చిట్కా! | Friendly, like sharing a secret; said before a tip plays on the board after a game. |
-| tip-catch | Get close to the knight, then watch where it can hop! | గుర్రం దగ్గరికి వెళ్ళు, అది ఎక్కడికి దూకగలదో చూడు! | Calm and clear, a tip rather than an instruction. |
+| how-look | Watch how to play! | ఎలా ఆడాలో చూడు! | Friendly and inviting; said before a game's "watch how to play" scene. |
+| how-catch-1 | The knight can hop to these squares. | గుర్రం ఈ గడులకి దూకగలదు. | Calm, pointing at the knight's footprints on the board. |
+| how-catch-2 | Stand where your footprints cover its hops. | దాని దూకే గడుల మీద నీ అడుగుల గుర్తులు పడేలా నిలబడు. | Clear and slow, the key idea of the game. |
+| how-catch-3 | It landed on your footprints. Capture it! | అది నీ అడుగుల గుర్తు మీద దిగింది. పట్టుకో! | Excited, a small "gotcha" on the capture. |
 | tip-race | A pawn's first step can be two squares. Zoom ahead! | భటుడి మొదటి అడుగు రెండు గడులు కావచ్చు. ముందుకు దూసుకుపో! | Calm, then bright on the last words. |
 | tip-battle | Use all your pieces. Each one moves its own way! | నీ పావులన్నిటినీ వాడు. ఒక్కొక్కటి ఒక్కోలా కదులుతుంది! | Calm and clear, a tip rather than an instruction. |
 | tip-chain | Before you capture, look for the next pawn! | పట్టుకునే ముందు, తర్వాతి భటుడు ఎక్కడున్నాడో చూడు! | Calm and clear, a tip rather than an instruction. |

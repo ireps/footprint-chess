@@ -169,13 +169,29 @@
 
     /* more games (stage 6): the Games screen, two new games, the quiz and the tips after a game */
     'games-pick': { en: 'Pick a game!', te: 'ఒక ఆట ఎంచుకో!' },
+
+    /* check (stage 7): the "check" lesson and the Get out of check game */
+    'check-1': { en: 'Check! The rook could capture your king.', te: 'చెక్! ఏనుగు నీ రాజుని పట్టుకోగలదు.' },
+    'check-2': { en: 'Move your king out of danger!', te: 'నీ రాజుని ప్రమాదం నుంచి తప్పించు!' },
+    'check-3': { en: 'Your king is safe now!', te: 'ఇప్పుడు నీ రాజు క్షేమంగా ఉన్నాడు!' },
+    'game-escape': { en: 'Get out of check! Save your king every time.', te: 'చెక్ నుంచి తప్పించుకో! ప్రతిసారీ నీ రాజుని కాపాడు.' },
+    'escape-ask': { en: 'Check! Save your king.', te: 'చెక్! నీ రాజుని కాపాడు.' },
+    'escape-won': { en: 'You kept your king safe every time!', te: 'ప్రతిసారీ నీ రాజుని కాపాడావు!' },
+    'game-run': { en: 'Run away! Stay where the other piece cannot capture you.', te: 'పారిపో! శత్రువు పావు పట్టుకోలేని చోట ఉండు.' },
+    'run-danger': { en: 'Not there! It could capture you there.', te: 'అక్కడ వద్దు! అక్కడ అది నిన్ను పట్టుకోగలదు.' },
+    'run-won': { en: 'You got away safely!', te: 'సురక్షితంగా తప్పించుకున్నావు!' },
+    'tip-run': { en: 'Look at its footprints, and stand where they are not!', te: 'దాని అడుగుల గుర్తులు చూడు, అవి లేని చోట నిలబడు!' },
+    'tip-escape': { en: 'Step away, block the line, or capture the attacker!', te: 'పక్కకి తప్పుకో, దారికి అడ్డం పెట్టు, లేదా దాడి చేసే పావుని పట్టుకో!' },
     'game-chain': { en: 'Capture chain! Capture every pawn, one after another.', te: 'గొలుసు ఆట! శత్రువు భటులను ఒకరి తర్వాత ఒకరిని పట్టుకో!' },
     'game-whose': { en: 'Whose footprints? Tap the piece that made them!', te: 'ఎవరి అడుగులు? ఆ అడుగులు వేసిన పావుని నొక్కు!' },
     'quiz-ask': { en: 'Whose footprints are these?', te: 'ఈ అడుగుల గుర్తులు ఎవరివి?' },
     'quiz-again': { en: 'Its footprints look different. Try again!', te: 'దాని అడుగులు వేరేలా ఉంటాయి. మళ్ళీ చూడు!' },
     'quiz-won': { en: 'You know your pieces so well!', te: 'నీకు పావులన్నీ బాగా తెలుసు!' },
     'tip-look': { en: 'Here is a little tip!', te: 'ఇదిగో, ఒక చిన్న చిట్కా!' },
-    'tip-catch': { en: 'Get close to the knight, then watch where it can hop!', te: 'గుర్రం దగ్గరికి వెళ్ళు, అది ఎక్కడికి దూకగలదో చూడు!' },
+    'how-look': { en: 'Watch how to play!', te: 'ఎలా ఆడాలో చూడు!' },
+    'how-catch-1': { en: 'The knight can hop to these squares.', te: 'గుర్రం ఈ గడులకి దూకగలదు.' },
+    'how-catch-2': { en: 'Stand where your footprints cover its hops.', te: 'దాని దూకే గడుల మీద నీ అడుగుల గుర్తులు పడేలా నిలబడు.' },
+    'how-catch-3': { en: 'It landed on your footprints. Capture it!', te: 'అది నీ అడుగుల గుర్తు మీద దిగింది. పట్టుకో!' },
     'tip-race': { en: "A pawn's first step can be two squares. Zoom ahead!", te: 'భటుడి మొదటి అడుగు రెండు గడులు కావచ్చు. ముందుకు దూసుకుపో!' },
     'tip-battle': { en: 'Use all your pieces. Each one moves its own way!', te: 'నీ పావులన్నిటినీ వాడు. ఒక్కొక్కటి ఒక్కోలా కదులుతుంది!' },
     'tip-chain': { en: 'Before you capture, look for the next pawn!', te: 'పట్టుకునే ముందు, తర్వాతి భటుడు ఎక్కడున్నాడో చూడు!' },
@@ -271,9 +287,11 @@
   var MORE_GAME_LINES = [
     'games-pick', 'game-chain', 'game-whose',
     'quiz-ask', 'quiz-again', 'quiz-won',
-    'tip-look', 'tip-catch', 'tip-race', 'tip-battle', 'tip-chain', 'tip-whose',
+    'tip-look', 'how-look', 'how-catch-1', 'how-catch-2', 'how-catch-3', 'tip-race', 'tip-battle', 'tip-chain', 'tip-whose',
     'game-hop', 'game-way', 'game-stop', 'game-safe', 'reach-won', 'king-danger',
-    'tip-hop', 'tip-way', 'tip-stop', 'tip-safe'
+    'tip-hop', 'tip-way', 'tip-stop', 'tip-safe',
+    'game-escape', 'escape-ask', 'escape-won', 'tip-escape',
+    'game-run', 'run-danger', 'run-won', 'tip-run'
   ];
 
   var LESSONS = [
@@ -585,6 +603,39 @@
     ]
   });
 
+  /*
+   * Check (stage 7): the king is in check from a rook on his line; the line
+   * glows red ({ glow, color: 'danger' }), he steps out of it. Played
+   * before the "Get out of check" game, the first time (js/game-list.js
+   * `lesson`). Footprints in lessons only ever show legal moves
+   * (FC.rules.legalMoves), so the king never offers a square in check.
+   */
+  LESSONS.push({
+    id: 'check',
+    type: 'k',
+    title: 'Check',
+    setup: { hero: [7, 4], foes: [{ at: [3, 4], type: 'r' }] },
+    watch: [
+      { wait: 600 },
+      { glow: [[4, 4], [5, 4], [6, 4]], color: 'danger' },
+      { say: 'check-1' },
+      { waitVoice: true },
+      { select: true },
+      { say: 'check-2' },
+      { hand: [6, 5] },
+      { move: [6, 5] },
+      { glow: [] },
+      { waitVoice: true },
+      { say: 'check-3' },
+      { waitVoice: true },
+      { wait: 400 },
+      { reset: true }
+    ],
+    practice: [
+      { to: [6, 5], accept: 'any' }
+    ]
+  });
+
   var STEP_MS = { hand: 900, move: 700, select: 300, unselect: 300, reset: 300, foeMove: 700 };
 
   function get(id) {
@@ -594,13 +645,22 @@
     return null;
   }
 
-  /* Fresh { board, hero } built from a lesson's setup, for FC.rules.movesFor. */
+  /* A lesson's opponent pieces as [{ at: [r, c], type }]. A setup lists
+   * each as [r, c] (a pawn) or { at: [r, c], type } (any piece; the
+   * "check" lesson's rook). */
+  function foesOf(lesson) {
+    return (lesson.setup.foes || []).map(function (f) {
+      return Array.isArray(f) ? { at: f, type: 'p' } : { at: f.at, type: f.type };
+    });
+  }
+
+  /* Fresh { board, hero } built from a lesson's setup, for FC.rules. */
   function boardFor(lesson) {
     var board = R.emptyBoard();
     var hero = lesson.setup.hero;
     board[hero[0]][hero[1]] = { type: lesson.type, team: 'me' };
-    (lesson.setup.foes || []).forEach(function (sq) {
-      board[sq[0]][sq[1]] = { type: 'p', team: 'foe' };
+    foesOf(lesson).forEach(function (f) {
+      board[f.at[0]][f.at[1]] = { type: f.type, team: 'foe' };
     });
     return { board: board, hero: hero.slice() };
   }
@@ -646,7 +706,7 @@
    * broken by column so the result is deterministic.
    */
   function suggestMove(board, hero, preferred) {
-    var moves = R.movesFor(board, hero[0], hero[1]);
+    var moves = R.legalMoves(board, hero[0], hero[1]);
     if (!moves.length) return null;
     if (preferred) {
       for (var i = 0; i < moves.length; i++) {
@@ -704,6 +764,7 @@
     LESSONS: LESSONS,
     get: get,
     boardFor: boardFor,
+    foesOf: foesOf,
     estimateWatchMs: estimateWatchMs,
     suggestMove: suggestMove,
     lineIds: lineIds,

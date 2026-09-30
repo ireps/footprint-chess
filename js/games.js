@@ -20,6 +20,15 @@
  *   'safe'   - Keep the king safe (stage 6, solo): the king walks to the
  *              other side past a still rook and bishop; it can never step
  *              onto a square either of them could capture on.
+ *   'run'    - Run away (stage 7, requested by the owner): the child's piece
+ *              is chased by an opponent piece of another kind, taking turns.
+ *              The piece may never step where the chaser could capture it
+ *              (those squares glow red); after six safe moves it has got
+ *              away. The chaser never captures and always leaves at least
+ *              two safe squares.
+ *   'escape' - Get out of check (stage 7, solo): five small puzzles, each
+ *              with the child's king in check; any legal move ends the
+ *              check (step away, block the line, or capture the attacker).
  * The list of games shown to the child (names, rows, pictures) lives in
  * js/game-list.js; the footprints quiz is in js/quiz.js.
  *
@@ -632,12 +641,47 @@
     };
   }
 
-  /* A square to glow as a hint, or null: the next pawn of a capture chain,
+  /* Catch the knight: the knight itself when it can be captured now;
+   * otherwise the move that puts the most of the knight's next hops on the
+   * piece's footprints (ties: the square nearest the knight), so that
+   * wherever it hops, it is likely to land where it can be captured. */
+  function catchHint(state) {
+    var board = state.board;
+    var hero = state.hero;
+    var knight = state.knight;
+    var now = R.movesFor(board, hero[0], hero[1]);
+    if (now.some(function (m) { return m.r === knight[0] && m.c === knight[1]; })) return knight.slice();
+    var hops = R.movesFor(board, knight[0], knight[1]).filter(function (m) { return !m.capture; });
+    var best = null;
+    var bestScore = -1;
+    var bestDist = Infinity;
+    now.forEach(function (m) {
+      if (m.capture) return;
+      var work = R.cloneBoard(board);
+      work[m.r][m.c] = work[hero[0]][hero[1]];
+      work[hero[0]][hero[1]] = null;
+      var covers = heroAttackSet(work, [m.r, m.c], knight);
+      var score = hops.filter(function (h) { return covers[h.r + ',' + h.c]; }).length;
+      var dist = Math.max(Math.abs(m.r - knight[0]), Math.abs(m.c - knight[1]));
+      if (score > bestScore || (score === bestScore && dist < bestDist)) {
+        best = [m.r, m.c];
+        bestScore = score;
+        bestDist = dist;
+      }
+    });
+    return best;
+  }
+
+  /* A square to glow as a hint, or null: the knight or a good square to
+   * wait on (Catch the knight), the next pawn of a capture chain,
    * (else the first step toward the nearest pawn), the first step toward
    * the nearest pawn (Stop the pawns), or the next
    * step of a shortest way to the other side. */
   function hint(state) {
     if (state.over) return null;
+    if (state.id === 'catch') return catchHint(state);
+    if (state.id === 'escape') return state.solved ? null : escapeHint(state);
+    if (state.id === 'run') return runHint(state);
     if (state.id === 'chain') {
       // The next pawn of the chain when it is one move away; otherwise
       // (the child left the chain) the first step toward the nearest pawn.
@@ -665,10 +709,217 @@
 
   /* 'safe' only: the squares next to the king it may not step to. */
   function dangerSquares(state, r, c) {
-    if (state.id !== 'safe') return [];
+    if (state.id === 'run') {
+      if (!state.hero || state.hero[0] !== r || state.hero[1] !== c) return [];
+      return runDanger(state.board, [r, c]).map(function (m) { return [m.r, m.c]; });
+    }
+    if (state.id !== 'safe' && state.id !== 'escape') return [];
     var p = state.board[r][c];
     if (!p || p.type !== 'k' || p.team !== 'me') return [];
     return kingDanger(state.board, r, c).map(function (m) { return [m.r, m.c]; });
+  }
+
+  // ---- run: Run away ----------------------------------------------------------
+
+  // The chaser is always a piece that moves differently from the child's.
+  var RUN_CHASER = { r: 'n', b: 'r', q: 'n', k: 'r', n: 'b' };
+  var RUN_MOVES = 6;
+
+  function findTeam(board, team) {
+    for (var r = 0; r < R.SIZE; r++) {
+      for (var c = 0; c < R.SIZE; c++) {
+        if (board[r][c] && board[r][c].team === team) return [r, c];
+      }
+    }
+    return null;
+  }
+
+  /* The moves of the piece on `hero` that land where the chaser could
+   * capture it (worked out with the piece lifted off the board, so it
+   * cannot shelter behind itself). Capturing the chaser is never one. */
+  function runDanger(board, hero) {
+    var chaser = findTeam(board, 'foe');
+    if (!chaser) return [];
+    var lifted = R.cloneBoard(board);
+    lifted[hero[0]][hero[1]] = null;
+    var watched = {};
+    R.attacks(lifted, chaser[0], chaser[1]).forEach(function (sq) { watched[sq[0] + ',' + sq[1]] = true; });
+    return R.movesFor(board, hero[0], hero[1]).filter(function (m) {
+      return !m.capture && watched[m.r + ',' + m.c];
+    });
+  }
+
+  function runSafeMoves(board, hero) {
+    var danger = {};
+    runDanger(board, hero).forEach(function (m) { danger[m.r + ',' + m.c] = true; });
+    return R.movesFor(board, hero[0], hero[1]).filter(function (m) { return !danger[m.r + ',' + m.c]; });
+  }
+
+  function createRun(options, rng) {
+    var type = (options && CHAIN_TYPES.indexOf(options.type) !== -1) ? options.type : 'r';
+    var chaserType = RUN_CHASER[type];
+    for (var attempt = 0; attempt < MAX_ATTEMPTS * 4; attempt++) {
+      var board = R.emptyBoard();
+      var hero = [7, randInt(rng, 8)];
+      board[hero[0]][hero[1]] = { type: type, team: 'me' };
+      var cs = [1 + randInt(rng, 3), randInt(rng, 8)];
+      if (board[cs[0]][cs[1]]) continue;
+      board[cs[0]][cs[1]] = { type: chaserType, team: 'foe' };
+      // The chaser does not watch the start square, cannot be captured at
+      // once, and the child has at least two safe first moves.
+      var lifted = R.cloneBoard(board);
+      if (R.attacks(lifted, cs[0], cs[1]).some(function (sq) { return sq[0] === hero[0] && sq[1] === hero[1]; })) continue;
+      if (R.movesFor(board, hero[0], hero[1]).some(function (m) { return m.capture; })) continue;
+      if (runSafeMoves(board, hero).length < 2) continue;
+      return {
+        id: 'run', board: board, turn: 'me', moveCount: 0, over: false, winner: null,
+        heroType: type, hero: hero, chaserType: chaserType, childMoves: 0
+      };
+    }
+    throw new Error('run: could not place the chaser');
+  }
+
+  function botRun(state, rng) {
+    var board = state.board;
+    var from = findTeam(board, 'foe');
+    state.turn = 'me';
+    if (!from) return null;
+    var hero = state.hero;
+    var options = R.movesFor(board, from[0], from[1]).filter(function (m) { return !m.capture; }).map(function (m) {
+      var next = R.cloneBoard(board);
+      next[m.r][m.c] = next[from[0]][from[1]];
+      next[from[0]][from[1]] = null;
+      var canBeCaptured = R.movesFor(next, hero[0], hero[1]).some(function (h) { return h.r === m.r && h.c === m.c; });
+      return {
+        to: [m.r, m.c],
+        safeLeft: runSafeMoves(next, hero).length,
+        pressure: runDanger(next, hero).length,
+        exposed: canBeCaptured
+      };
+    });
+    // Gentle: never leave the child fewer than two safe squares (one if
+    // nothing else is possible), and never stand where the child could
+    // capture it if that can be avoided. Otherwise press as hard as it can.
+    var pool = options.filter(function (o) { return o.safeLeft >= 2 && !o.exposed; });
+    if (!pool.length) pool = options.filter(function (o) { return o.safeLeft >= 1; });
+    if (!pool.length) pool = options;
+    if (!pool.length) return null;
+    var best = Math.max.apply(null, pool.map(function (o) { return o.pressure; }));
+    pool = pool.filter(function (o) { return o.pressure === best; });
+    var choice = pool[randInt(rng, pool.length)];
+    board[choice.to[0]][choice.to[1]] = board[from[0]][from[1]];
+    board[from[0]][from[1]] = null;
+    state.moveCount++;
+    return { from: from, to: choice.to, captured: null, events: [] };
+  }
+
+  // Run away hint: the safe move farthest from the chaser (a capture of the
+  // chaser, when one is on offer, comes first).
+  function runHint(state) {
+    var chaser = findTeam(state.board, 'foe');
+    var moves = runSafeMoves(state.board, state.hero);
+    var cap = moves.filter(function (m) { return m.capture; });
+    if (cap.length) return [cap[0].r, cap[0].c];
+    var best = null;
+    var bestDist = -1;
+    moves.forEach(function (m) {
+      var d = chaser ? Math.max(Math.abs(m.r - chaser[0]), Math.abs(m.c - chaser[1])) : 0;
+      if (d > bestDist) { best = [m.r, m.c]; bestDist = d; }
+    });
+    return best;
+  }
+
+  // ---- escape: Get out of check -------------------------------------------
+
+  /*
+   * Hand-made puzzles, each [kind, pieces]: the child's king ('K'), the
+   * child's other pieces (lower case r/b/q/n/p) and the opponent's (upper
+   * case after 'x', for example 'xR'). kind names the one way out that
+   * works: 'step' (the king steps away), 'block' (a piece steps into the
+   * line) or 'capture' (the checking piece is captured). Every puzzle is
+   * checked by tests/games.test.js: the king is in check, and for 'block'
+   * and 'capture' every legal move is of that kind.
+   */
+  var ESCAPE_PUZZLES = {
+    step: [
+      [[7, 4, 'K'], [2, 4, 'xR']],
+      [[6, 3, 'K'], [3, 6, 'xB']],
+      [[7, 6, 'K'], [5, 5, 'xN']]
+    ],
+    block: [
+      [[7, 7, 'K'], [6, 6, 'p'], [6, 7, 'p'], [3, 2, 'r'], [7, 0, 'xR']],
+      [[7, 6, 'K'], [6, 5, 'p'], [6, 6, 'p'], [6, 7, 'p'], [4, 0, 'b'], [7, 0, 'xR']]
+    ],
+    capture: [
+      [[7, 7, 'K'], [6, 6, 'p'], [6, 7, 'p'], [2, 1, 'r'], [7, 1, 'xR']],
+      [[7, 4, 'K'], [6, 4, 'xQ']],
+      [[7, 7, 'K'], [6, 6, 'p'], [6, 7, 'p'], [7, 6, 'r'], [5, 6, 'xN'], [3, 4, 'b']]
+    ]
+  };
+  var ESCAPE_KINDS = ['step', 'step', 'block', 'capture', 'capture'];
+
+  function puzzleBoard(list, mirror) {
+    var board = R.emptyBoard();
+    list.forEach(function (p) {
+      var c = mirror ? 7 - p[1] : p[1];
+      var foe = p[2].charAt(0) === 'x';
+      var letter = foe ? p[2].charAt(1) : p[2];
+      board[p[0]][c] = { type: letter.toLowerCase(), team: foe ? 'foe' : 'me' };
+    });
+    return board;
+  }
+
+  function loadEscape(state) {
+    var p = state.puzzles[state.index];
+    state.board = puzzleBoard(ESCAPE_PUZZLES[p.kind][p.n], p.mirror);
+    state.hero = R.findKing(state.board, 'me');
+    state.kind = p.kind;
+    state.turn = 'me';
+  }
+
+  function createEscape(options, rng) {
+    // One puzzle per slot in ESCAPE_KINDS, never the same one twice, each
+    // shown as drawn or mirrored side to side.
+    var used = {};
+    var puzzles = ESCAPE_KINDS.map(function (kind) {
+      var n;
+      do { n = randInt(rng, ESCAPE_PUZZLES[kind].length); } while (used[kind + n] && Object.keys(used).length < 8);
+      used[kind + n] = true;
+      return { kind: kind, n: n, mirror: rng() < 0.5 };
+    });
+    var state = {
+      id: 'escape', board: null, turn: 'me', moveCount: 0, over: false, winner: null,
+      heroType: 'k', hero: null, solo: true, checkRules: true, puzzles: puzzles, index: 0, kind: null, solved: false
+    };
+    loadEscape(state);
+    return state;
+  }
+
+  /* After a solved puzzle ('escaped' event), the next one. */
+  function nextPuzzle(state) {
+    if (state.id !== 'escape' || !state.solved || state.over) return false;
+    state.index++;
+    state.solved = false;
+    loadEscape(state);
+    return true;
+  }
+
+  // Escape hint: the piece to move for this puzzle's way out.
+  function escapeHint(state) {
+    var board = state.board;
+    for (var r = 0; r < R.SIZE; r++) {
+      for (var c = 0; c < R.SIZE; c++) {
+        var p = board[r][c];
+        if (!p || p.team !== 'me') continue;
+        var ok = R.legalMoves(board, r, c).some(function (m) {
+          if (state.kind === 'step') return p.type === 'k';
+          if (state.kind === 'capture') return m.capture;
+          return p.type !== 'k' && !m.capture;
+        });
+        if (ok) return [r, c];
+      }
+    }
+    return null;
   }
 
   // ---- shared API ------------------------------------------------------
@@ -683,6 +934,8 @@
     if (id === 'way') return createWay(options, rng);
     if (id === 'stop') return createStop(options, rng);
     if (id === 'safe') return createSafe(options, rng);
+    if (id === 'escape') return createEscape(options, rng);
+    if (id === 'run') return createRun(options, rng);
     throw new Error('Unknown game id: ' + id);
   }
 
@@ -692,7 +945,13 @@
     if (!piece || piece.team !== 'me') return [];
     // Find the way: only the one piece moves; the child's pawns are in the way.
     if (state.heroOnly && (r !== state.hero[0] || c !== state.hero[1])) return [];
-    var moves = R.movesFor(state.board, r, c);
+    if (state.id === 'escape' && state.solved) return [];
+    // The check games use the full rule (never a move that leaves the
+    // child's own king in check); the earlier games keep plain moves, so a
+    // king there may still capture a protected pawn.
+    var moves = state.checkRules ? R.legalMoves(state.board, r, c) : R.movesFor(state.board, r, c);
+    // Run away: never a square where the chaser could capture the piece.
+    if (state.id === 'run') return runSafeMoves(state.board, [r, c]);
     if (state.id === 'safe') {
       var danger = {};
       kingDanger(state.board, r, c).forEach(function (m) { danger[m.r + ',' + m.c] = true; });
@@ -751,6 +1010,24 @@
         state.winner = 'me';
         events.push('reach-won');
       }
+    } else if (state.id === 'run') {
+      state.hero = [to[0], to[1]];
+      state.childMoves++;
+      if ((captured && captured.team === 'foe') || state.childMoves >= RUN_MOVES) {
+        state.over = true;
+        state.winner = 'me';
+        events.push('run-won');
+      }
+    } else if (state.id === 'escape') {
+      if (piece.type === 'k') state.hero = [to[0], to[1]];
+      // Every legal move ends the check.
+      state.solved = true;
+      events.push('escaped');
+      if (state.index === state.puzzles.length - 1) {
+        state.over = true;
+        state.winner = 'me';
+        events.push('escape-won');
+      }
     } else if (state.id === 'chain' || state.id === 'stop') {
       state.hero = [to[0], to[1]];
       if (captured && captured.type === 'p') {
@@ -775,6 +1052,7 @@
     if (state.id === 'race') return botRace(state, rng);
     if (state.id === 'battle') return botBattle(state, rng);
     if (state.id === 'stop') return botStop(state, rng);
+    if (state.id === 'run') return botRun(state, rng);
     return null;
   }
 
@@ -785,6 +1063,8 @@
     if (id === 'chain') return { kind: 'capture-all', target: 'p', count: CHAIN_PAWNS };
     if (id === 'stop') return { kind: 'capture-all', target: 'p', count: STOP_PAWNS };
     if (id === 'hop' || id === 'way' || id === 'safe') return { kind: 'reach-row', row: 0 };
+    if (id === 'escape') return { kind: 'escape-check', count: ESCAPE_KINDS.length };
+    if (id === 'run') return { kind: 'stay-safe', moves: RUN_MOVES };
     return null;
   }
 
@@ -797,8 +1077,13 @@
     nextInChain: nextInChain,
     hint: hint,
     dangerSquares: dangerSquares,
+    nextPuzzle: nextPuzzle,
+    ESCAPE_PUZZLES: ESCAPE_PUZZLES,
+    puzzleBoard: puzzleBoard,
     CHAIN_TYPES: CHAIN_TYPES,
     WAY_TYPES: WAY_TYPES,
+    RUN_CHASER: RUN_CHASER,
+    RUN_MOVES: RUN_MOVES,
     STOP_TYPES: STOP_TYPES
   };
 
