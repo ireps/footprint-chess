@@ -42,6 +42,12 @@
  *              shown). Any other move is taken back: a smaller prize
  *              ('smaller'), a capture that could be captured back ('back',
  *              with the pieces that could do it), or no capture ('none').
+ *   'stale'  - Checkmate, not stalemate (solo): five hand-made puzzles
+ *              with a checkmate in one and a move that looks close but
+ *              leaves the king with no move and no check (stalemate). A
+ *              stalemating move is taken back ('stalemate', with the
+ *              king's square); any other move that is not checkmate is
+ *              taken back as in 'mate'.
  *   'escape' - Get out of check (stage 7, solo): five small puzzles, each
  *              with the child's king in check; any legal move ends the
  *              check (step away, block the line, or capture the attacker).
@@ -705,7 +711,7 @@
     if (state.over) return null;
     if (state.id === 'catch') return catchHint(state);
     if (state.id === 'escape') return state.solved ? null : escapeHint(state);
-    if (state.id === 'mate') return state.solved ? null : mateHint(state, selected);
+    if (state.id === 'mate' || state.id === 'stale') return state.solved ? null : mateHint(state, selected);
     if (state.id === 'mate2') return (state.solved || state.turn !== 'me') ? null : mate2Hint(state, selected);
     if (state.id === 'value') return state.solved ? null : valueHint(state, selected);
     if (state.id === 'run') return runHint(state);
@@ -924,7 +930,7 @@
   }
 
   // The games made of puzzles, one after another (nextPuzzle).
-  var PUZZLE_GAMES = { escape: true, mate: true, mate2: true, value: true };
+  var PUZZLE_GAMES = { escape: true, mate: true, mate2: true, value: true, stale: true };
 
   /* After a solved puzzle ('escaped' event), the next one. */
   function nextPuzzle(state) {
@@ -934,6 +940,7 @@
     if (state.id === 'mate') loadMate(state);
     else if (state.id === 'mate2') loadMate2(state);
     else if (state.id === 'value') loadValue(state);
+    else if (state.id === 'stale') loadStale(state);
     else loadEscape(state);
     return true;
   }
@@ -1226,6 +1233,49 @@
     return { why: 'smaller', back: [] };
   }
 
+  // ---- stale: Checkmate, not stalemate ------------------------------------------
+
+  /* Hand-made, easiest first (notation as in MATE_PUZZLES). In each, the
+   * opponent is not in check, a move gives checkmate, and a move by a piece
+   * other than the king gives stalemate (tests/games.test.js). */
+  var STALE_PUZZLES = [
+    // The queen next to the king, guarded by her king, is checkmate; one
+    // square further along is stalemate.
+    [[0, 0, 'xK'], [2, 2, 'K'], [1, 5, 'q']],
+    // Checkmate beside the king; stalemate on the diagonal in front of him.
+    [[0, 1, 'xK'], [2, 0, 'K'], [5, 5, 'q']],
+    // Checkmate from far along the row; stalemate from close by.
+    [[0, 6, 'xK'], [2, 6, 'K'], [3, 5, 'q']],
+    // The same idea, from the other side of the king.
+    [[0, 7, 'xK'], [2, 6, 'K'], [3, 6, 'q']],
+    // Capturing his last pawn would leave him stuck: the rook checkmates.
+    [[0, 7, 'xK'], [1, 7, 'xP'], [2, 7, 'K'], [2, 1, 'r'], [6, 2, 'b']]
+  ];
+
+  function loadStale(state) {
+    var p = state.puzzles[state.index];
+    state.board = puzzleBoard(STALE_PUZZLES[p.n], p.mirror);
+    state.hero = R.findKing(state.board, 'me');
+    state.turn = 'me';
+  }
+
+  function createStale(options, rng) {
+    var puzzles = STALE_PUZZLES.map(function (list, n) { return { n: n, mirror: rng() < 0.5 }; });
+    var state = {
+      id: 'stale', board: null, turn: 'me', moveCount: 0, over: false, winner: null,
+      heroType: 'q', hero: null, solo: true, checkRules: true, puzzles: puzzles, index: 0, solved: false
+    };
+    loadStale(state);
+    return state;
+  }
+
+  /* Every move that gives stalemate: [{ from, to }]. */
+  function staleMoves(board) {
+    return teamMoves(board, 'me').filter(function (m) {
+      return R.isStalemate(afterMove(board, m.from, m.to), 'foe');
+    });
+  }
+
   // ---- shared API ------------------------------------------------------
 
   function create(id, options, rng) {
@@ -1243,6 +1293,7 @@
     if (id === 'mate') return createMate(options, rng);
     if (id === 'mate2') return createMate2(options, rng);
     if (id === 'value') return createValue(options, rng);
+    if (id === 'stale') return createStale(options, rng);
     if (id === 'run') return createRun(options, rng);
     throw new Error('Unknown game id: ' + id);
   }
@@ -1277,8 +1328,12 @@
     var valid = moves.some(function (m) { return m.r === to[0] && m.c === to[1]; });
     if (!valid) throw new Error('applyMove: illegal move from ' + key(from) + ' to ' + key(to));
 
+    // Checkmate, not stalemate: a stalemate is taken back, with the king.
+    if (state.id === 'stale' && R.isStalemate(afterMove(state.board, from, to), 'foe')) {
+      return { captured: null, events: ['nearly'], reverted: true, why: 'stalemate', escapes: [R.findKing(state.board, 'foe')] };
+    }
     // Checkmate in one: a move that is not checkmate is taken back.
-    if (state.id === 'mate' && !R.isCheckmate(afterMove(state.board, from, to), 'foe')) {
+    if ((state.id === 'mate' || state.id === 'stale') && !R.isCheckmate(afterMove(state.board, from, to), 'foe')) {
       return { captured: null, events: ['nearly'], reverted: true, escapes: kingEscapes(state.board, from, to) };
     }
     // Which capture is best? Anything but the best capture is taken back.
@@ -1350,13 +1405,13 @@
         state.winner = 'me';
         events.push('run-won');
       }
-    } else if (state.id === 'mate') {
+    } else if (state.id === 'mate' || state.id === 'stale') {
       state.solved = true;
       events.push('mated');
       if (state.index === state.puzzles.length - 1) {
         state.over = true;
         state.winner = 'me';
-        events.push('mate-won');
+        events.push(state.id + '-won');
       }
     } else if (state.id === 'value') {
       state.solved = true;
@@ -1434,6 +1489,7 @@
     if (id === 'mate') return { kind: 'checkmate', count: MATE_PUZZLES.length };
     if (id === 'mate2') return { kind: 'checkmate-in-two', count: MATE2_PUZZLES.length };
     if (id === 'value') return { kind: 'best-capture', count: VALUE_PUZZLES.length };
+    if (id === 'stale') return { kind: 'checkmate', count: STALE_PUZZLES.length };
     if (id === 'run') return { kind: 'stay-safe', moves: RUN_MOVES };
     return null;
   }
@@ -1451,6 +1507,8 @@
     ESCAPE_PUZZLES: ESCAPE_PUZZLES,
     MATE_PUZZLES: MATE_PUZZLES,
     MATE2_PUZZLES: MATE2_PUZZLES,
+    STALE_PUZZLES: STALE_PUZZLES,
+    staleMoves: staleMoves,
     VALUE: VALUE,
     VALUE_PUZZLES: VALUE_PUZZLES,
     captureOptions: captureOptions,

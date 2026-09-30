@@ -1426,12 +1426,15 @@ body {
 .game-pic-mini.game-pic-value > svg.pc, .game-pic-mini.game-pic-value .prize-ring svg.pc { width: 30px; height: 30px; }
 .game-pic-mini .prize-ring { border-width: 3px; padding: 2px; }
 .rbtn .game-pic-mini.game-pic-value > svg.pc, .rbtn .game-pic-mini.game-pic-value .prize-ring svg.pc { width: 20px; height: 20px; }
+/* Checkmate, not stalemate: the stuck king's ring is grey and dashed. */
+.stale-ring { border-color: #9aa3bf; border-style: dashed; opacity: 0.8; }
 /* Checkmate in two: the ringed king with a rook and the queen, smaller to fit. */
 .game-pic-mate2 { gap: 2px; }
 .game-pic-mate2 .king-ring { padding: 2px; }
 .game-pic-mate2 .king-ring svg.pc { width: 36px; height: 36px; }
 .game-pic-mate2 > svg.pc, .game-pic-mate2 .king-ring + svg.pc { width: 40px; height: 40px; }
 .game-pic-mini.game-pic-mate2 .king-ring svg.pc, .game-pic-mini.game-pic-mate2 > svg.pc { width: 28px; height: 28px; }
+.game-pic-mate2 .king-ring + svg.pc + .king-ring svg.pc { width: 36px; height: 36px; }
 .rbtn .game-pic-mini.game-pic-mate2 .king-ring svg.pc, .rbtn .game-pic-mini.game-pic-mate2 > svg.pc { width: 18px; height: 18px; }
 .game-pic-mini .safe-king { border-width: 3px; padding: 2px; }
 .game-pic-mini .safe-king svg.pc { width: 34px; height: 34px; }
