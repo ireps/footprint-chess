@@ -1,0 +1,27 @@
+name: An idea
+description: A new game, lesson, theme or improvement.
+labels: [idea]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ideas are welcome. The app follows a few firm rules (real chess words, never left or right, no fail states, no locked levels, nothing sent anywhere): see CONTRIBUTING.md, "Rules for what children see and hear".
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+      description: What would the child see, hear and do?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: What would it teach, or which problem would it solve?
+    validations:
+      required: true
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Would you like to build it?
+      options:
+        - label: I would like to open a pull request for this, after it is agreed here.

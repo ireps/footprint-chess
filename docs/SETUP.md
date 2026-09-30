@@ -10,17 +10,38 @@
 
 The repository includes an empty `.nojekyll` file, so GitHub serves the files as they are, without running Jekyll.
 
-## Repository security settings
+## Repository settings
 
-In **Settings > Code security** (the page name can vary slightly):
+These are changed by the repository owner on GitHub; nothing in the repository can set them.
 
-- **Private vulnerability reporting:** enable. [SECURITY.md](../SECURITY.md) relies on it.
+**Settings > General**
+
+- **Description:** "A chess-learning web app for young children: footprints instead of left and right, animated lessons, no login, works offline." **Website:** the Pages address. **Topics:** chess, education, kids, offline-first, accessibility, telugu.
+- **Features:** Issues on; Wiki off; Discussions optional; Projects off unless used.
+- **Pull Requests:** allow merge commits (and squash merging if wanted); turn on **Always suggest updating pull request branches** and **Automatically delete head branches**.
+
+**Settings > Rules > Rulesets:** add a branch ruleset for `main` (the default branch), enforced, with:
+
+- **Restrict deletions** and **Block force pushes**.
+- **Require a pull request before merging**, with 0 required approvals while there is one maintainer (GitHub does not let authors approve their own pull requests); raise it to 1 when there are co-maintainers. Turn on **Require review from Code Owners** at the same time.
+- **Require status checks to pass**, adding the check **test** (from the Tests workflow, `.github/workflows/test.yml`; it appears in the list after the workflow has run once).
+
+**Settings > Actions > General**
+
+- **Actions permissions:** allow actions created by GitHub only (the workflow uses `actions/checkout` and `actions/setup-node`).
+- **Approval for running fork pull request workflows:** require approval for first-time contributors.
+- **Workflow permissions:** read repository contents permission (the default for new repositories); leave "Allow GitHub Actions to create and approve pull requests" off.
+
+**Settings > Code security**
+
+- **Private vulnerability reporting:** enable. [SECURITY.md](../SECURITY.md) and [CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md) rely on it.
 - **Secret scanning** and **Push protection:** enable. Both are free for public repositories.
-- **Dependabot alerts:** optional. The project has no dependencies.
+- **Code scanning:** set up CodeQL with the default setup (JavaScript).
+- **Dependabot:** alerts are optional (the app has no dependencies); version updates can keep the workflow's actions current.
 
-In **Settings > Rules > Rulesets** (optional): add a ruleset for `main` that blocks force pushes and branch deletion.
+**Settings > Pages:** deploy from the `main` branch, folder `/ (root)`, with **Enforce HTTPS** on (see above).
 
-For the GitHub account that owns the repository: turn on two-factor authentication.
+**The owner's account:** two-factor authentication on, and **Keep my email addresses private** on (in the account's email settings), with git set to use the GitHub no-reply address for new commits.
 
 ## Check the tablet
 

@@ -61,12 +61,9 @@ Castling, en passant and promotion are in `js/rules.js` (stage 8) through `fullM
 ## Workflow
 
 - Plan each stage before coding and get the owner's approval. Build in stages; after each one, the owner tests on the tablet and with the child, and that feedback shapes the next stage.
-- Before every commit, run `node --test`. All tests must pass.
-- Before every commit, run these checks:
-  - `grep -nE "innerHTML|outerHTML|insertAdjacentHTML|document\.write|\beval\(|new Function" js/*.js *.html` must find nothing.
-  - `grep -nE "\?\.|\?\?" js/*.js` must find nothing.
-  - Confirm the ES2017 parse still succeeds (acorn with `ecmaVersion: 2017`, if available), for `js/*.js` and `sw.js`.
-  - After changing any page, style, script or voice clip, run `node tools/make-offline.js` (rewrites the offline file list and version in `sw.js`; `tests/offline.test.js` fails until it is run).
+- After changing any page, style, script or voice clip, run `node tools/make-offline.js` (rewrites the offline file list and version in `sw.js`; `tests/offline.test.js` fails until it is run).
+- Before every commit, run `npm test` (`node --test`, then `node tools/check.js`). All tests and checks must pass. `tools/check.js` covers: no `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write`, `eval(` or `new Function`; no `?.` or `??`; the CSP `<meta>` first in `<head>` with no unsafe values; no inline scripts, handlers or style attributes; the ES2017 parse of `js/*.js` and `sw.js` (needs acorn: `npm install --no-save acorn`, required in CI); and `sw.js` up to date. The same runs on every pull request (`.github/workflows/test.yml`).
+- Contributor-facing rules live in CONTRIBUTING.md; keep it in step with the design decisions above.
 - For UI changes, review screenshots in headless Chromium (Playwright) at 1280x800 and 800x1280 with touch enabled. Check for console errors and CSP violations, and play through a round.
 - The owner prefers cost-effective model use: a stronger model for planning and review, a cheaper one for routine implementation.
 
