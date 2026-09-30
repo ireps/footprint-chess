@@ -108,6 +108,14 @@
       cage.appendChild(B.pieceSvg('k', 'foe'));
       pic.appendChild(cage);
       pic.appendChild(B.pieceSvg('q', 'me'));
+    } else if (id === 'mate2') {
+      // The opponent king in a red ring, a rook and the queen beside him.
+      pic.classList.add('game-pic-mate2');
+      var cage2 = el('div', 'king-ring');
+      cage2.appendChild(B.pieceSvg('k', 'foe'));
+      pic.appendChild(cage2);
+      pic.appendChild(B.pieceSvg('r', 'me'));
+      pic.appendChild(B.pieceSvg('q', 'me'));
     } else if (id === 'escape') {
       // An opponent rook, a red line of danger, the child's king.
       var stack4 = el('div', 'game-pic-stack game-pic-tight game-pic-check');

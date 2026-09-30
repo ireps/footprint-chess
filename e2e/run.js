@@ -13,7 +13,9 @@
  *     "watch how to play" scene (js/games-how.js, watched to its end),
  *     until the child's turn begins;
  *   - the pawn battle played to its Won card (the child follows the app's
- *     own hints; js/army.js decides the moves from what is on the board).
+ *     own hints; js/army.js decides the moves from what is on the board);
+ *   - Checkmate in two played to its Won card, with one wrong first move
+ *     taken back.
  *
  * Needs Playwright, which is not a dependency of the app:
  *   npm install --no-save playwright@1.56.1 && npx playwright install chromium
@@ -31,6 +33,7 @@ const path = require('path');
 const { chromium } = require('playwright');
 const R = require('../js/rules.js');
 const A = require('../js/army.js');
+const G = require('../js/games.js');
 
 const ROOT = path.join(__dirname, '..');
 const OUT = path.join(__dirname, 'output');
@@ -205,6 +208,55 @@ async function testPawnBattle() {
   await done(page, name);
 }
 
+/* Checkmate in two, played to its Won card: in the first puzzle a wrong
+ * first move is taken back, then every puzzle is solved (check, the other
+ * side's answer, checkmate). */
+async function testMateInTwo() {
+  const name = 'checkmate in two to the Won card';
+  const page = await newPage(LANDSCAPE);
+  await page.click('.games-entry');
+  await page.click('.game-card[aria-label="Checkmate in two"]');
+  if (!(await reachTurn(page, name))) { await done(page, name); return; }
+  let tried = false;
+  for (let move = 0; move < 40; move++) {
+    for (let w = 0; w < 240 && (await modeText(page)) !== 'Your turn!' && !(await page.$('#card .rbtn-home')); w++) await page.waitForTimeout(250);
+    if (await page.$('#card .rbtn-home')) break;
+    await page.waitForTimeout(300);
+    const board = await readBoard(page);
+    // Checkmate already on the board (the solved line, then the next puzzle
+    // or the Won card, are on their way), or check (the other side is
+    // about to answer): wait.
+    if (R.inCheck(board, 'foe')) { await page.waitForTimeout(1000); continue; }
+    // Before the check: a first move of a checkmate in two; after the
+    // answer: the checkmate.
+    let list = G.mateMoves(board);
+    if (!list.length) list = G.mateInTwoMoves(board);
+    if (!list.length) { await fail(page, name, 'no move found'); break; }
+    let mv = list[0];
+    if (!tried && G.mateMoves(board).length === 0) {
+      // A legal first move that does not lead to checkmate goes back.
+      tried = true;
+      const wrong = G.legalMoves({ id: 'x', board, turn: 'me', over: false, checkRules: true }, mv.from[0], mv.from[1])
+        .find(m => !list.some(k => k.to[0] === m.r && k.to[1] === m.c));
+      if (wrong) {
+        await tapSquare(page, mv.from[0], mv.from[1]);
+        await page.waitForTimeout(250);
+        await tapSquare(page, wrong.r, wrong.c);
+        await page.waitForTimeout(2500);
+        const after = await readBoard(page);
+        if (JSON.stringify(after) !== JSON.stringify(board)) { await fail(page, name, 'a wrong first move stayed on the board'); break; }
+      }
+    }
+    await tapSquare(page, mv.from[0], mv.from[1]);
+    await page.waitForTimeout(250);
+    await tapSquare(page, mv.to[0], mv.to[1]);
+    await page.waitForTimeout(1500);
+  }
+  for (let w = 0; w < 80 && !(await page.$('#card .rbtn-home')); w++) await page.waitForTimeout(250);
+  if (!(await page.$('#card .rbtn-home'))) await fail(page, name, 'the Won card never showed');
+  await done(page, name);
+}
+
 async function main() {
   const server = await serve();
   base = 'http://127.0.0.1:' + server.address().port;
@@ -213,7 +265,8 @@ async function main() {
     await testScreens();
     const n = await testEveryGame();
     await testPawnBattle();
-    console.log('Browser tests: home and Games screen at both sizes, ' + n + ' games through their scenes to the first turn, the pawn battle to its Won card.');
+    await testMateInTwo();
+    console.log('Browser tests: home and Games screen at both sizes, ' + n + ' games through their scenes to the first turn, the pawn battle and Checkmate in two to their Won cards.');
   } finally {
     await browser.close();
     server.close();

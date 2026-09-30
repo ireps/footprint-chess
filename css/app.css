@@ -1418,6 +1418,13 @@ body {
 .game-pic-mini .king-ring { border-width: 3px; padding: 2px; }
 .game-pic-mini .king-ring svg.pc, .game-pic-mini .king-ring + svg.pc { width: 32px; height: 32px; }
 .rbtn .game-pic-mini .king-ring svg.pc, .rbtn .game-pic-mini .king-ring + svg.pc { width: 20px; height: 20px; }
+/* Checkmate in two: the ringed king with a rook and the queen, smaller to fit. */
+.game-pic-mate2 { gap: 2px; }
+.game-pic-mate2 .king-ring { padding: 2px; }
+.game-pic-mate2 .king-ring svg.pc { width: 36px; height: 36px; }
+.game-pic-mate2 > svg.pc, .game-pic-mate2 .king-ring + svg.pc { width: 40px; height: 40px; }
+.game-pic-mini.game-pic-mate2 .king-ring svg.pc, .game-pic-mini.game-pic-mate2 > svg.pc { width: 28px; height: 28px; }
+.rbtn .game-pic-mini.game-pic-mate2 .king-ring svg.pc, .rbtn .game-pic-mini.game-pic-mate2 > svg.pc { width: 18px; height: 18px; }
 .game-pic-mini .safe-king { border-width: 3px; padding: 2px; }
 .game-pic-mini .safe-king svg.pc { width: 34px; height: 34px; }
 .rbtn .game-pic-mini .safe-king svg.pc { width: 22px; height: 22px; }
