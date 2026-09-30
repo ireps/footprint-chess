@@ -1858,6 +1858,10 @@
    * its rule. Skip ends either at once.
    * ===================================================================*/
 
+  // Every pause in a scene is this much longer than the scene asks for:
+  // the owner found the scenes too fast for the child to follow.
+  var SCENE_PACE = 1.4;
+
   // lead: the line said first ('tip-look' after a win, 'how-look' before
   // a "watch how to play" scene).
   function playTip(tip, done, lead) {
@@ -1896,10 +1900,11 @@
     tipDone = finish;
     var ctx = {
       alive: alive,
-      // Runs fn after ms, unless the tip was skipped or ended. Pacing, so
-      // reduced motion must not shorten it.
-      after: function (ms, fn) { B.wait(function () { if (alive()) fn(); }, ms); },
-      end: function () { ctx.after(700, finish); },
+      // Runs fn after ms (times SCENE_PACE, so a young child can follow),
+      // unless the tip was skipped or ended. Pacing, so reduced motion must
+      // not shorten it.
+      after: function (ms, fn) { B.wait(function () { if (alive()) fn(); }, ms * SCENE_PACE); },
+      end: function () { ctx.after(1000, finish); },
       showPond: showPondStrip
     };
     V.say(lead, function () {

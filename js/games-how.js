@@ -48,6 +48,17 @@
 
   function key(r, c) { return r + ',' + c; }
 
+  // Scene pacing, so a young child can follow every move: pieces move at
+  // the board's slow pace, each landing is held for LAND_PAUSE before the
+  // scene goes on, and a scene showing several examples rests
+  // EXAMPLE_PAUSE on the result of each before clearing it for the next.
+  var LAND_PAUSE = 700;
+  var EXAMPLE_PAUSE = 1600;
+
+  function move(node, type, from, to, done) {
+    B.moveHero(node, type, from, to, done, { slow: true });
+  }
+
   function ruleTipFallback(ctx) { ctx.end(); }
 
   // Calls fn once both the line and the scene are done.
@@ -80,7 +91,7 @@
   function tipMove(ctx, board, node, from, to, items, done) {
     B.hideFootprints(items || {});
     var type = board[from[0]][from[1]].type;
-    B.moveHero(node, type, from, to, function () {
+    move(node, type, from, to, function () {
       if (!ctx.alive()) return;
       var k = key(to[0], to[1]);
       if (items && items[k]) {
@@ -90,7 +101,8 @@
       }
       board[to[0]][to[1]] = board[from[0]][from[1]];
       board[from[0]][from[1]] = null;
-      done();
+      // Hold the landing so the child sees where the piece went.
+      ctx.after(LAND_PAUSE, done);
     });
   }
 
@@ -141,7 +153,7 @@
             // The knight hops onto one of them...
             var knight = items['3,4'];
             delete items['3,4'];
-            B.moveHero(knight, 'n', [3, 4], [4, 2], function () {
+            move(knight, 'n', [3, 4], [4, 2], function () {
               if (!ctx.alive()) return;
               board[4][2] = board[3][4];
               board[3][4] = null;
@@ -174,7 +186,7 @@
       B.glow([[5, 3]], SAFE);
       ctx.after(2200, function () {
         B.glow([]);
-        B.moveHero(foe, 'p', [4, 2], [5, 3], function () {
+        move(foe, 'p', [4, 2], [5, 3], function () {
           if (!ctx.alive()) return;
           B.poof(mine['5,3']);
           board[5][3] = board[4][2];
@@ -423,7 +435,7 @@
         king.classList.remove('selected');
         B.hideFootprints({});
         // The king and the rook move together.
-        B.moveHero(mine['7,7'], 'r', [7, 7], [7, 5], function () {});
+        move(mine['7,7'], 'r', [7, 7], [7, 5], function () {});
         tipMove(ctx, board, king, [7, 4], [7, 6], null, function () {
           board[7][5] = board[7][7];
           board[7][7] = null;
@@ -659,7 +671,7 @@
         ctx.after(2200, function () {
           B.glow([]);
           B.hideFootprints({});
-          B.moveHero(pawn, 'p', [2, 3], [3, 3], function () { if (ctx.alive()) done(); });
+          move(pawn, 'p', [2, 3], [3, 3], function () { if (ctx.alive()) done(); });
         });
       });
     },
@@ -755,7 +767,7 @@
       });
       ctx.after(300 + row.length * 450, function () {
         B.glow([[3, 5]]);
-        ctx.after(900, next);
+        ctx.after(EXAMPLE_PAUSE, next);
       });
     },
     // The queen steps close to the king: he has no move but is not in
@@ -780,9 +792,10 @@
           B.glow([king], DANGER);
           V.say('stale-oops', function () {
             if (!ctx.alive()) return;
+            ctx.after(EXAMPLE_PAUSE, function () {
             B.glow([]);
             tipMove(ctx, board, queen, stale.to, stale.from, null, function () {
-              ctx.after(500, function () {
+              ctx.after(EXAMPLE_PAUSE, function () {
                 tipMove(ctx, board, queen, mate.from, mate.to, null, function () {
                   var cage = [];
                   for (var dr = -1; dr <= 1; dr++) {
@@ -791,9 +804,10 @@
                     }
                   }
                   B.glow(cage, DANGER);
-                  V.say('mate-3', function () { if (ctx.alive()) ctx.after(600, ctx.end); });
+                  V.say('mate-3', function () { if (ctx.alive()) ctx.after(1200, ctx.end); });
                 });
               });
+            });
             });
           });
         });
@@ -834,15 +848,15 @@
         delete nodes[key(from[0], from[1])];
         nodes[key(to[0], to[1])] = node;
         B.glow([from]);
-        ctx.after(500, function () {
+        ctx.after(900, function () {
           B.glow([]);
           tipMove(ctx, board, node, from, to, null, function () {
             if (i === steps.length - 1) {
               // Castling: the rook comes round beside the king.
               var rook = nodes['7,7'];
-              tipMove(ctx, board, rook, [7, 7], [7, 5], null, function () { ctx.after(600, function () { play(i + 1); }); });
+              tipMove(ctx, board, rook, [7, 7], [7, 5], null, function () { ctx.after(EXAMPLE_PAUSE, function () { play(i + 1); }); });
             } else {
-              ctx.after(600, function () { play(i + 1); });
+              ctx.after(900, function () { play(i + 1); });
             }
           });
         });
@@ -917,10 +931,14 @@
         B.glow(Object.keys(items).map(function (k) { return k.split(',').map(Number); }).filter(function (sq) {
           return R.attacks(board, sq[0], sq[1]).some(function (a) { return a[0] === king[0] && a[1] === king[1]; });
         }), DANGER);
-        ctx.after(600, function () {
+        ctx.after(1400, function () {
           B.glow([]);
           tipMove(ctx, board, nodes[key(sc.from[0], sc.from[1])], sc.from, sc.to, items, function () {
-            ctx.after(Math.max(300, step - 1400), function () { play(i + 1); });
+            // Rest on the result, then an empty board before the next way.
+            ctx.after(Math.max(EXAMPLE_PAUSE, step - 1400), function () {
+              B.clearAll();
+              ctx.after(500, function () { play(i + 1); });
+            });
           });
         });
       }
@@ -930,7 +948,7 @@
     // footprints, in time with the line.
     whose: function (ctx, line) {
       var at = [3, 3];
-      var step = Math.max(1500, Math.round(LS.LINES[line].ms / 3));
+      var step = Math.max(2800, Math.round(LS.LINES[line].ms / 3));
       var done = join(2, ctx.end);
       V.say(line, function () { if (ctx.alive()) done(); });
       var types = ['r', 'b', 'q'];
@@ -941,7 +959,10 @@
         board[at[0]][at[1]] = { type: types[i], team: 'me' };
         tipPiece(types[i], at[0], at[1]);
         tipPrints(board, at, {});
-        ctx.after(step, function () { show(i + 1); });
+        ctx.after(step, function () {
+          B.clearAll();
+          ctx.after(600, function () { show(i + 1); });
+        });
       }
       show(0);
     }
