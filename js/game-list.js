@@ -69,7 +69,8 @@
     { id: 'army3', row: 'army', mission: 'game-army3', win: 'army-won', tip: 'tip-army3', teams: true, kind: 'board' },
     { id: 'army4', row: 'army', mission: 'game-army4', win: 'army-won', tip: 'tip-army4', teams: true, kind: 'board' },
     { id: 'army5', row: 'army', mission: 'game-army5', win: 'army-won', tip: 'tip-army5', teams: true, kind: 'board' },
-    { id: 'army6', row: 'army', mission: 'game-army6', win: 'army-mate-won', tip: 'tip-army6', teams: true, kind: 'board' }
+    { id: 'army6', row: 'army', mission: 'game-army6', win: 'army-mate-won', tip: 'tip-army6', teams: true, kind: 'board' },
+    { id: 'army7', row: 'army', mission: 'game-army7', win: 'army-mate-won', tip: 'tip-army7', teams: true, kind: 'board' }
   ];
 
   // Winning this many different games in a theme, for the first time,

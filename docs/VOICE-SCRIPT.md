@@ -205,6 +205,13 @@ naming a direction.
 | army-how-1 | Check! Their bishop could capture your king. | చెక్! శత్రువు ఒంటె నీ రాజుని పట్టుకోగలదు. | A little urgent; the bishop's line to the king glows red. |
 | army-how-2 | Your pawn steps in the way. Your king is safe again. | నీ భటుడు దారికి అడ్డం వచ్చాడు. నీ రాజు మళ్ళీ క్షేమం. | Relieved; the pawn steps into the line. |
 | army-how-3 | Now your queen and rook work together to trap their king. | ఇప్పుడు నీ మంత్రి, ఏనుగు కలిసి శత్రువు రాజుని బంధిస్తాయి. | Clever teamwork; the rook moves first, then the queen. |
+| game-army7 | The full game! Every rule of chess. Checkmate their king to win. | పూర్తి ఆట! చదరంగంలోని ప్రతి నియమం. శత్రువు రాజుకి చెక్‌మేట్ పెట్టి గెలువు. | Grand and proud, the top of the ladder; states the goal on the Mission card. |
+| tip-army7 | Castling: the king steps two squares, and the rook jumps beside him! | క్యాస్లింగ్: రాజు రెండు గడులు కదులుతాడు, ఏనుగు అతని పక్కకి దూకుతుంది! | Clear and a little magical, in time with the king and rook moving together. |
+| army-castle | Castling! The king and rook moved together. | క్యాస్లింగ్! రాజు, ఏనుగు కలిసి కదిలారు. | Bright; said whenever either side castles. |
+| army-passant | En passant! A pawn captured the pawn that rushed past it. | ఆన్ పసాంట్! పక్క నుంచి దూసుకెళ్ళిన భటుడిని ఇంకో భటుడు పట్టుకున్నాడు. | Surprised and delighted by a rare rule; said whenever either side captures en passant. |
+| army-foe-queen | Their pawn reached your side. Now it is a queen! | శత్రువు భటుడు నీ వైపుకి చేరాడు. ఇప్పుడు అది మంత్రి! | Calm, a fact not a threat; the opponent's pawn turns into a queen. |
+| army-draw-kings | Only the two kings remain. Nobody wins this time. | ఇద్దరు రాజులే మిగిలారు. ఈసారి ఎవరూ గెలవలేదు. | Calm and kind; a game that ends with nobody winning. |
+| army-undo | Taken back. Try another move! | వెనక్కి తీసుకున్నాం. ఇంకో ఎత్తు వేసి చూడు! | Warm and encouraging, never "wrong"; said after the Undo button. |
 
 ## How the owner makes the clips
 

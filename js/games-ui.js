@@ -97,7 +97,8 @@
     gamesHome: byId('games-home'),
     stickerRow: byId('sticker-row'),
     jarFill: byId('game-jar-fill'),
-    toolSkip: byId('tool-skip')
+    toolSkip: byId('tool-skip'),
+    toolUndo: byId('tool-undo')
   };
 
   /* ---------- module state ---------- */
@@ -278,7 +279,14 @@
       var types = A.level(id).types.slice().reverse().slice(0, 3);
       if (types.length === 1) types = ['p', 'p', 'p'];
       pic.classList.add('game-pic-3');
-      types.forEach(function (t) { pic.appendChild(B.pieceSvg(t, 'me')); });
+      if (A.level(id).full) {
+        // The full game: both kings, with the queen between them.
+        pic.appendChild(B.pieceSvg('k', 'me'));
+        pic.appendChild(B.pieceSvg('q', 'me'));
+        pic.appendChild(B.pieceSvg('k', 'foe'));
+      } else {
+        types.forEach(function (t) { pic.appendChild(B.pieceSvg(t, 'me')); });
+      }
     } else if (id === 'whose') {
       pic.appendChild(buildWhoseMark());
       pic.appendChild(B.pieceSvg('n', 'me'));
@@ -779,6 +787,7 @@
     setPanel(gameId);
     if (!prepared) prepareGame();
     prepared = false;
+    updateUndo();
     if (gstate.turn === 'me') {
       B.setMode('play', modeTextPlay());
       S.play('your-turn');
@@ -940,6 +949,7 @@
 
   function doChildMove(from, mv) {
     busy = true;
+    updateUndo();
     B.glow([]);
     var node = pieceNodes[key(from[0], from[1])];
     node.classList.remove('selected');
@@ -1003,16 +1013,39 @@
   function commitMove(node, from, to, res, isChild) {
     var fk = key(from[0], from[1]);
     var tk = key(to[0], to[1]);
-    var goldenCaptured = !!res.captured && goldenKey === tk;
+    // En passant captures a pawn beside the landing square.
+    var ck = res.capturedAt ? key(res.capturedAt[0], res.capturedAt[1]) : tk;
+    var goldenCaptured = !!res.captured && goldenKey === ck;
     if (goldenKey === fk) goldenKey = tk; // the golden piece itself just moved
     if (goldenCaptured) goldenKey = null;
 
     delete pieceNodes[fk];
     if (res.captured) {
-      var capNode = pieceNodes[tk];
+      var capNode = pieceNodes[ck];
       if (capNode && capNode !== node) B.poof(capNode);
+      delete pieceNodes[ck];
     }
     pieceNodes[tk] = node;
+    if (res.rook) {
+      // Castling: the rook moves beside the king.
+      var rk = key(res.rook.from[0], res.rook.from[1]);
+      var rookNode = pieceNodes[rk];
+      delete pieceNodes[rk];
+      if (rookNode) {
+        pieceNodes[key(res.rook.to[0], res.rook.to[1])] = rookNode;
+        B.moveHero(rookNode, 'r', res.rook.from, res.rook.to, function () {});
+      }
+      V.sayAfter('army-castle');
+    }
+    if ((res.events || []).indexOf('passant') !== -1) V.sayAfter('army-passant');
+    if ((res.events || []).indexOf('foe-promoted') !== -1) {
+      // The other side's pawn on the child's side becomes a queen.
+      var foeQueen = B.addItem(to[0], to[1], 'q', foePieceSide());
+      node.remove();
+      node = foeQueen;
+      pieceNodes[tk] = foeQueen;
+      V.sayAfter('army-foe-queen');
+    }
     if ((res.events || []).indexOf('promoted') !== -1) {
       // The pawn on the other side becomes a queen.
       var queen = B.addPiece('q', to[0], to[1], childPieceSide());
@@ -1050,6 +1083,7 @@
       B.setMode('play', modeTextPlay());
       S.play('your-turn');
       V.sayAfter('turn-me');
+      updateUndo();
       if (gstate.army) {
         // A piece newly in danger: its red ring, and the warning once. In
         // check, the check line instead.
@@ -1074,6 +1108,45 @@
   // a red ring. Added to whatever else glows. fresh: work the danger out
   // again (after a move); otherwise the squares from the start of this
   // turn are reused, since nothing has moved.
+  // The Undo button (the growing battle): shown on the child's turn once
+  // they have a move to take back.
+  function updateUndo() {
+    if (!dom.toolUndo) return;
+    dom.toolUndo.hidden = !(gmode === 'play' && gstate && gstate.army && !busy && A.canUndo(gstate));
+  }
+
+  // Takes back the child's last move and the other side's reply, and sets
+  // the board up again.
+  function onUndo() {
+    S.unlock();
+    if (gmode !== 'play' || !gstate || !gstate.army || busy || !A.canUndo(gstate)) {
+      B.nudgeMode();
+      return;
+    }
+    A.undo(gstate);
+    gameToken += 1;
+    clearIdle();
+    selected = null;
+    moves = [];
+    B.hideFootprints(pieceNodes);
+    B.hideHand();
+    B.clearAll();
+    // The golden pawn stays golden only if it is still where it was.
+    if (goldenKey) {
+      var gp = gstate.board[+goldenKey.split(',')[0]][+goldenKey.split(',')[1]];
+      if (!gp || gp.team !== 'foe' || gp.type !== 'p') goldenKey = null;
+    }
+    renderGame();
+    B.glow([]);
+    armyHelp(true);
+    B.setActiveTeamBar('home');
+    B.setMode('play', modeTextPlay());
+    S.play('your-turn');
+    V.say('army-undo', function () {});
+    updateUndo();
+    armIdle();
+  }
+
   function armyHelp(fresh) {
     if (!gstate || !gstate.army) return;
     if (gstate.lastFoe) B.glowAdd([gstate.lastFoe.from, gstate.lastFoe.to], LAST_MOVE);
@@ -1169,6 +1242,7 @@
       var mv = G.botMove(gstate, Math.random);
       if (!mv) {
         gstate.turn = 'me';
+        updateUndo();
         B.setActiveTeamBar('home');
         B.setMode('play', modeTextPlay());
         S.play('your-turn');
@@ -1181,7 +1255,7 @@
       var type = gstate.board[mv.to[0]][mv.to[1]].type;
       B.moveHero(node, type, mv.from, mv.to, function () {
         if (myToken !== gameToken || !gstate) return;
-        commitMove(node, mv.from, mv.to, { captured: mv.captured, events: mv.events }, false);
+        commitMove(node, mv.from, mv.to, { captured: mv.captured, capturedAt: mv.capturedAt, rook: mv.rook, events: mv.events }, false);
       });
     }, 600 + Math.floor(Math.random() * 300));
   }
@@ -1195,6 +1269,7 @@
 
   function onGameOver() {
     clearIdle();
+    updateUndo();
     resetStreak();
     B.hideFootprints(pieceNodes);
     B.hideHand();
@@ -1203,7 +1278,7 @@
     if (isDraw()) {
       // A calm ending: no win sound, no confetti, not counted as a win.
       var drawToken = gameToken;
-      V.sayAfter('army-draw', function () {
+      V.sayAfter(gstate.drawReason === 'kings' ? 'army-draw-kings' : 'army-draw', function () {
         if (drawToken === gameToken) showGameWonOrBreak();
       });
       return;
@@ -1912,6 +1987,7 @@
     B.setMode('watch', modeTextWatch());
     S.play('watch');
     if (dom.toolSkip) dom.toolSkip.hidden = false;
+    if (dom.toolUndo) dom.toolUndo.hidden = true;
     gameToken += 1;
     var myToken = gameToken;
     var finished = false;
@@ -2293,6 +2369,50 @@
           });
         });
       }
+    },
+    // The full game: castling (the king steps two squares and the rook
+    // jumps beside him), then a pawn reaching the other side becomes a
+    // queen.
+    army7: function (ctx, line) {
+      var board = R.emptyBoard();
+      var mine = {};
+      function put(list, team) {
+        list.forEach(function (x) {
+          board[x[0]][x[1]] = { type: x[2], team: team };
+          var n = team === 'me' ? tipPiece(x[2], x[0], x[1]) : tipFoe(x[2], x[0], x[1]);
+          if (team === 'me') mine[key(x[0], x[1])] = n;
+        });
+      }
+      put([[7, 4, 'k'], [7, 7, 'r'], [7, 0, 'r'], [7, 2, 'b'], [6, 0, 'p'], [6, 1, 'p'], [6, 5, 'p'], [6, 6, 'p'], [6, 7, 'p'], [5, 5, 'n'], [1, 2, 'p']], 'me');
+      put([[0, 4, 'k'], [1, 5, 'p'], [1, 6, 'p'], [2, 0, 'p'], [0, 7, 'r']], 'foe');
+      var king = mine['7,4'];
+      king.classList.add('selected');
+      B.showFootprints('k', [7, 4], R.fullMoves(board, 7, 4, R.newInfo()), {});
+      B.glow([[7, 6]]);
+      V.say(line, function () {
+        if (!ctx.alive()) return;
+        B.glow([]);
+        king.classList.remove('selected');
+        B.hideFootprints({});
+        // The king and the rook move together.
+        B.moveHero(mine['7,7'], 'r', [7, 7], [7, 5], function () {});
+        tipMove(ctx, board, king, [7, 4], [7, 6], null, function () {
+          board[7][5] = board[7][7];
+          board[7][7] = null;
+          V.say('army-castle', function () {
+            if (!ctx.alive()) return;
+            // A pawn on the other side becomes a queen.
+            var pawn = mine['1,2'];
+            tipMove(ctx, board, pawn, [1, 2], [0, 2], null, function () {
+              var queen = B.addPiece('q', 0, 2, childPieceSide());
+              B.replay(queen, 'enter');
+              B.sparkle(0, 2, 0);
+              pawn.remove();
+              V.say('army-queen', function () { if (ctx.alive()) ctx.end(); });
+            });
+          });
+        });
+      });
     },
     // The pawn's first step: two squares.
     race: function (ctx, line) {
@@ -2821,6 +2941,7 @@
     B.hideHand();
     B.hideTeamBars();
     if (dom.toolSkip) dom.toolSkip.hidden = true;
+    if (dom.toolUndo) dom.toolUndo.hidden = true;
     active = false;
     gmode = 'none';
     gameId = null;
@@ -2885,6 +3006,10 @@
     if (dom.gamesHome) {
       dom.gamesHome.appendChild(B.svgUse('house'));
       dom.gamesHome.addEventListener('click', function () { S.unlock(); FC.app.goHome(); });
+    }
+    if (dom.toolUndo) {
+      dom.toolUndo.appendChild(B.svgUse('ic-undo'));
+      dom.toolUndo.addEventListener('click', onUndo);
     }
     renderHomeGames();
     onProfileChange();

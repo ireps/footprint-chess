@@ -11,7 +11,12 @@
  * checkmate and stalemate, and legal moves that never leave a team's own
  * king in check (stage 7). A board without a king for a team (every game
  * before stage 7) is never in check, so legalMoves equals movesFor there.
- * Not implemented: castling, en passant, promotion.
+ * The full game (stage 8): castling, en passant and promotion (always to a
+ * queen), through fullMoves and playMove, which need a little more than
+ * the board: `info` (newInfo) remembers which kings and rooks have moved
+ * and the square an en passant capture could land on. movesFor and
+ * legalMoves never include these special moves, so every earlier game
+ * keeps plain moves.
  *
  * Classic script: exposes window.FC.rules in the browser and module.exports in Node.
  * Keep to ES2017 syntax (see README, "Browser support and coding rules").
@@ -218,6 +223,136 @@
     return !!findKing(board, team) && !inCheck(board, team) && !hasLegalMove(board, team);
   }
 
+  /* ---------- the full game: castling, en passant, promotion ---------- */
+
+  // Castling sides, from each team's own home row: 'k' is the side of the
+  // board's column 7 (the king's rook, two squares away), 'q' column 0.
+  function homeRow(team) { return team === 'me' ? 7 : 0; }
+
+  /* What the board alone does not show: who may still castle, and the
+   * square an en passant capture could land on (or null). */
+  function newInfo() {
+    return { castle: { me: { k: true, q: true }, foe: { k: true, q: true } }, ep: null };
+  }
+
+  function cloneInfo(info) {
+    return {
+      castle: {
+        me: { k: info.castle.me.k, q: info.castle.me.q },
+        foe: { k: info.castle.foe.k, q: info.castle.foe.q }
+      },
+      ep: info.ep ? info.ep.slice() : null
+    };
+  }
+
+  /* The castling and en passant moves of the piece on (r, c), each legal:
+   * [{ r, c, capture, castle: 'k'|'q' }] or [{ r, c, capture: true, ep: true }]. */
+  function specialMoves(board, r, c, info) {
+    var piece = board[r][c];
+    var out = [];
+    if (!piece || !info) return out;
+    var team = piece.team;
+    var foe = otherTeam(team);
+    if (piece.type === 'k' && r === homeRow(team) && c === 4 && !inCheck(board, team)) {
+      var rights = info.castle[team];
+      var attacked = attackedSquares(board, foe);
+      [['k', 7, [5, 6], 6], ['q', 0, [3, 2, 1], 2]].forEach(function (side) {
+        if (!rights[side[0]]) return;
+        var rook = board[r][side[1]];
+        if (!rook || rook.type !== 'r' || rook.team !== team) return;
+        if (side[2].some(function (col) { return board[r][col]; })) return;
+        // The king may not pass through or land on a watched square.
+        var path = side[0] === 'k' ? [5, 6] : [3, 2];
+        if (path.some(function (col) { return attacked[r + ',' + col]; })) return;
+        out.push({ r: r, c: side[3], capture: false, castle: side[0] });
+      });
+    }
+    if (piece.type === 'p' && info.ep) {
+      var dir = team === 'me' ? -1 : 1;
+      var ep = info.ep;
+      if (ep[0] === r + dir && Math.abs(ep[1] - c) === 1) {
+        var victim = board[r][ep[1]];
+        if (victim && victim.type === 'p' && victim.team === foe && !board[ep[0]][ep[1]]) {
+          var next = playMove(board, [r, c], ep, info).board;
+          if (!inCheck(next, team)) out.push({ r: ep[0], c: ep[1], capture: true, ep: true });
+        }
+      }
+    }
+    return out;
+  }
+
+  /* Every legal move of the piece on (r, c) in the full game. */
+  function fullMoves(board, r, c, info) {
+    return legalMoves(board, r, c).concat(specialMoves(board, r, c, info));
+  }
+
+  /*
+   * Plays a move of the full game (not checked for legality). Returns
+   * { board, info, captured, capturedAt, rook, promoted, ep }: the new
+   * board and info, the captured piece and its square (en passant captures
+   * a pawn beside the landing square), the castling rook's { from, to },
+   * and whether a pawn became a queen.
+   */
+  function playMove(board, from, to, info) {
+    var next = cloneBoard(board);
+    var nextInfo = info ? cloneInfo(info) : newInfo();
+    var piece = next[from[0]][from[1]];
+    var out = { board: next, info: nextInfo, captured: null, capturedAt: null, rook: null, promoted: false, ep: false };
+    if (!piece) return out;
+    var team = piece.team;
+    if (next[to[0]][to[1]]) {
+      out.captured = next[to[0]][to[1]];
+      out.capturedAt = to.slice();
+    }
+    if (piece.type === 'p' && info && info.ep && to[0] === info.ep[0] && to[1] === info.ep[1] && from[1] !== to[1] && !out.captured) {
+      out.captured = next[from[0]][to[1]];
+      out.capturedAt = [from[0], to[1]];
+      next[from[0]][to[1]] = null;
+      out.ep = true;
+    }
+    next[to[0]][to[1]] = piece;
+    next[from[0]][from[1]] = null;
+    if (piece.type === 'k' && Math.abs(to[1] - from[1]) === 2) {
+      var kingSide = to[1] > from[1];
+      var rf = [from[0], kingSide ? 7 : 0];
+      var rt = [from[0], kingSide ? 5 : 3];
+      next[rt[0]][rt[1]] = next[rf[0]][rf[1]];
+      next[rf[0]][rf[1]] = null;
+      out.rook = { from: rf, to: rt };
+    }
+    if (piece.type === 'p' && to[0] === (team === 'me' ? 0 : 7)) {
+      next[to[0]][to[1]] = { type: 'q', team: team };
+      out.promoted = true;
+    }
+    // Castling rights: a king or rook that moves, or a rook captured at home.
+    if (piece.type === 'k') {
+      nextInfo.castle[team].k = false;
+      nextInfo.castle[team].q = false;
+    }
+    [[homeRow('me'), 'me'], [homeRow('foe'), 'foe']].forEach(function (h) {
+      [[from, h], [to, h]].forEach(function (x) {
+        var sq = x[0];
+        if (sq[0] !== h[0]) return;
+        if (sq[1] === 7) nextInfo.castle[h[1]].k = false;
+        if (sq[1] === 0) nextInfo.castle[h[1]].q = false;
+      });
+    });
+    // En passant: a pawn's two-square step leaves the square it passed.
+    nextInfo.ep = (piece.type === 'p' && Math.abs(to[0] - from[0]) === 2) ? [(from[0] + to[0]) / 2, from[1]] : null;
+    return out;
+  }
+
+  /* Whether `team` has any legal move in the full game. */
+  function hasFullMove(board, team, info) {
+    for (var r = 0; r < SIZE; r++) {
+      for (var c = 0; c < SIZE; c++) {
+        var p = board[r][c];
+        if (p && p.team === team && fullMoves(board, r, c, info).length) return true;
+      }
+    }
+    return false;
+  }
+
   /*
    * Squares the piece on (r, c) can reach in any number of moves, with every
    * other piece standing still. Captured pieces are only removed from the
@@ -265,7 +400,13 @@
     hasLegalMove: hasLegalMove,
     isCheckmate: isCheckmate,
     isStalemate: isStalemate,
-    reachable: reachable
+    reachable: reachable,
+    newInfo: newInfo,
+    cloneInfo: cloneInfo,
+    specialMoves: specialMoves,
+    fullMoves: fullMoves,
+    playMove: playMove,
+    hasFullMove: hasFullMove
   };
 
   if (typeof module !== 'undefined' && module.exports) {

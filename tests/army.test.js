@@ -69,8 +69,8 @@ test('each level sets up both sides as in a real game, with only its kinds of pi
     }
     assert.equal(s.startPieces, count(s.board, 'me'));
   }
-  assert.deepEqual(A.LEVELS.map(l => l.types.length), [1, 2, 3, 4, 5, 6]);
-  assert.deepEqual(A.LEVELS.map(l => l.id), ['army1', 'army2', 'army3', 'army4', 'army5', 'army6']);
+  assert.deepEqual(A.LEVELS.map(l => l.types.length), [1, 2, 3, 4, 5, 6, 6]);
+  assert.deepEqual(A.LEVELS.map(l => l.id), ['army1', 'army2', 'army3', 'army4', 'army5', 'army6', 'army7']);
 });
 
 test('the opponent gets a little stronger at each level', () => {
@@ -302,4 +302,79 @@ test('hint: nothing while the game is over or on the other side\'s turn', () => 
   s.turn = 'me';
   s.over = true;
   assert.equal(A.hint(s, null), null);
+});
+
+test('the full game: every rule, and the other side\'s pawns may promote', () => {
+  const s = A.create('army7', {}, Math.random);
+  assert.equal(s.full, true);
+  assert.equal(s.checkRules, true);
+  assert.ok(s.info && s.info.castle.me.k);
+  // Castling offered once the squares are clear.
+  s.board[7][5] = null;
+  s.board[7][6] = null;
+  assert.ok(A.legalMoves(s, 7, 4).some(m => m.c === 6 && m.castle === 'k'));
+  const res = A.applyMove(s, [7, 4], [7, 6]);
+  assert.ok(res.events.includes('castle'));
+  assert.deepEqual(res.rook, { from: [7, 7], to: [7, 5] });
+  // The other side's pawns are no longer held back.
+  const t = A.create('army7', {}, Math.random);
+  t.board = R.emptyBoard();
+  t.board[6][2] = { type: 'p', team: 'foe' };
+  t.board[0][7] = { type: 'k', team: 'foe' };
+  t.board[3][4] = { type: 'k', team: 'me' };
+  t.board[4][0] = { type: 'r', team: 'me' };
+  t.startPieces = 2;
+  t.turn = 'foe';
+  const mv = A.botMove(t, () => 0.99);
+  assert.deepEqual(mv.to, [7, 2]);
+  assert.ok(mv.events.includes('foe-promoted'));
+  assert.deepEqual(t.board[7][2], { type: 'q', team: 'foe' });
+});
+
+test('the full game: only the two kings left is a draw', () => {
+  const s = A.create('army7', {}, Math.random);
+  s.board = R.emptyBoard();
+  s.board[7][4] = { type: 'k', team: 'me' };
+  s.board[6][4] = { type: 'p', team: 'foe' };
+  s.board[0][0] = { type: 'k', team: 'foe' };
+  const res = A.applyMove(s, [7, 4], [6, 4]);
+  assert.ok(res.events.includes('army-draw'));
+  assert.equal(s.winner, null);
+  assert.equal(s.drawReason, 'kings');
+});
+
+test('the full game: a child who follows the hints gives checkmate', () => {
+  for (let seed = 1; seed <= 6; seed++) {
+    const rng = seeded(seed);
+    const s = A.create('army7', {}, rng);
+    let n = 0;
+    while (!s.over && n < 200) {
+      if (s.turn === 'me') { const mv = hintMove(s); A.applyMove(s, mv.from, mv.to); n++; } else {
+        A.botMove(s, rng);
+        if (!s.over) assert.ok(!A.checkmated(s.board, 'me'));
+      }
+    }
+    assert.equal(s.winner, 'me', `seed ${seed}`);
+  }
+});
+
+test('undo takes back the child\'s move and the reply, in every battle', () => {
+  for (const lv of A.LEVELS) {
+    const rng = seeded(7);
+    const s = A.create(lv.id, {}, rng);
+    assert.equal(A.canUndo(s), false);
+    const start = JSON.stringify(s.board);
+    const startInfo = JSON.stringify(s.info);
+    const mv = hintMove(s);
+    A.applyMove(s, mv.from, mv.to);
+    assert.equal(A.canUndo(s), false, 'not during the other side\'s turn');
+    A.botMove(s, rng);
+    assert.equal(A.canUndo(s), true);
+    assert.equal(A.undo(s), true);
+    assert.equal(JSON.stringify(s.board), start, lv.id);
+    assert.equal(JSON.stringify(s.info), startInfo);
+    assert.equal(s.turn, 'me');
+    assert.equal(s.lastFoe, null);
+    assert.equal(A.canUndo(s), false);
+  }
 });
