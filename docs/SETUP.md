@@ -52,7 +52,8 @@ These are changed by the repository owner on GitHub; nothing in the repository c
    - **CSS grid, Pointer events, Web Animations, Web Audio:** all should be Yes.
    - **Speech voices:** note the number of English voices. Zero means spoken lessons will use recorded audio clips.
 3. Tap **Play test sound** and **Test speech** and note what happens.
-4. Open the game. Tap the rook card, then follow the lesson: tap the piece, then tap a footprint.
+4. Tap **Test game speed** and wait for the result (up to a minute). It times the other side's moves and the hints in the two biggest battles. "Fast enough" means the opponent's longest move fits inside its thinking pause (600 ms) and the longest hint takes under a second; otherwise note the numbers.
+5. Open the game. Tap the rook card, then follow the lesson: tap the piece, then tap a footprint.
 
 ## Troubleshooting
 

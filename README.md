@@ -125,7 +125,8 @@ js/grownups-ui.js The grown-ups' corner (hold "?" for two seconds).
 js/app.js         Screen flow: who, home, book, meet, lesson, mission, round, won; side panel; language, theme and sound; loads and saves the current child's progress.
 audio/voice/en/   English voice clips (MP3).
 audio/voice/te/   Telugu voice clips (MP3).
-js/check.js       Device check page logic, including the speech voice list.
+js/check.js       Device check page logic, including the speech voice list and the game speed test.
+js/speed.js       The game speed test: times the growing battle's opponent and hints. No DOM access. Tested.
 sw.js             Service worker for offline play: keeps every file of the app in a versioned cache.
 tools/make-voice.js  Dev tool: generates voice clips with Azure text-to-speech. Not loaded by the site.
 tools/make-offline.js  Dev tool: writes the offline file list and version into sw.js.

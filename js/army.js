@@ -75,15 +75,20 @@
   // The opponent's pawns stop one row short of the child's home row.
   var FOE_PAWN_LAST_ROW = 6;
 
-  // The rules in use for the call in progress: every public function that
-  // takes a state sets these first (use), so the helpers below, which only
-  // see a board, know whether the full game's rules apply. Calls are
-  // synchronous, so one game's settings never leak into another's.
-  var FULL = false;
-  var INFO = null;
-  function use(state) {
-    FULL = !!state.full;
-    INFO = state.info || null;
+  // The rules a helper plays by, passed to every helper that looks at a
+  // board: { full, info }. full: the full game's rules (castling, en
+  // passant, promotion for both sides, the other side's pawns not held
+  // back); info: its castling rights and en passant square (js/rules.js
+  // newInfo), for the real position only.
+  var PLAIN = { full: false, info: null };
+  function rulesOf(state) {
+    return state.full ? { full: true, info: state.info || null } : PLAIN;
+  }
+  // The public helpers that take a board also take the game's state (or
+  // nothing, for the plain rules).
+  function asRules(x) {
+    if (!x) return PLAIN;
+    return x.board ? rulesOf(x) : x;
   }
 
   function randInt(rng, n) { return Math.floor(rng() * n); }
@@ -149,48 +154,48 @@
   /* The moves of the piece on (r, c) under this game's rules: the
    * opponent's pawns never reach the child's home row, and on a board
    * with kings a move may never leave the mover's own king in check. */
-  function pieceMoves(board, r, c) {
+  function pieceMoves(board, r, c, rules) {
     var p = board[r][c];
     if (!p) return [];
     var moves = R.movesFor(board, r, c);
-    if (p.type === 'p' && p.team === 'foe' && !FULL) moves = moves.filter(function (m) { return m.r <= FOE_PAWN_LAST_ROW; });
+    if (p.type === 'p' && p.team === 'foe' && !rules.full) moves = moves.filter(function (m) { return m.r <= FOE_PAWN_LAST_ROW; });
     if (R.findKing(board, p.team)) {
-      moves = moves.filter(function (m) { return !R.inCheck(afterMove(board, [r, c], [m.r, m.c]), p.team); });
+      moves = moves.filter(function (m) { return !R.inCheck(afterMove(board, [r, c], [m.r, m.c], rules), p.team); });
     }
     return moves;
   }
 
   /* The squares next to the king on (r, c) he may not step to, because the
    * other side could capture him there. */
-  function kingDanger(board, r, c) {
+  function kingDanger(board, r, c, rules) {
     var p = board[r][c];
     if (!p || p.type !== 'k') return [];
     var ok = {};
-    pieceMoves(board, r, c).forEach(function (m) { ok[key(m.r, m.c)] = true; });
+    pieceMoves(board, r, c, rules).forEach(function (m) { ok[key(m.r, m.c)] = true; });
     return R.movesFor(board, r, c).filter(function (m) { return !ok[key(m.r, m.c)]; }).map(function (m) { return [m.r, m.c]; });
   }
 
-  function hasMove(board, team) {
+  function hasMove(board, team, rules) {
     for (var r = 0; r < R.SIZE; r++) {
       for (var c = 0; c < R.SIZE; c++) {
         var p = board[r][c];
-        if (p && p.team === team && pieceMoves(board, r, c).length) return true;
+        if (p && p.team === team && pieceMoves(board, r, c, rules).length) return true;
       }
     }
     // The full game: castling or en passant may be the only move left.
-    return FULL && !!INFO && R.hasFullMove(board, team, INFO);
+    return rules.full && !!rules.info && R.hasFullMove(board, team, rules.info);
   }
 
   /* allMoves plus, in the full game, castling and en passant (only for the
    * real position, whose info is known). */
-  function topMoves(board, team) {
-    var out = allMoves(board, team);
-    if (!FULL || !INFO) return out;
+  function topMoves(board, team, rules) {
+    var out = allMoves(board, team, rules);
+    if (!rules.full || !rules.info) return out;
     for (var r = 0; r < R.SIZE; r++) {
       for (var c = 0; c < R.SIZE; c++) {
         var p = board[r][c];
         if (!p || p.team !== team) continue;
-        R.specialMoves(board, r, c, INFO).forEach(function (m) {
+        R.specialMoves(board, r, c, rules.info).forEach(function (m) {
           out.push({ from: [r, c], to: [m.r, m.c], capture: m.capture, castle: m.castle, ep: m.ep });
         });
       }
@@ -198,24 +203,24 @@
     return out;
   }
 
-  function checkmated(board, team) {
-    return R.inCheck(board, team) && !hasMove(board, team);
+  function checkmated(board, team, rules) {
+    return R.inCheck(board, team) && !hasMove(board, team, rules);
   }
 
   // A king that is not in check but whose side has no move.
-  function stalemated(board, team) {
+  function stalemated(board, team, rules) {
     var king = R.findKing(board, team);
-    if (!king || R.inCheck(board, team) || pieceMoves(board, king[0], king[1]).length) return false;
-    return !hasMove(board, team);
+    if (!king || R.inCheck(board, team) || pieceMoves(board, king[0], king[1], rules).length) return false;
+    return !hasMove(board, team, rules);
   }
 
-  function allMoves(board, team) {
+  function allMoves(board, team, rules) {
     var out = [];
     for (var r = 0; r < R.SIZE; r++) {
       for (var c = 0; c < R.SIZE; c++) {
         var p = board[r][c];
         if (!p || p.team !== team) continue;
-        pieceMoves(board, r, c).forEach(function (m) {
+        pieceMoves(board, r, c, rules).forEach(function (m) {
           out.push({ from: [r, c], to: [m.r, m.c], capture: m.capture });
         });
       }
@@ -225,8 +230,8 @@
 
   /* The board after a move. In the battle with kings, the child's pawn
    * that reaches the other side becomes a queen. */
-  function afterMove(board, from, to) {
-    if (FULL) return R.playMove(board, from, to, INFO).board;
+  function afterMove(board, from, to, rules) {
+    if (rules.full) return R.playMove(board, from, to, rules.info).board;
     var next = R.cloneBoard(board);
     var piece = next[from[0]][from[1]];
     if (piece && piece.type === 'p' && piece.team === 'me' && to[0] === 0 && R.findKing(board, 'me')) {
@@ -242,7 +247,7 @@
    * them, and either nobody of the child's protects them or the cheapest
    * piece that could capture is worth less. Returns [[r, c]].
    */
-  function inDanger(board, team) {
+  function inDanger(board, team, rules) {
     team = team || 'me';
     var foe = team === 'me' ? 'foe' : 'me';
     var guarded = R.attackedSquares(board, team);
@@ -251,7 +256,7 @@
       for (var c = 0; c < R.SIZE; c++) {
         var p = board[r][c];
         if (!p || p.team !== foe) continue;
-        pieceMoves(board, r, c).forEach(function (m) {
+        pieceMoves(board, r, c, rules).forEach(function (m) {
           if (!m.capture) return;
           var k = key(m.r, m.c);
           if (cheapest[k] === undefined || VALUE[p.type] < cheapest[k]) cheapest[k] = VALUE[p.type];
@@ -275,14 +280,14 @@
    * what it saves, and (for the child) reaching the other side. Used by
    * the opponent and by the child's hint.
    */
-  function score(board, mv, team) {
+  function score(board, mv, team, rules) {
     var piece = board[mv.from[0]][mv.from[1]];
     var target = board[mv.to[0]][mv.to[1]];
     var s = 0;
     if (target) s += VALUE[target.type] * 10;
-    var next = afterMove(board, mv.from, mv.to);
-    var dangerNow = inDanger(board, team).some(function (sq) { return sq[0] === mv.from[0] && sq[1] === mv.from[1]; });
-    var dangerAfter = inDanger(next, team).some(function (sq) { return sq[0] === mv.to[0] && sq[1] === mv.to[1]; });
+    var next = afterMove(board, mv.from, mv.to, rules);
+    var dangerNow = inDanger(board, team, rules).some(function (sq) { return sq[0] === mv.from[0] && sq[1] === mv.from[1]; });
+    var dangerAfter = inDanger(next, team, rules).some(function (sq) { return sq[0] === mv.to[0] && sq[1] === mv.to[1]; });
     if (dangerAfter) s -= VALUE[piece.type] * 9;
     else if (dangerNow) s += VALUE[piece.type] * 5;
     // Castling tucks the king away and brings a rook out.
@@ -292,12 +297,12 @@
     if (theirKing) {
       // With kings: the child plays for checkmate (never stalemate); the
       // opponent likes a check but never gives checkmate (botMove).
-      if (checkmated(next, other)) return 5000;
-      if (stalemated(next, other)) return -3000;
+      if (checkmated(next, other, rules)) return 5000;
+      if (stalemated(next, other, rules)) return -3000;
       if (R.inCheck(next, other)) s += 2;
       if (team === 'me') {
         // Fewer squares for their king, and their king nearer an edge.
-        s -= pieceMoves(next, theirKing[0], theirKing[1]).length * 1.5;
+        s -= pieceMoves(next, theirKing[0], theirKing[1], rules).length * 1.5;
         s += Math.max(Math.abs(theirKing[0] - 3.5), Math.abs(theirKing[1] - 3.5));
       }
     }
@@ -310,7 +315,7 @@
       // nobody protects (so the next move can capture it).
       if (team === 'me' ? mv.from[0] === 7 : mv.from[0] === 0) s += 1.5;
       var guarded = R.attackedSquares(next, team === 'me' ? 'foe' : 'me');
-      pieceMoves(next, mv.to[0], mv.to[1]).forEach(function (m) {
+      pieceMoves(next, mv.to[0], mv.to[1], rules).forEach(function (m) {
         if (m.capture && !guarded[key(m.r, m.c)]) s += 3;
       });
     }
@@ -319,18 +324,17 @@
 
   /* Whether the child's move from `from` to `to` is allowed now. */
   function legalMoves(state, r, c) {
-    use(state);
     if (state.over || state.turn !== 'me') return [];
     var p = state.board[r][c];
     if (!p || p.team !== 'me') return [];
-    var moves = pieceMoves(state.board, r, c);
-    if (FULL) moves = moves.concat(R.specialMoves(state.board, r, c, state.info));
+    var moves = pieceMoves(state.board, r, c, rulesOf(state));
+    if (state.full) moves = moves.concat(R.specialMoves(state.board, r, c, state.info));
     return moves;
   }
 
   function won(state) {
     var board = state.board;
-    if (state.checkRules) return checkmated(board, 'foe');
+    if (state.checkRules) return checkmated(board, 'foe', rulesOf(state));
     for (var c = 0; c < R.SIZE; c++) {
       var p = board[0][c];
       if (p && p.team === 'me' && p.type === 'p') return true;
@@ -368,12 +372,12 @@
     if (board[to[0]][to[1]].type !== moved.type) events.push('promoted');
     if (won(state)) {
       finish(state, events);
-    } else if (state.checkRules && stalemated(board, 'foe')) {
+    } else if (state.checkRules && stalemated(board, 'foe', rulesOf(state))) {
       draw(state, events);
-    } else if (FULL && onlyKings(board)) {
+    } else if (state.full && onlyKings(board)) {
       state.drawReason = 'kings';
       draw(state, events);
-    } else if (!allMoves(board, 'foe').length && !allMoves(board, 'me').length) {
+    } else if (!allMoves(board, 'foe', rulesOf(state)).length && !allMoves(board, 'me', rulesOf(state)).length) {
       // Nobody can move (only possible with pawns alone): the child wins.
       finish(state, events);
     } else {
@@ -389,18 +393,17 @@
    * pawn of the other side becoming a queen ('foe-promoted'). */
   function playHere(state, from, to) {
     var events = [];
-    if (FULL) {
+    if (state.full) {
       var res = R.playMove(state.board, from, to, state.info);
       state.board = res.board;
       state.info = res.info;
-      INFO = state.info;
       if (res.rook) events.push('castle');
       if (res.ep) events.push('passant');
       if (res.promoted && res.board[to[0]][to[1]].team === 'foe') events.push('foe-promoted');
       return { captured: res.captured, capturedAt: res.capturedAt, rook: res.rook, events: events };
     }
     var captured = state.board[to[0]][to[1]] || null;
-    state.board = afterMove(state.board, from, to);
+    state.board = afterMove(state.board, from, to, PLAIN);
     return { captured: captured, capturedAt: captured ? to.slice() : null, rook: null, events: events };
   }
 
@@ -453,16 +456,20 @@
    */
   function botMove(state, rng) {
     rng = rng || Math.random;
-    use(state);
     if (state.over || state.turn !== 'foe') return null;
     var lv = level(state.id);
+    var rules = rulesOf(state);
     var board = state.board;
     var mine = count(board, 'me');
     var mineBig = mine - count(board, 'me', 'p') - count(board, 'me', 'k');
     var keep = Math.ceil(state.startPieces / 2);
-    var all = topMoves(board, 'foe');
-    // Never checkmate the child, and never leave them without a move.
-    var fair = all.filter(function (m) { return hasMove(afterMove(board, m.from, m.to), 'me'); });
+    var all = topMoves(board, 'foe', rules);
+    // Never checkmate the child, and never leave them without a move. (The
+    // position after a move has its own castling and en passant rights,
+    // which this does not work out: only plain moves count here.)
+    var fair = all.filter(function (m) {
+      return hasMove(afterMove(board, m.from, m.to, rules), 'me', { full: rules.full, info: null });
+    });
     if (fair.length) all = fair;
     var moves = all.filter(function (m) {
       if (!m.capture) return true;
@@ -486,7 +493,7 @@
       var best = -Infinity;
       var pool = [];
       moves.forEach(function (m) {
-        var s = score(board, m, 'foe');
+        var s = score(board, m, 'foe', rules);
         if (s > best + 1e-9) { best = s; pool = [m]; } else if (Math.abs(s - best) <= 1e-9) pool.push(m);
       });
       choice = pool[randInt(rng, pool.length)];
@@ -497,10 +504,10 @@
     state.moveCount++;
     state.lastFoe = { from: choice.from, to: choice.to };
     var events = played.events;
-    if (FULL && onlyKings(board)) {
+    if (state.full && onlyKings(board)) {
       state.drawReason = 'kings';
       draw(state, events);
-    } else if (!hasMove(board, 'me')) {
+    } else if (!hasMove(board, 'me', rulesOf(state))) {
       // Only when every move left the child stuck: the child wins, or in
       // the battle with kings nobody does.
       if (state.checkRules) draw(state, events); else finish(state, events);
@@ -511,13 +518,15 @@
   }
 
   /* The child's best move by the same scoring, or null. Ties go to the
-   * first found (from the other side's edge down), so a hint is steady. */
-  function bestMove(board, fromSq, last) {
+   * first found (from the other side's edge down), so a hint is steady.
+   * rules: the game's state, or { full, info } (plain rules if omitted). */
+  function bestMove(board, fromSq, last, rules) {
+    rules = asRules(rules);
     var best = null;
     var bestScore = -Infinity;
-    topMoves(board, 'me').forEach(function (m) {
+    topMoves(board, 'me', rules).forEach(function (m) {
       if (fromSq && (m.from[0] !== fromSq[0] || m.from[1] !== fromSq[1])) return;
-      var s = score(board, m, 'me');
+      var s = score(board, m, 'me', rules);
       // Going straight back where the child's last move came from gets
       // nowhere: a small penalty.
       if (last && m.from[0] === last.to[0] && m.from[1] === last.to[1] && m.to[0] === last.from[0] && m.to[1] === last.from[1]) s -= 4;
@@ -532,13 +541,12 @@
    * no move).
    */
   function hint(state, selected) {
-    use(state);
     if (state.over || state.turn !== 'me') return null;
     if (selected) {
-      var own = bestMove(state.board, selected, state.lastMine);
+      var own = bestMove(state.board, selected, state.lastMine, state);
       return own ? own.to.slice() : null;
     }
-    var mv = bestMove(state.board, null, state.lastMine);
+    var mv = bestMove(state.board, null, state.lastMine, state);
     return mv ? mv.from.slice() : null;
   }
 
@@ -552,10 +560,9 @@
   /* The child's king's forbidden squares, when the king on (r, c) is
    * selected (for the red glow). */
   function dangerSquares(state, r, c) {
-    use(state);
     var p = state.board[r][c];
     if (!state.checkRules || !p || p.team !== 'me' || p.type !== 'k') return [];
-    return kingDanger(state.board, r, c);
+    return kingDanger(state.board, r, c, rulesOf(state));
   }
 
   /* The other side's pieces giving check to the child's king. */
@@ -573,6 +580,12 @@
     return out;
   }
 
+  /* Public forms of the board helpers: rules is the game's state, or
+   * { full, info }, or omitted for the plain rules. */
+  function publicInDanger(board, team, rules) { return inDanger(board, team, asRules(rules)); }
+  function publicCheckmated(board, team, rules) { return checkmated(board, team, asRules(rules)); }
+  function publicStalemated(board, team, rules) { return stalemated(board, team, asRules(rules)); }
+
   var api = {
     LEVELS: LEVELS,
     BACK_ROW: BACK_ROW,
@@ -585,7 +598,7 @@
     legalMoves: legalMoves,
     applyMove: applyMove,
     botMove: botMove,
-    inDanger: inDanger,
+    inDanger: publicInDanger,
     bestMove: bestMove,
     hint: hint,
     goalOf: goalOf,
@@ -593,8 +606,8 @@
     undo: undo,
     dangerSquares: dangerSquares,
     checkers: checkers,
-    checkmated: checkmated,
-    stalemated: stalemated
+    checkmated: publicCheckmated,
+    stalemated: publicStalemated
   };
 
   if (isNode) {
