@@ -480,14 +480,49 @@
       var frag = document.createDocumentFragment();
       frag.appendChild(buildGamePic(gameId));
       frag.appendChild(textEl('div', 'caption', LS.LINES[lineId][V.getLang()]));
+      var row = el('div', 'btn-row');
       var go = el('button', 'go-btn');
       go.type = 'button';
+      go.setAttribute('aria-label', 'Play');
       go.appendChild(B.svgUse('play-tri'));
-      frag.appendChild(go);
+      row.appendChild(go);
+      // "Watch how to play", whenever the child wants it; then back here.
+      var how = el('button', 'rbtn rbtn-tip');
+      how.type = 'button';
+      how.setAttribute('aria-label', 'Watch how to play');
+      how.appendChild(B.svgUse('ic-bulb'));
+      how.addEventListener('click', function (e) {
+        e.stopPropagation();
+        S.unlock();
+        FC.app.hideCard();
+        playHow(showMissionCard);
+      });
+      row.appendChild(how);
+      frag.appendChild(row);
       return frag;
     }
-    FC.app.showCustomCard(build, startGame);
+    FC.app.showCustomCard(build, startOrHow);
     V.sayAfter(lineId);
+  }
+
+  // The first time a child plays a game, its "watch how to play" scene
+  // comes first (saved as seen 'how-<game>'), then the game.
+  function startOrHow() {
+    var p = progress();
+    var key = 'how-' + gameId;
+    if (p && p.seen[key]) {
+      startGame();
+      return;
+    }
+    if (store) store.markSeen(key);
+    playHow(function () {
+      prepared = false; // the scene used the board; set the game up again
+      startGame();
+    });
+  }
+
+  function playHow(done) {
+    playTip({ kind: 'how', line: GL.get(gameId).tip }, done, 'how-look');
   }
 
   /* =====================================================================
@@ -899,15 +934,13 @@
   // After the win line: a tip on the board when one is due (js/game-list.js
   // pickTip), then the Won card (or the Break card).
   function afterWin() {
-    var p = progress();
     var misses = gmodeIsQuiz() ? qstate.misses : wrongTaps;
-    var tip = GL.pickTip(gameId, misses, !!(p && p.seen['tip-' + gameId]));
+    var tip = GL.pickTip(gameId, misses);
     if (!tip) {
       showGameWonOrBreak();
       return;
     }
-    if (tip.kind === 'strategy' && store) store.markSeen('tip-' + gameId);
-    playTip(tip, showGameWonOrBreak);
+    playTip(tip, showGameWonOrBreak, 'tip-look');
   }
 
   function gmodeIsQuiz() {
@@ -964,16 +997,16 @@
       });
       row.appendChild(next);
 
-      // The game's tip, on the board, whenever the child wants it again.
+      // "Watch how to play" again, on the board, whenever the child wants it.
       var tipBtn = el('button', 'rbtn rbtn-tip');
       tipBtn.type = 'button';
-      tipBtn.setAttribute('aria-label', 'Tip');
+      tipBtn.setAttribute('aria-label', 'Watch how to play');
       tipBtn.appendChild(B.svgUse('ic-bulb'));
       tipBtn.addEventListener('click', function (e) {
         e.stopPropagation();
         S.unlock();
         FC.app.hideCard();
-        playTip({ kind: 'strategy', line: GL.get(gameId).tip }, showGameWon);
+        playHow(showGameWon);
       });
       row.appendChild(tipBtn);
 
@@ -1129,13 +1162,17 @@
   }
 
   /* =====================================================================
-   * Tips after a game: a short "watch" on the board (js/game-list.js
-   * pickTip chooses which). A rule tip shows one piece's footprints and
-   * says its rule; a strategy tip plays the game's own little scene. Skip
-   * ends it at once.
+   * Short "watch" scenes on the board: "watch how to play" (each game's
+   * own scene in HOW_TO, before its first game and from the light bulb on
+   * its Mission and Won cards), and the rule tip after a win
+   * (js/game-list.js pickTip), which shows one piece's footprints and says
+   * its rule. Skip ends either at once.
    * ===================================================================*/
 
-  function playTip(tip, done) {
+  // lead: the line said first ('tip-look' after a win, 'how-look' before
+  // a "watch how to play" scene).
+  function playTip(tip, done, lead) {
+    lead = lead || 'tip-look';
     gmode = 'tip';
     clearIdle();
     busy = false;
@@ -1174,10 +1211,10 @@
       after: function (ms, fn) { B.wait(function () { if (alive()) fn(); }, ms); },
       end: function () { ctx.after(700, finish); }
     };
-    V.say('tip-look', function () {
+    V.say(lead, function () {
       if (!alive()) return;
       if (tip.kind === 'rule') ruleTip(ctx, tip.type, tip.line);
-      else (STRATEGY_TIPS[gameId] || ruleTipFallback)(ctx, tip.line);
+      else (HOW_TO[gameId] || ruleTipFallback)(ctx, tip.line);
     });
   }
 
@@ -1243,22 +1280,49 @@
     });
   }
 
-  var STRATEGY_TIPS = {
-    // The piece comes closer, then the knight's own footprints show where
-    // it can hop.
-    catch: function (ctx, line) {
+  // "Watch how to play" scenes, one per game (tip.line is the game's
+  // `tip` line in js/game-list.js).
+  var HOW_TO = {
+    // How to catch a knight that moves differently from your piece: see
+    // where it can hop, stand so your footprints cover those squares, and
+    // capture it when it lands on one.
+    catch: function (ctx) {
       var board = R.emptyBoard();
-      board[7][1] = { type: 'r', team: 'me' };
+      board[7][2] = { type: 'r', team: 'me' };
       board[3][4] = { type: 'n', team: 'foe' };
-      var rook = tipPiece('r', 7, 1);
-      tipFoe('n', 3, 4);
-      var done = join(2, ctx.end);
-      V.say(line, function () { if (ctx.alive()) done(); });
-      ctx.after(600, function () {
-        tipMove(ctx, board, rook, [7, 1], [5, 1], null, function () {
-          ctx.after(300, function () {
-            B.showFootprints('n', [3, 4], R.movesFor(board, 3, 4), {});
-            ctx.after(1500, done);
+      var items = {};
+      var rook = tipPiece('r', 7, 2);
+      items['3,4'] = tipFoe('n', 3, 4);
+      var hops = R.movesFor(board, 3, 4);
+      B.showFootprints('n', [3, 4], hops, {});
+      V.say('how-catch-1', function () {
+        if (!ctx.alive()) return;
+        tipMove(ctx, board, rook, [7, 2], [5, 2], null, function () {
+          // The rook's footprints now cover some of the knight's hops: they glow.
+          var covered = R.movesFor(board, 5, 2).filter(function (m) {
+            return hops.some(function (h) { return h.r === m.r && h.c === m.c; });
+          }).map(function (m) { return [m.r, m.c]; });
+          tipPrints(board, [5, 2], {});
+          B.glow(covered);
+          V.say('how-catch-2', function () {
+            if (!ctx.alive()) return;
+            B.glow([]);
+            B.hideFootprints({});
+            // The knight hops onto one of them...
+            var knight = items['3,4'];
+            delete items['3,4'];
+            B.moveHero(knight, 'n', [3, 4], [4, 2], function () {
+              if (!ctx.alive()) return;
+              board[4][2] = board[3][4];
+              board[3][4] = null;
+              items['4,2'] = knight;
+              tipPrints(board, [5, 2], items);
+              // ...and the rook captures it.
+              V.say('how-catch-3', function () {
+                if (!ctx.alive()) return;
+                tipMove(ctx, board, rook, [5, 2], [4, 2], items, ctx.end);
+              });
+            });
           });
         });
       });

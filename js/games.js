@@ -632,12 +632,45 @@
     };
   }
 
-  /* A square to glow as a hint, or null: the next pawn of a capture chain,
+  /* Catch the knight: the knight itself when it can be captured now;
+   * otherwise the move that puts the most of the knight's next hops on the
+   * piece's footprints (ties: the square nearest the knight), so that
+   * wherever it hops, it is likely to land where it can be captured. */
+  function catchHint(state) {
+    var board = state.board;
+    var hero = state.hero;
+    var knight = state.knight;
+    var now = R.movesFor(board, hero[0], hero[1]);
+    if (now.some(function (m) { return m.r === knight[0] && m.c === knight[1]; })) return knight.slice();
+    var hops = R.movesFor(board, knight[0], knight[1]).filter(function (m) { return !m.capture; });
+    var best = null;
+    var bestScore = -1;
+    var bestDist = Infinity;
+    now.forEach(function (m) {
+      if (m.capture) return;
+      var work = R.cloneBoard(board);
+      work[m.r][m.c] = work[hero[0]][hero[1]];
+      work[hero[0]][hero[1]] = null;
+      var covers = heroAttackSet(work, [m.r, m.c], knight);
+      var score = hops.filter(function (h) { return covers[h.r + ',' + h.c]; }).length;
+      var dist = Math.max(Math.abs(m.r - knight[0]), Math.abs(m.c - knight[1]));
+      if (score > bestScore || (score === bestScore && dist < bestDist)) {
+        best = [m.r, m.c];
+        bestScore = score;
+        bestDist = dist;
+      }
+    });
+    return best;
+  }
+
+  /* A square to glow as a hint, or null: the knight or a good square to
+   * wait on (Catch the knight), the next pawn of a capture chain,
    * (else the first step toward the nearest pawn), the first step toward
    * the nearest pawn (Stop the pawns), or the next
    * step of a shortest way to the other side. */
   function hint(state) {
     if (state.over) return null;
+    if (state.id === 'catch') return catchHint(state);
     if (state.id === 'chain') {
       // The next pawn of the chain when it is one move away; otherwise
       // (the child left the chain) the first step toward the nearest pawn.

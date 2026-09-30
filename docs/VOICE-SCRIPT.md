@@ -120,7 +120,10 @@ naming a direction.
 | quiz-again | Its footprints look different. Try again! | దాని అడుగులు వేరేలా ఉంటాయి. మళ్ళీ చూడు! | Kind and encouraging, never "wrong"; said after the child taps a piece that is not the answer. |
 | quiz-won | You know your pieces so well! | నీకు పావులన్నీ బాగా తెలుసు! | Big and celebratory; the quiz's win line. |
 | tip-look | Here is a little tip! | ఇదిగో, ఒక చిన్న చిట్కా! | Friendly, like sharing a secret; said before a tip plays on the board after a game. |
-| tip-catch | Get close to the knight, then watch where it can hop! | గుర్రం దగ్గరికి వెళ్ళు, అది ఎక్కడికి దూకగలదో చూడు! | Calm and clear, a tip rather than an instruction. |
+| how-look | Watch how to play! | ఎలా ఆడాలో చూడు! | Friendly and inviting; said before a game's "watch how to play" scene. |
+| how-catch-1 | The knight can hop to these squares. | గుర్రం ఈ గడులకి దూకగలదు. | Calm, pointing at the knight's footprints on the board. |
+| how-catch-2 | Stand where your footprints cover its hops. | దాని దూకే గడుల మీద నీ అడుగుల గుర్తులు పడేలా నిలబడు. | Clear and slow, the key idea of the game. |
+| how-catch-3 | It landed on your footprints. Capture it! | అది నీ అడుగుల గుర్తు మీద దిగింది. పట్టుకో! | Excited, a small "gotcha" on the capture. |
 | tip-race | A pawn's first step can be two squares. Zoom ahead! | భటుడి మొదటి అడుగు రెండు గడులు కావచ్చు. ముందుకు దూసుకుపో! | Calm, then bright on the last words. |
 | tip-battle | Use all your pieces. Each one moves its own way! | నీ పావులన్నిటినీ వాడు. ఒక్కొక్కటి ఒక్కోలా కదులుతుంది! | Calm and clear, a tip rather than an instruction. |
 | tip-chain | Before you capture, look for the next pawn! | పట్టుకునే ముందు, తర్వాతి భటుడు ఎక్కడున్నాడో చూడు! | Calm and clear, a tip rather than an instruction. |

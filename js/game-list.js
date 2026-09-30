@@ -12,9 +12,11 @@
  * a word: capture games, "reach the other side" games and thinking games.
  * The order here is also the order of the Won card's "next game" button.
  *
- * Also picks the tip that follows a win (pickTip): a child who kept tapping
- * squares a piece cannot reach sees that piece's rule again; otherwise the
- * game's own strategy tip plays the first time the game is won.
+ * Each game has a "watch how to play" scene (js/games-ui.js), played
+ * before the first game each child plays of it and from the light bulb on
+ * its Mission and Won cards; `tip` is its line. After a win, pickTip
+ * chooses a rule tip: a child who kept tapping squares a piece cannot reach
+ * sees that piece's rule again.
  *
  * Classic script: exposes window.FC.gameList in the browser and
  * module.exports in Node. Keep to ES2017 syntax.
@@ -32,13 +34,13 @@
    * mission: the line said on the Mission card (its text up to the first
    *          "!" or "?" is the card's caption on the Games screen)
    * win:     the line said when the game is won
-   * tip:     the strategy tip line (see pickTip)
+   * tip:     the line of its "watch how to play" scene
    * teams:   true when the child plays against the other side, taking
    *          turns (the Team card shows first); false for a solo game
    * kind:    'board' (js/games.js) or 'quiz' (js/quiz.js)
    */
   var GAMES = [
-    { id: 'catch', row: 'capture', mission: 'game-catch', win: 'caught', tip: 'tip-catch', teams: true, kind: 'board' },
+    { id: 'catch', row: 'capture', mission: 'game-catch', win: 'caught', tip: 'how-catch-2', teams: true, kind: 'board' },
     { id: 'battle', row: 'capture', mission: 'game-battle', win: 'won', tip: 'tip-battle', teams: true, kind: 'board' },
     { id: 'chain', row: 'capture', mission: 'game-chain', win: 'won', tip: 'tip-chain', teams: false, kind: 'board' },
     { id: 'race', row: 'reach', mission: 'game-race', win: 'race-won', tip: 'tip-race', teams: true, kind: 'board' },
@@ -83,16 +85,13 @@
   }
 
   /*
-   * The tip to show after winning game `id`:
-   *   { kind: 'rule', type, line } when the child made STRUGGLE_TAPS or more
-   *     wrong taps with one piece type (the type with the most; ties go to
-   *     the earlier type in 'rbqknp' order), shown every time;
-   *   { kind: 'strategy', line } the game's own tip, when tipSeen is false
-   *     (the first win of that game for this child);
-   *   null otherwise.
-   * wrong maps a piece type to its wrong-tap count for this game.
+   * The tip to show after winning game `id`: { kind: 'rule', type, line }
+   * when the child made STRUGGLE_TAPS or more wrong taps with one piece
+   * type (the type with the most; ties go to the earlier type in 'rbqknp'
+   * order), else null. wrong maps a piece type to its wrong-tap count for
+   * this game.
    */
-  function pickTip(id, wrong, tipSeen) {
+  function pickTip(id, wrong) {
     var game = get(id);
     if (!game) return null;
     var best = null;
@@ -104,9 +103,7 @@
         bestCount = n;
       }
     });
-    if (best) return { kind: 'rule', type: best, line: RULE_LINES[best] };
-    if (!tipSeen) return { kind: 'strategy', line: game.tip };
-    return null;
+    return best ? { kind: 'rule', type: best, line: RULE_LINES[best] } : null;
   }
 
   /* Every line id the registry names (tests check each exists). */

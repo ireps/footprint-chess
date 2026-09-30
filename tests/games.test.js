@@ -696,3 +696,38 @@ test('hint "chain" and "stop": always a square the piece can move to now, even a
     }
   }
 });
+
+test('hint "catch": the knight when it can be captured, else a move that covers some of its hops', () => {
+  for (const type of CATCH_TYPES) {
+    for (let seed = 1; seed <= 100; seed++) {
+      const rng = seeded(seed);
+      const state = G.create('catch', { type }, rng);
+      for (let i = 0; i < 8 && !state.over; i++) {
+        const h = G.hint(state);
+        assert.ok(h, `${type} seed ${seed}: no hint`);
+        const moves = G.legalMoves(state, state.hero[0], state.hero[1]);
+        assert.ok(moves.some(m => m.r === h[0] && m.c === h[1]), `${type} seed ${seed}: hint is not a move`);
+        const catchNow = moves.some(m => m.r === state.knight[0] && m.c === state.knight[1]);
+        if (catchNow) assert.deepEqual(h, state.knight);
+        G.applyMove(state, state.hero, h);
+        if (!state.over) G.botMove(state, rng);
+      }
+    }
+  }
+});
+
+test('guarantee "catch": following the hint catches the knight within 12 moves', () => {
+  for (const type of CATCH_TYPES) {
+    for (let seed = 1; seed <= SEEDS; seed++) {
+      const rng = seeded(seed);
+      const state = G.create('catch', { type }, rng);
+      let n = 0;
+      while (!state.over && n < 12) {
+        G.applyMove(state, state.hero, G.hint(state));
+        n++;
+        if (!state.over) G.botMove(state, rng);
+      }
+      assert.ok(state.over, `${type} seed ${seed}: not caught in 12`);
+    }
+  }
+});

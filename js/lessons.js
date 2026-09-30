@@ -175,7 +175,10 @@
     'quiz-again': { en: 'Its footprints look different. Try again!', te: 'దాని అడుగులు వేరేలా ఉంటాయి. మళ్ళీ చూడు!' },
     'quiz-won': { en: 'You know your pieces so well!', te: 'నీకు పావులన్నీ బాగా తెలుసు!' },
     'tip-look': { en: 'Here is a little tip!', te: 'ఇదిగో, ఒక చిన్న చిట్కా!' },
-    'tip-catch': { en: 'Get close to the knight, then watch where it can hop!', te: 'గుర్రం దగ్గరికి వెళ్ళు, అది ఎక్కడికి దూకగలదో చూడు!' },
+    'how-look': { en: 'Watch how to play!', te: 'ఎలా ఆడాలో చూడు!' },
+    'how-catch-1': { en: 'The knight can hop to these squares.', te: 'గుర్రం ఈ గడులకి దూకగలదు.' },
+    'how-catch-2': { en: 'Stand where your footprints cover its hops.', te: 'దాని దూకే గడుల మీద నీ అడుగుల గుర్తులు పడేలా నిలబడు.' },
+    'how-catch-3': { en: 'It landed on your footprints. Capture it!', te: 'అది నీ అడుగుల గుర్తు మీద దిగింది. పట్టుకో!' },
     'tip-race': { en: "A pawn's first step can be two squares. Zoom ahead!", te: 'భటుడి మొదటి అడుగు రెండు గడులు కావచ్చు. ముందుకు దూసుకుపో!' },
     'tip-battle': { en: 'Use all your pieces. Each one moves its own way!', te: 'నీ పావులన్నిటినీ వాడు. ఒక్కొక్కటి ఒక్కోలా కదులుతుంది!' },
     'tip-chain': { en: 'Before you capture, look for the next pawn!', te: 'పట్టుకునే ముందు, తర్వాతి భటుడు ఎక్కడున్నాడో చూడు!' },
@@ -271,7 +274,7 @@
   var MORE_GAME_LINES = [
     'games-pick', 'game-chain', 'game-whose',
     'quiz-ask', 'quiz-again', 'quiz-won',
-    'tip-look', 'tip-catch', 'tip-race', 'tip-battle', 'tip-chain', 'tip-whose',
+    'tip-look', 'how-look', 'how-catch-1', 'how-catch-2', 'how-catch-3', 'tip-race', 'tip-battle', 'tip-chain', 'tip-whose',
     'game-hop', 'game-way', 'game-stop', 'game-safe', 'reach-won', 'king-danger',
     'tip-hop', 'tip-way', 'tip-stop', 'tip-safe'
   ];

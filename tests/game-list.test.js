@@ -44,13 +44,12 @@ test('next cycles through every game and wraps round', () => {
   assert.equal(id, GL.GAMES[0].id);
 });
 
-test('pickTip: struggling with a piece shows its rule; otherwise the strategy tip once', () => {
-  assert.deepEqual(GL.pickTip('chain', { b: 2 }, true), { kind: 'rule', type: 'b', line: 'bishop-1' });
-  assert.deepEqual(GL.pickTip('chain', { r: 2, n: 3 }, false), { kind: 'rule', type: 'n', line: 'knight-2' });
-  assert.deepEqual(GL.pickTip('chain', { r: 1 }, false), { kind: 'strategy', line: 'tip-chain' });
-  assert.equal(GL.pickTip('chain', { r: 1 }, true), null);
-  assert.equal(GL.pickTip('chain', {}, true), null);
-  assert.equal(GL.pickTip('nope', {}, false), null);
+test('pickTip: struggling with a piece shows its rule, otherwise no tip after the win', () => {
+  assert.deepEqual(GL.pickTip('chain', { b: 2 }), { kind: 'rule', type: 'b', line: 'bishop-1' });
+  assert.deepEqual(GL.pickTip('chain', { r: 2, n: 3 }), { kind: 'rule', type: 'n', line: 'knight-2' });
+  assert.equal(GL.pickTip('chain', { r: 1 }), null);
+  assert.equal(GL.pickTip('chain', {}), null);
+  assert.equal(GL.pickTip('nope', { r: 5 }), null);
 });
 
 test('the golden king needs three different games', () => {
