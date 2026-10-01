@@ -37,7 +37,8 @@ list order is the order of the language row and of `--lang all`). Fields:
 - `msPerChar`: milliseconds of speech per character, used only to pace
   lessons before and around recorded clips. Start with 75 and adjust from the
   clip lengths.
-- `azureVoice`: the Azure neural voice name used by `tools/make-voice.js`,
+- `voiceRate`, `voicePitch`: the speed and pitch `tools/make-voice-edge.py` gives that voice (for example `-10%` and `+15Hz`); try a few by ear with `--rate` and `--pitch` first.
+- `azureVoice`: the Microsoft neural voice name used by `tools/make-voice-edge.py` and `tools/make-voice.js`,
   for example `hi-IN-SwaraNeural`. The SSML language is its first two
   parts.
 - `voicePrefs`: `null`, or preferred device voices (`preferNames`,
@@ -71,10 +72,13 @@ language has no column.
 
 ## 4. Clips
 
-Put the recorded clips in `audio/voice/<id>/<line id>.mp3`. Either generate
-them (`node tools/make-voice.js --lang <id>`, which needs
-`AZURE_SPEECH_KEY` and `AZURE_SPEECH_REGION`) or have the parent record them
-under the same file names. Then rebuild the clip index, which lists the ids
+Put the clips in `audio/voice/<id>/<line id>.mp3`. Generate them with
+`tools/make-voice-edge.py --lang <id>` (Microsoft neural voices through
+edge-tts, using the registry entry's `azureVoice`, `voiceRate` and
+`voicePitch`; no key needed, see [VOICE-SCRIPT.md](VOICE-SCRIPT.md)), or with
+`node tools/make-voice.js --lang <id>` (Azure, needs `AZURE_SPEECH_KEY` and
+`AZURE_SPEECH_REGION`), or have the parent record them under the same file
+names. Then rebuild the clip index, which lists the ids
 that have a file:
 
     node tools/make-voice.js --index-only

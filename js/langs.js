@@ -22,8 +22,12 @@
  *               this script (tests/lessons.test.js), or null.
  *   msPerChar   milliseconds of speech per character, used by js/lessons.js to
  *               estimate how long a line takes (pacing only).
- *   azureVoice  Azure neural voice name used by tools/make-voice.js; its first
- *               two dash-separated parts are the SSML xml:lang.
+ *   azureVoice  Microsoft neural voice name used by tools/make-voice-edge.py
+ *               and tools/make-voice.js; its first two dash-separated parts
+ *               are the SSML xml:lang.
+ *   voiceRate, voicePitch  the speed and pitch tools/make-voice-edge.py gives
+ *               that voice (edge-tts form, e.g. '-10%' and '+15Hz'), chosen by
+ *               the owner by ear.
  *   voicePrefs  optional device-voice preferences (js/voice.js pickVoice):
  *               { preferNames: [RegExp, ...] in order, avoidNames: RegExp,
  *               preferRegions: [lowercase lang tags, ...] }, or null.
@@ -56,7 +60,9 @@
       fallback: null,
       script: null,
       msPerChar: 60,
-      azureVoice: 'en-IN-NeerjaNeural',
+      azureVoice: 'en-IN-NeerjaExpressiveNeural',
+      voiceRate: '-10%',
+      voicePitch: '+15Hz',
       voicePrefs: {
         preferNames: [
           /Google UK English Female/,
@@ -91,6 +97,8 @@
       script: /[ఀ-౿]/,
       msPerChar: 75,
       azureVoice: 'te-IN-ShrutiNeural',
+      voiceRate: '-5%',
+      voicePitch: '+25Hz',
       voicePrefs: null,
       // "<team> వంతు": the possessive form when the team has one
       // (మెరుపుల వంతు, not మెరుపులు వంతు).

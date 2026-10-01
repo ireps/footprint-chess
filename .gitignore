@@ -9,3 +9,7 @@ Thumbs.db
 
 # Browser test failure screenshots (e2e/run.js)
 e2e/output/
+
+# Python environment for tools/make-voice-edge.py
+.venv/
+__pycache__/

@@ -65,60 +65,60 @@
     'meet-p': { en: 'Here is our little pawn!', te: 'ఇదిగో, మన చిన్న భటుడు!' },
 
     /* hello */
-    'hello-1': { en: "Hello! Let's have fun and learn chess together.", te: 'హలో! సరదాగా చదరంగం నేర్చుకుందాం.' },
-    'hello-2': { en: 'Tap your piece once to see where it can walk with its little footprints!', te: 'నీ పావుని ఒక్కసారి నొక్కు, అది ఎక్కడెక్కడ నడవగలదో అడుగుల గుర్తులు చూపిస్తుంది!' },
+    'hello-1': { en: "Hello, let's have fun and learn chess together!", te: 'హలో, సరదాగా చదరంగం నేర్చుకుందాం!' },
+    'hello-2': { en: 'Tap your piece once, and see where it can walk with its little footprints!', te: 'నీ పావుని ఒక్కసారి నొక్కు, అది ఎక్కడెక్కడ నడవగలదో అడుగుల గుర్తులు చూపిస్తుంది!' },
     'hello-3': { en: 'Tap a footprint, and off it goes with a skip!', te: 'ఆ అడుగు గుర్తు మీద నొక్కు చాలు, అది హుషారుగా అక్కడికి వెళ్తుంది!' },
 
     /* rook */
     'rook-1': { en: 'Our rook always moves in straight lines.', te: 'మన ఏనుగు ఎప్పుడూ తిన్నగానే అడుగు వేస్తుంది.' },
-    'rook-2': { en: 'It can slide all the way across toward the other side!', te: 'అవతలి వైపు దాకా చక్కగా దూసుకుపోగలదు!' },
-    'rook-3': { en: 'Or straight across, just as far.', te: 'లేదా అడ్డంగా కూడా అంతే దూరం సరదాగా వెళ్తుంది.' },
+    'rook-2': { en: 'It can slide all the way across, toward the other side!', te: 'అవతలి వైపు దాకా చక్కగా దూసుకుపోగలదు!' },
+    'rook-3': { en: 'Or straight across, just as far!', te: 'లేదా అడ్డంగా కూడా అంతే దూరం సరదాగా వెళ్తుంది.' },
 
     /* bishop */
     'bishop-1': { en: 'Our bishop always moves on slanty lines.', te: 'మన ఒంటె ఎప్పుడూ వాలుగానే నడుస్తుంది.' },
-    'bishop-2': { en: 'It always stays on its own colour, look at that!', te: 'అది ఎప్పుడూ తన సొంత రంగు గడుల మీదే ఉంటుంది, చూశావా!' },
-    'bishop-3': { en: 'Watch it slide smoothly the other way!', te: 'చూడు, ఇప్పుడు చక్కగా ఇంకో వైపు జారుతుంది!' },
+    'bishop-2': { en: 'It always stays on its own colour. Look at that!', te: 'అది ఎప్పుడూ తన సొంత రంగు గడుల మీదే ఉంటుంది, చూశావా!' },
+    'bishop-3': { en: 'Watch it slide smoothly, the other way!', te: 'చూడు, ఇప్పుడు చక్కగా ఇంకో వైపు జారుతుంది!' },
 
     /* queen */
-    'queen-1': { en: 'Our queen is amazing! She moves like both the rook and the bishop together.', te: 'మన మంత్రి చాలా గొప్పది! ఏనుగు లాగా, ఒంటె లాగా రెండింటిలానూ వెళ్లగలదు.' },
+    'queen-1': { en: 'Our queen is amazing! She moves like both the rook and the bishop, together.', te: 'మన మంత్రి చాలా గొప్పది! ఏనుగు లాగా, ఒంటె లాగా రెండింటిలానూ వెళ్లగలదు.' },
     'queen-2': { en: 'Straight lines, just like the rook.', te: 'ఏనుగు లాగా తిన్నగా వెళ్తుంది.' },
     'queen-3': { en: 'And slanty lines, just like the bishop too!', te: 'అలాగే ఒంటె లాగా వాలుగా కూడా వెళ్తుంది!' },
 
     /* king */
-    'king-1': { en: 'Our king takes just one calm step at a time.', te: 'మన రాజుగారు చాలా ప్రశాంతంగా ఒక్క అడుగు మాత్రమే వేస్తారు.' },
-    'king-2': { en: 'But he can step any way he likes with courage!', te: 'కానీ ఏ వైపుకైనా సరే ధైర్యంగా అడుగు వేయగలడు!' },
+    'king-1': { en: 'Our king takes just one calm step at a time.', te: 'మన రాజుగారు చాలా ప్రశాంతంగా, ఒక్క అడుగు మాత్రమే వేస్తారు.' },
+    'king-2': { en: 'But he can step any way he likes, with courage!', te: 'కానీ ఏ వైపుకైనా సరే ధైర్యంగా అడుగు వేయగలడు!' },
     'king-3': { en: 'Slow and careful, just like a real king.', te: 'నెమ్మదిగా, చాలా జాగ్రత్తగా, నిజమైన రాజు లాగా!' },
 
     /* knight */
     'knight-1': { en: 'Our knight moves in a special, bouncy way!', te: 'మన గుర్రం చాలా ప్రత్యేకంగా, చురుగ్గా కదులుతుంది!' },
-    'knight-2': { en: 'Two steps, then one to the side.', te: 'రెండు గడులు ముందుకు వేసి, తర్వాత పక్కకి ఒకటి దూకుతుంది.' },
-    'knight-3': { en: 'Oh, it can even jump over other pieces!', te: 'అరె! అది వేరే పావుల మీదుగా కూడా సరదాగా దూకగలదు!' },
+    'knight-2': { en: 'Two steps... then one to the side.', te: 'రెండు గడులు ముందుకు వేసి, తర్వాత పక్కకి ఒకటి దూకుతుంది.' },
+    'knight-3': { en: 'Oh, it can even jump over other pieces!', te: 'అరె, అది వేరే పావుల మీదుగా కూడా సరదాగా దూకగలదు!' },
 
     /* pawn */
-    'pawn-1': { en: 'Our pawn marches like a brave soldier toward the other side.', te: 'మన భటుడు ఒక సైనికుడిలా అవతలి వైపుకి ముందుకు నడుస్తాడు.' },
-    'pawn-2': { en: 'Its very first step can be two full steps!', te: 'తన మొదటి అడుగులో మాత్రం రెండు గడులు హుషారుగా వెళ్లగలడు!' },
+    'pawn-1': { en: 'Our pawn marches like a brave soldier, toward the other side.', te: 'మన భటుడు ఒక సైనికుడిలా, అవతలి వైపుకి ముందుకు నడుస్తాడు.' },
+    'pawn-2': { en: 'Its very first step can be two whole squares!', te: 'తన మొదటి అడుగులో మాత్రం రెండు గడులు హుషారుగా వెళ్లగలడు!' },
     'pawn-3': { en: 'After that, always one small step at a time.', te: 'ఆ తర్వాత మాత్రం, ఎప్పుడూ ఒక్కోసారి ఒక్క అడుగే వేస్తాడు.' },
 
     /* capturing, shared by every capture-<type> lesson */
-    'capture-1': { en: 'Oh look, there is a pawn from the other side!', te: 'అయ్యో చూడు, అక్కడ శత్రువు భటుడు ఉన్నాడు!' },
-    'capture-2': { en: 'Move onto its space and capture it!', te: 'ఇప్పుడు నువ్వు దాని గడిలోకి వెళ్లి, దాన్ని పట్టుకో!' },
-    'capture-3': { en: "Successfully captured! Now it's off the board.", te: 'భలే పట్టేసుకుంది! ఇక ఆ పావు ఆటలో లేదు.' },
+    'capture-1': { en: "Oh look, there's a pawn from the other side!", te: 'అయ్యో చూడు, అక్కడ శత్రువు భటుడు ఉన్నాడు!' },
+    'capture-2': { en: 'Move onto its space, and capture it!', te: 'ఇప్పుడు నువ్వు దాని గడిలోకి వెళ్లి, దాన్ని పట్టుకో!' },
+    'capture-3': { en: "Successfully captured! Now, it's off the board.", te: 'భలే పట్టేసుకుంది! ఇక ఆ పావు ఆటలో లేదు.' },
 
     /* pawn capturing, its own special case */
-    'pawncap-1': { en: 'Our pawn captures on the slant, one step ahead!', te: 'మన భటుడు ముందు వాలుగా ఉన్న గడిలో శత్రువుని పట్టేసుకుంటాడు!' },
+    'pawncap-1': { en: 'Our pawn captures on the slant, one step ahead!', te: 'మన భటుడు, ముందు వాలుగా ఉన్న గడిలో శత్రువుని పట్టేసుకుంటాడు!' },
     'pawncap-2': { en: 'But it cannot capture straight ahead, remember!', te: 'అంతే కానీ, తిన్నగా ఎదురుగా ఉన్నదాన్ని మాత్రం పట్టుకోలేడు సుమా!' },
 
     /* generic practice-flow lines, reused by every lesson, and by the app outside lessons */
-    'your-turn': { en: "Now it's your turn to try!", te: 'ఇప్పుడు నీ వంతు, నువ్వు చేసి చూపించు!' },
+    'your-turn': { en: "Now, it's your turn to try!", te: 'ఇప్పుడు నీ వంతు, నువ్వు చేసి చూపించు!' },
     'tap-piece': { en: 'Tap your piece.', te: 'నీ పావుని ఒక్కసారి నొక్కు.' },
     'tap-footprint': { en: 'Tap a footprint.', te: 'ఇప్పుడు ఆ అడుగు గుర్తుని నొక్కు.' },
-    'great': { en: 'Great job! That was wonderful!', te: 'భలే చేశావు! చాలా చాలా బాగుంది!' },
+    'great': { en: 'Great job, that was wonderful!', te: 'భలే చేశావు, చాలా చాలా బాగుంది!' },
 
     /* used outside lessons, by js/app.js */
     'mission': { en: "Let's capture all three pawns!", te: 'సరే, ఇప్పుడు మనం ఈ మూడు భటులనీ పట్టుకోవాలి!' },
-    'hint-pawn': { en: 'Follow the footprints all the way to the pawn.', te: 'అడుగుల గుర్తులు చూపించే దారిలోనే భటుడి దగ్గరికి వెళ్ళు.' },
-    'won': { en: 'You captured them all!', te: 'అబ్బో, అందరినీ చక్కగా పట్టేసుకున్నావు!' },
-    'next': { en: 'Play again, or pick the next piece to explore.', te: 'మళ్ళీ ఆడు, లేదా వేరే కొత్త పావుని ఎంచుకో.' },
+    'hint-pawn': { en: 'Follow the footprints, all the way to the pawn.', te: 'అడుగుల గుర్తులు చూపించే దారిలోనే, భటుడి దగ్గరికి వెళ్ళు.' },
+    'won': { en: 'Wow, you captured them all!', te: 'అబ్బో, అందరినీ చక్కగా పట్టేసుకున్నావు!' },
+    'next': { en: 'Play again, or try the next one!', te: 'మళ్ళీ ఆడు, లేదా తర్వాతి దానికి వెళ్దాం!' },
 
     /*
      * Games (stage 3). Team names, said when the child picks a team (see
@@ -135,7 +135,7 @@
     'team-dinos-b': { en: 'Sauropods!', te: 'అడవి జట్టు!' },
     'team-pirate-a': { en: 'Buccaneers!', te: 'సొరచేపలు!' },
     'team-pirate-b': { en: 'Corsairs!', te: 'తిమింగలాలు!' },
-    'pick-team': { en: 'Pick your team!', te: 'నీ జట్టుని ఎంచుకో!' },
+    'pick-team': { en: 'Now, pick your team!', te: 'ఇప్పుడు, నీ జట్టుని ఎంచుకో!' },
 
     /*
      * Turn-taking. turn-me/turn-foe are said by the player whenever a
@@ -145,27 +145,27 @@
      */
     'turn-me': { en: 'Your turn!', te: 'నీ వంతు!' },
     'turn-foe': { en: 'Their turn.', te: 'శత్రువు వంతు.' },
-    'turns-1': { en: 'In chess, we take turns.', te: 'చదరంగంలో వంతుల వారీగా ఆడతాం.' },
-    'turns-2': { en: 'First your team moves.', te: 'ముందు నీ జట్టు కదులుతుంది.' },
-    'turns-3': { en: 'Then their team moves.', te: 'తర్వాత శత్రువు జట్టు కదులుతుంది.' },
-    'turns-4': { en: 'Then it is your turn again!', te: 'మళ్ళీ నీ వంతు!' },
+    'turns-1': { en: 'In chess, we always take turns.', te: 'చదరంగంలో, ఎప్పుడూ వంతుల వారీగా ఆడతాం.' },
+    'turns-2': { en: 'First, your team moves.', te: 'ముందు, నీ జట్టు కదులుతుంది.' },
+    'turns-3': { en: 'Then, their team moves.', te: 'తర్వాత, శత్రువు జట్టు కదులుతుంది.' },
+    'turns-4': { en: "And then... it's your turn again!", te: 'ఆ తర్వాత... మళ్ళీ నీ వంతు!' },
 
     /* the three games' mission lines, said on each game's Mission card */
-    'game-catch': { en: 'Catch the knight! It hops away after every move.', te: 'గుర్రాన్ని పట్టుకో! ప్రతి సారీ అది దూకి పారిపోతుంది.' },
-    'game-race': { en: 'Pawn race! Get one pawn to the other side first.', te: 'భటుల పందెం! ముందుగా ఒక భటుడిని అవతలి వైపుకి చేర్చు.' },
-    'game-battle': { en: 'Capture all their pawns!', te: 'శత్రువు భటులందరినీ పట్టుకో!' },
+    'game-catch': { en: 'Catch the knight! But watch out, it hops away after every move.', te: 'గుర్రాన్ని పట్టుకో! కానీ జాగ్రత్త, ప్రతి సారీ అది దూకి పారిపోతుంది.' },
+    'game-race': { en: 'Pawn race! Be the first to get a pawn to the other side!', te: 'భటుల పందెం! ముందుగా, ఒక భటుడిని అవతలి వైపుకి చేర్చు.' },
+    'game-battle': { en: 'Little battle! Can you capture all their pawns?', te: 'చిన్న యుద్ధం! శత్రువు భటులందరినీ పట్టుకోగలవా?' },
 
     /* game event lines */
-    'knight-tired': { en: 'The knight is getting tired!', te: 'గుర్రం అలసిపోతోంది!' },
-    'caught': { en: 'You caught the knight!', te: 'గుర్రాన్ని పట్టేశావు!' },
-    'race-won': { en: 'Your pawn reached the other side!', te: 'నీ భటుడు అవతలి వైపుకి చేరాడు!' },
-    'piece-back': { en: 'Your piece is back!', te: 'నీ పావు మళ్ళీ వచ్చింది!' },
-    'golden': { en: 'A golden pawn!', te: 'బంగారు భటుడు!' },
-    'sticker': { en: 'You got a sticker!', te: 'నీకు ఒక స్టిక్కర్ వచ్చింది!' },
-    'break': { en: 'Great playing! Time for a little break?', te: 'బాగా ఆడావు! కొంచెం విశ్రాంతి తీసుకుందామా?' },
+    'knight-tired': { en: 'Oh, the knight is getting tired!', te: 'అరె, గుర్రం అలసిపోతోంది!' },
+    'caught': { en: 'Yay, you caught the knight!', te: 'భలే, గుర్రాన్ని పట్టేశావు!' },
+    'race-won': { en: 'Hooray, your pawn reached the other side!', te: 'అబ్బో, నీ భటుడు అవతలి వైపుకి చేరాడు!' },
+    'piece-back': { en: 'Look, your piece is back!', te: 'చూడు, నీ పావు మళ్ళీ వచ్చింది!' },
+    'golden': { en: 'Wow, a golden pawn!', te: 'ఆహా, బంగారు భటుడు!' },
+    'sticker': { en: 'Yay, you got a sticker!', te: 'భలే, నీకు ఒక స్టిక్కర్ వచ్చింది!' },
+    'break': { en: 'Great playing! How about a little break?', te: 'బాగా ఆడావు! కొంచెం విశ్రాంతి తీసుకుందామా?' },
 
     /* profiles (stage 5): said on the Who's playing screen, and shown there as its heading */
-    'who': { en: "Who's playing?", te: 'ఎవరు ఆడుతున్నారు?' },
+    'who': { en: "Who's playing today?", te: 'ఈ రోజు ఎవరు ఆడుతున్నారు?' },
 
     /* more games (stage 6): the Games screen, two new games, the quiz and the tips after a game */
     'games-pick': { en: 'Pick a game!', te: 'ఒక ఆట ఎంచుకో!' },
@@ -178,7 +178,7 @@
     'escape-ask': { en: 'Check! Save your king.', te: 'చెక్! నీ రాజుని కాపాడు.' },
     'escape-won': { en: 'You kept your king safe every time!', te: 'ప్రతిసారీ నీ రాజుని కాపాడావు!' },
     'game-run': { en: 'Run away! Stay where the other piece cannot capture you.', te: 'పారిపో! శత్రువు పావు పట్టుకోలేని చోట ఉండు.' },
-    'run-danger': { en: 'Not there! It could capture you there.', te: 'అక్కడ వద్దు! అక్కడ అది నిన్ను పట్టుకోగలదు.' },
+    'run-danger': { en: 'Not there, it could capture you there!', te: 'అక్కడ వద్దు, అక్కడ అది నిన్ను పట్టుకోగలదు!' },
     'run-won': { en: 'You got away safely!', te: 'సురక్షితంగా తప్పించుకున్నావు!' },
     'tip-run': { en: 'Look at its footprints, and stand where they are not!', te: 'దాని అడుగుల గుర్తులు చూడు, అవి లేని చోట నిలబడు!' },
     'mate-1': { en: 'This king is stuck behind his own pawns.', te: 'ఈ రాజు తన సొంత భటుల వెనక ఇరుక్కుపోయాడు.' },
@@ -186,19 +186,19 @@
     'mate-3': { en: 'Checkmate! The king has nowhere to go.', te: 'చెక్‌మేట్! రాజుకి ఎక్కడికీ వెళ్ళే దారి లేదు.' },
     'game-mate': { en: 'Checkmate in one! Trap the king with one move.', te: 'ఒక్క ఎత్తులో చెక్‌మేట్! ఒకే కదలికతో రాజుని బంధించు.' },
     'mate-ask': { en: 'Find the checkmate!', te: 'చెక్‌మేట్ కనుక్కో!' },
-    'mate-nearly': { en: 'Nearly! The king can still escape.', te: 'దాదాపు! రాజు ఇంకా తప్పించుకోగలడు.' },
+    'mate-nearly': { en: 'Nearly, but the king can still escape!', te: 'దాదాపు, కానీ రాజు ఇంకా తప్పించుకోగలడు!' },
     'mate-won': { en: 'You found every checkmate!', te: 'అన్ని చెక్‌మేట్లూ కనుక్కున్నావు!' },
     'tip-mate': { en: 'Check the king, and cover every square he could run to!', te: 'రాజుకి చెక్ పెట్టు, అతను పారిపోయే ప్రతి గడినీ కాపు కాయి!' },
     'game-mate2': { en: 'Checkmate in two! Give check first, then checkmate.', te: 'రెండు ఎత్తుల్లో చెక్‌మేట్! ముందు చెక్ పెట్టు, తర్వాత చెక్‌మేట్.' },
     'mate2-ask': { en: 'Give check first!', te: 'ముందు చెక్ పెట్టు!' },
-    'mate2-nearly': { en: 'Nearly! Find the check that traps him next move.', te: 'దాదాపు! తర్వాతి ఎత్తులో రాజుని బంధించే చెక్ కనుక్కో.' },
+    'mate2-nearly': { en: 'Nearly, now find the check that traps him on the next move.', te: 'దాదాపు, ఇప్పుడు తర్వాతి ఎత్తులో రాజుని బంధించే చెక్ కనుక్కో.' },
     'mate2-won': { en: 'You found every checkmate in two!', te: 'రెండు ఎత్తుల్లో చెక్‌మేట్లు అన్నీ కనుక్కున్నావు!' },
     'tip-mate2': { en: 'Give check so the king must move. Then checkmate him!', te: 'రాజు కదలక తప్పని చెక్ పెట్టు. తర్వాత చెక్‌మేట్ పెట్టు!' },
     'game-value': { en: 'Which capture is best? Take the biggest prize you can keep.', te: 'ఏది పట్టుకుంటే మంచిది? నువ్వు ఉంచుకోగలిగే పెద్ద బహుమతిని పట్టుకో.' },
     'value-ask': { en: 'Which capture is best?', te: 'ఏది పట్టుకుంటే మంచిది?' },
     'value-find': { en: 'Find a capture!', te: 'పట్టుకోగలిగేది కనుక్కో!' },
     'value-bigger': { en: 'A bigger prize is waiting!', te: 'ఇంకా పెద్ద బహుమతి ఎదురు చూస్తోంది!' },
-    'value-back': { en: 'Careful! They could capture it back.', te: 'జాగ్రత్త! శత్రువు దాన్ని తిరిగి పట్టుకోగలదు.' },
+    'value-back': { en: 'Careful, they could capture it back!', te: 'జాగ్రత్త, శత్రువు దాన్ని తిరిగి పట్టుకోగలదు!' },
     'value-yes': { en: 'Great capture!', te: 'భలే పట్టావు!' },
     'value-won': { en: 'You found every best capture!', te: 'ప్రతిసారీ మంచి పట్టు కనుక్కున్నావు!' },
     'tip-value': { en: 'Take the biggest prize they cannot capture back!', te: 'శత్రువు తిరిగి పట్టుకోలేని పెద్ద బహుమతిని పట్టుకో!' },
@@ -206,13 +206,13 @@
     'game-stale': { en: 'Checkmate, not stalemate! Trap the king with check.', te: 'చెక్‌మేట్, స్టేల్‌మేట్ కాదు! చెక్ పెట్టి రాజుని బంధించు.' },
     'stale-ask': { en: 'Find the checkmate, not the stalemate!', te: 'స్టేల్‌మేట్ కాదు, చెక్‌మేట్ కనుక్కో!' },
     'stale-oops': { en: 'Stalemate! He cannot move, but he is not in check.', te: 'స్టేల్‌మేట్! రాజు కదలలేడు, కానీ అతనికి చెక్ లేదు.' },
-    'stale-won': { en: 'Checkmate every time! Well done!', te: 'ప్రతిసారీ చెక్‌మేట్! శభాష్!' },
+    'stale-won': { en: 'Checkmate every time, well done!', te: 'ప్రతిసారీ చెక్‌మేట్, శభాష్!' },
     'tip-stale': { en: 'Always give check. No check and no moves is stalemate.', te: 'ఎప్పుడూ చెక్ పెట్టు. చెక్ లేకుండా కదలలేకపోతే స్టేల్‌మేట్.' },
     'game-opening': { en: 'Wake up your army! Bring your pieces out, then castle.', te: 'నీ సైన్యాన్ని నిద్రలేపు! పావుల్ని బయటకు తెచ్చి, తర్వాత క్యాస్లింగ్ చెయ్యి.' },
     'open-queen': { en: 'Keep the queen at home for now.', te: 'ఇప్పటికి మంత్రిని తన చోటులోనే ఉంచు.' },
     'open-rook': { en: 'The rooks wait until the king is safe.', te: 'రాజు సురక్షితంగా ఉండే వరకు ఏనుగులు ఆగుతాయి.' },
     'open-king': { en: 'Keep the king at home, then castle!', te: 'రాజుని తన చోటులోనే ఉంచు, తర్వాత క్యాస్లింగ్!' },
-    'open-ready': { en: 'Good! That piece is ready.', te: 'బాగుంది! ఆ పావు సిద్ధం.' },
+    'open-ready': { en: 'Good, that piece is ready!', te: 'బాగుంది, ఆ పావు సిద్ధం!' },
     'open-won': { en: 'Your army is awake, and your king is safe!', te: 'నీ సైన్యం మేల్కొంది, నీ రాజు సురక్షితం!' },
     'tip-opening': { en: 'A middle pawn, knights and bishops out, then castle!', te: 'మధ్య భటుడు ముందుకు, గుర్రాలు ఒంటెలు బయటకు, తర్వాత క్యాస్లింగ్!' },
     'pond-1': { en: 'Your pawns march toward the other side.', te: 'నీ భటులు అవతలి వైపుకి నడుస్తారు.' },
@@ -225,7 +225,7 @@
     'tip-theirs': { en: 'Their pawns march toward your side, and capture on the slant.', te: 'శత్రువు భటులు నీ వైపుకి నడుస్తారు, వాలుగా పట్టుకుంటారు.' },
     'game-danger': { en: 'Which piece is in danger? Find it, then move it to safety.', te: 'ఏ పావుకి ప్రమాదం? కనుక్కుని, దాన్ని సురక్షిత చోటుకి తీసుకెళ్ళు.' },
     'danger-ask': { en: 'Which of your pieces could they capture?', te: 'శత్రువు నీ ఏ పావుని పట్టుకోగలదు?' },
-    'danger-yes': { en: 'Yes! Now move it somewhere safe.', te: 'అవును! ఇప్పుడు దాన్ని సురక్షిత చోటుకి కదుపు.' },
+    'danger-yes': { en: 'Yes, now move it somewhere safe!', te: 'అవును, ఇప్పుడు దాన్ని సురక్షిత చోటుకి కదుపు!' },
     'danger-safe': { en: 'That one is safe. Try another!', te: 'అది క్షేమంగానే ఉంది. ఇంకోటి చూడు!' },
     'danger-won': { en: 'You kept your pieces safe!', te: 'నీ పావులన్నిటినీ కాపాడావు!' },
     'tip-danger': { en: 'Look at their footprints. Is one of your pieces on them?', te: 'శత్రువు అడుగుల గుర్తులు చూడు. వాటి మీద నీ పావు ఏదైనా ఉందా?' },
@@ -236,8 +236,8 @@
     'game-hands': { en: 'Left or right? Move the way I say!', te: 'ఎడమ, కుడి! నేను చెప్పిన వైపుకి కదుపు!' },
     'hands-left': { en: 'Move to your left!', te: 'నీ ఎడమ వైపుకి కదుపు!' },
     'hands-right': { en: 'Move to your right!', te: 'నీ కుడి వైపుకి కదుపు!' },
-    'hands-yes-left': { en: 'Yes! That is your left.', te: 'అవును! అది నీ ఎడమ వైపు.' },
-    'hands-yes-right': { en: 'Yes! That is your right.', te: 'అవును! అది నీ కుడి వైపు.' },
+    'hands-yes-left': { en: "Yes, that's your left!", te: 'అవును, అది నీ ఎడమ వైపు!' },
+    'hands-yes-right': { en: "Yes, that's your right!", te: 'అవును, అది నీ కుడి వైపు!' },
     'hands-not-left': { en: 'That way is your right. Try your left!', te: 'అది నీ కుడి వైపు. ఎడమ వైపు ప్రయత్నించు!' },
     'hands-not-right': { en: 'That way is your left. Try your right!', te: 'అది నీ ఎడమ వైపు. కుడి వైపు ప్రయత్నించు!' },
     'hands-won': { en: 'You know your left and right!', te: 'నీకు ఎడమ, కుడి బాగా తెలుసు!' },
@@ -248,7 +248,7 @@
     'quiz-ask': { en: 'Whose footprints are these?', te: 'ఈ అడుగుల గుర్తులు ఎవరివి?' },
     'quiz-again': { en: 'Its footprints look different. Try again!', te: 'దాని అడుగులు వేరేలా ఉంటాయి. మళ్ళీ చూడు!' },
     'quiz-won': { en: 'You know your pieces so well!', te: 'నీకు పావులన్నీ బాగా తెలుసు!' },
-    'tip-look': { en: 'Here is a little tip!', te: 'ఇదిగో, ఒక చిన్న చిట్కా!' },
+    'tip-look': { en: "Here's a little tip!", te: 'ఇదిగో, ఒక చిన్న చిట్కా!' },
     'how-look': { en: 'Watch how to play!', te: 'ఎలా ఆడాలో చూడు!' },
     'how-catch-1': { en: 'The knight can hop to these squares.', te: 'గుర్రం ఈ గడులకి దూకగలదు.' },
     'how-catch-2': { en: 'Stand where your footprints cover its hops.', te: 'దాని దూకే గడుల మీద నీ అడుగుల గుర్తులు పడేలా నిలబడు.' },
@@ -262,7 +262,7 @@
     'game-stop': { en: 'Stop the pawns! Capture them as they march toward you.', te: 'శత్రువు భటులను ఆపు! అవి నీ వైపు నడిచి వస్తుంటే పట్టుకో.' },
     'game-safe': { en: 'Keep the king safe! Walk him to the other side.', te: 'రాజుని కాపాడు! అతన్ని అవతలి వైపుకి నడిపించు.' },
     'reach-won': { en: 'You reached the other side!', te: 'అవతలి వైపుకి చేరుకున్నావు!' },
-    'king-danger': { en: 'Not there! That square is not safe for the king.', te: 'అక్కడ వద్దు! ఆ గడిలో రాజుకి ప్రమాదం.' },
+    'king-danger': { en: "Not there, that square isn't safe for the king!", te: 'అక్కడ వద్దు, ఆ గడిలో రాజుకి ప్రమాదం!' },
     'tip-hop': { en: 'Pick the footprints closest to the other side!', te: 'అవతలి వైపుకి దగ్గరగా ఉన్న అడుగు గుర్తుని ఎంచుకో!' },
     'tip-way': { en: 'Your own pieces block the way. Go around them!', te: 'నీ పావులే దారికి అడ్డం. వాటి చుట్టూ తిరిగి వెళ్ళు!' },
     'tip-stop': { en: 'A pawn cannot walk through you. Stand in front of it!', te: 'శత్రువు భటుడు నిన్ను దాటి నడవలేడు. అతని ముందు నిలబడు!' },
@@ -273,7 +273,7 @@
     'game-army2': { en: 'Pawns and rooks! Capture all their pawns, or reach the other side.', te: 'భటులు, ఏనుగులు! శత్రువు భటులందరినీ పట్టుకో, లేదా అవతలి వైపుకి చేరు.' },
     'game-army3': { en: 'Pawns, rooks and bishops! Capture all their pawns, or reach the other side.', te: 'భటులు, ఏనుగులు, ఒంటెలు! శత్రువు భటులందరినీ పట్టుకో, లేదా అవతలి వైపుకి చేరు.' },
     'army-won': { en: 'You won the battle!', te: 'యుద్ధంలో నువ్వు గెలిచావు!' },
-    'army-danger': { en: 'Careful! One of your pieces could be captured.', te: 'జాగ్రత్త! శత్రువు నీ పావుల్లో ఒకదాన్ని పట్టుకోగలదు.' },
+    'army-danger': { en: 'Careful, one of your pieces could be captured!', te: 'జాగ్రత్త, శత్రువు నీ పావుల్లో ఒకదాన్ని పట్టుకోగలదు!' },
     'tip-army1': { en: 'Pawns keep each other safe. If one is captured, the other captures back!', te: 'భటులు ఒకరినొకరు కాపాడుకుంటారు. ఒకరిని పట్టుకుంటే, ఇంకొకరు తిరిగి పట్టుకుంటారు!' },
     'tip-army2': { en: 'Find a pawn that nobody protects, and capture it with your rook!', te: 'ఎవరూ కాపు కాయని భటుడిని వెతికి, నీ ఏనుగుతో పట్టుకో!' },
     'tip-army3': { en: 'Your bishop is stuck behind the pawns. Move a pawn, and out it comes!', te: 'నీ ఒంటె భటుల వెనక ఇరుక్కుపోయింది. ఒక భటుడిని కదుపు, అది బయటకు వస్తుంది!' },
@@ -282,7 +282,7 @@
     'game-army6': { en: 'The whole army, kings too! Checkmate their king to win.', te: 'మొత్తం సైన్యం, రాజులతో సహా! శత్రువు రాజుకి చెక్‌మేట్ పెట్టి గెలువు.' },
     'army-mate-won': { en: 'Checkmate! You won the whole battle!', te: 'చెక్‌మేట్! మొత్తం యుద్ధం నువ్వే గెలిచావు!' },
     'army-check': { en: 'Check! Their king must get out of check.', te: 'చెక్! శత్రువు రాజు చెక్ నుంచి తప్పించుకోవాలి.' },
-    'army-queen': { en: 'Your pawn reached the other side. Now it is a queen!', te: 'నీ భటుడు అవతలి వైపుకి చేరాడు. ఇప్పుడు అతను మంత్రి!' },
+    'army-queen': { en: "Your pawn reached the other side. Now it's a queen!", te: 'నీ భటుడు అవతలి వైపుకి చేరాడు. ఇప్పుడు అతను మంత్రి!' },
     'army-draw': { en: 'Stalemate! Their king cannot move, but nobody wins this time.', te: 'స్టేల్‌మేట్! శత్రువు రాజు కదలలేడు, కానీ ఈసారి ఎవరూ గెలవలేదు.' },
     'tip-army4': { en: 'Knights jump over pieces. One knight can attack two pieces at once!', te: 'గుర్రాలు పావుల మీదుగా దూకుతాయి. ఒక్క గుర్రం ఒకేసారి రెండు పావుల మీద దాడి చేయగలదు!' },
     'tip-army5': { en: 'Your queen is strong. Never let her be captured for a pawn!', te: 'నీ మంత్రి చాలా బలమైనది. ఒక భటుడి కోసం ఆమెని పోగొట్టుకోకు!' },
@@ -294,9 +294,9 @@
     'tip-army7': { en: 'Castling: the king steps two squares, and the rook jumps beside him!', te: 'క్యాస్లింగ్: రాజు రెండు గడులు కదులుతాడు, ఏనుగు అతని పక్కకి దూకుతుంది!' },
     'army-castle': { en: 'Castling! The king and rook moved together.', te: 'క్యాస్లింగ్! రాజు, ఏనుగు కలిసి కదిలారు.' },
     'army-passant': { en: 'En passant! A pawn captured the pawn that rushed past it.', te: 'ఆన్ పసాంట్! పక్క నుంచి దూసుకెళ్ళిన భటుడిని ఇంకో భటుడు పట్టుకున్నాడు.' },
-    'army-foe-queen': { en: 'Their pawn reached your side. Now it is a queen!', te: 'శత్రువు భటుడు నీ వైపుకి చేరాడు. ఇప్పుడు అది మంత్రి!' },
+    'army-foe-queen': { en: "Their pawn reached your side. Now it's a queen!", te: 'శత్రువు భటుడు నీ వైపుకి చేరాడు. ఇప్పుడు అది మంత్రి!' },
     'army-draw-kings': { en: 'Only the two kings remain. Nobody wins this time.', te: 'ఇద్దరు రాజులే మిగిలారు. ఈసారి ఎవరూ గెలవలేదు.' },
-    'army-undo': { en: 'Taken back. Try another move!', te: 'వెనక్కి తీసుకున్నాం. ఇంకో ఎత్తు వేసి చూడు!' }
+    'army-undo': { en: 'Taken back, try another move!', te: 'వెనక్కి తీసుకున్నాం, ఇంకో ఎత్తు వేసి చూడు!' }
   };
 
   /*

@@ -130,7 +130,8 @@ audio/voice/te/   Telugu voice clips (MP3).
 js/check.js       Device check page logic, including the speech voice list and the game speed test.
 js/speed.js       The game speed test: times the growing battle's opponent and hints. No DOM access. Tested.
 sw.js             Service worker for offline play: keeps every file of the app in a versioned cache.
-tools/make-voice.js  Dev tool: generates voice clips with Azure text-to-speech. Not loaded by the site.
+tools/make-voice-edge.py  Dev tool: generates voice clips with Microsoft neural voices (edge-tts). Not loaded by the site.
+tools/make-voice.js  Dev tool: the clip index (--index-only), or clips with Azure text-to-speech. Not loaded by the site.
 tools/make-offline.js  Dev tool: writes the offline file list and version into sw.js.
 tools/check.js    Dev tool: the project's rule checks, run by npm test and on every pull request.
 e2e/run.js        Browser tests: plays every game and its "watch how to play" scene in headless Chromium (needs Playwright; not loaded by the site).
