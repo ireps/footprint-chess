@@ -47,7 +47,11 @@ test('English and Telugu entries carry the agreed data', () => {
   assert.equal(en.speech, 'en');
   assert.equal(en.fallback, null);
   assert.equal(en.script, null);
-  assert.equal(en.azureVoice, 'en-IN-NeerjaNeural');
+  assert.equal(en.azureVoice, 'en-IN-NeerjaExpressiveNeural');
+  LG.LANGUAGES.forEach((l) => {
+    assert.match(l.voiceRate, /^[+-]\d+%$/, l.id + ': voiceRate');
+    assert.match(l.voicePitch, /^[+-]\d+Hz$/, l.id + ': voicePitch');
+  });
   assert.equal(te.name, 'Telugu');
   assert.equal(te.nativeName, 'తెలుగు');
   assert.equal(te.glyph, 'అ');

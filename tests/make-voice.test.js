@@ -31,7 +31,7 @@ test('escapeXml escapes & < > " \'', () => {
 test('buildSsml picks the right voice and xml:lang for each language', () => {
   const en = MV.buildSsml('en', 'Meet your robot.');
   assert.match(en, /xml:lang="en-IN"/);
-  assert.match(en, /voice name="en-IN-NeerjaNeural"/);
+  assert.match(en, /voice name="en-IN-NeerjaExpressiveNeural"/);
   assert.match(en, /Meet your robot\./);
 
   const te = MV.buildSsml('te', 'ఇదిగో, నీ రోబో!');
