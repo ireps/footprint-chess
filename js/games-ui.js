@@ -90,13 +90,6 @@
   function key(r, c) { return r + ',' + c; }
 
   var dom = {
-    homeGames: byId('home-games'),
-    gameScreen: byId('gamescreen'),
-    gameRows: byId('game-rows'),
-    gamesFit: byId('games-fit'),
-    armyLadder: byId('army-ladder'),
-    gamesHome: byId('games-home'),
-    stickerRow: byId('sticker-row'),
     jarFill: byId('game-jar-fill'),
     toolSkip: byId('tool-skip'),
     toolUndo: byId('tool-undo')
@@ -148,10 +141,10 @@
   // language) - a strict substring of the owner-approved text, not a new
   // translation; a question keeps its "?". The current language's text,
   // else the next language in its fallback chain.
-  function shortCaption(lineId) {
+  function shortCaption(lineId, lang) {
     var line = LS.LINES[lineId];
     if (!line) return '';
-    var chain = FC.langs.fallbackChain(V.getLang());
+    var chain = FC.langs.fallbackChain(lang || V.getLang());
     var text = '';
     for (var i = 0; i < chain.length; i++) {
       if (line[chain[i]]) { text = line[chain[i]]; break; }
@@ -178,121 +171,24 @@
   function foePieceSide() { return classicSwap() ? 'me' : 'foe'; }
 
   /* =====================================================================
-   * Home: the games row
+   * Leaving Home for a game, and a game's caption on the path
    * ===================================================================*/
 
-  // Home: one Games button (the pictures of the three rows, no words).
-  function renderHomeGames() {
-    if (!dom.homeGames) return;
-    clear(dom.homeGames);
-    var card = el('button', 'game-card games-entry');
-    card.type = 'button';
-    card.appendChild(PICS.game('games'));
-    card.setAttribute('aria-label', 'Games');
-    card.addEventListener('click', showGamesScreen);
-    dom.homeGames.appendChild(card);
+  // A game's caption on the path (js/path-ui.js): its mission line up to the
+  // first "!" or "?", in lang (default: the current language).
+  function caption(id, lang) {
+    var g = GL.get(id);
+    return g ? shortCaption(g.mission, lang) : '';
   }
 
-  /* =====================================================================
-   * The Games screen: one row per kind of game (js/game-list.js ROWS)
-   * ===================================================================*/
-
-  function wonHere(id) {
-    var p = progress();
-    return !!(p && p.wins[B.getTheme() + ':' + id]);
-  }
-
-  // Every game can be tapped. The first game not yet won in this theme
-  // glows (the suggestion); a won game has a small green tick.
-  // The growing battle's row is drawn as a ladder of its own (#army-ladder):
-  // beside the rows in landscape, the first battle at the bottom; below
-  // them in portrait, the first battle next to the row's picture.
-  function renderGamesScreen() {
-    if (!dom.gameRows) return;
-    clear(dom.gameRows);
-    if (dom.armyLadder) clear(dom.armyLadder);
-    var suggested = null;
-    GL.GAMES.forEach(function (g) { if (!suggested && !wonHere(g.id)) suggested = g.id; });
-    GL.ROWS.forEach(function (row) {
-      var ladder = row === 'army';
-      if (ladder && !dom.armyLadder) return;
-      var rowEl = ladder ? dom.armyLadder : el('div', 'game-row');
-      rowEl.appendChild(PICS.rowMark(row));
-      GL.inRow(row).forEach(function (g) {
-        var card = el('button', 'game-card' + (g.id === suggested ? ' suggested' : ''));
-        card.type = 'button';
-        card.appendChild(PICS.game(g.id));
-        var name = shortCaption(g.mission);
-        card.appendChild(textEl('div', 'game-name', name));
-        card.setAttribute('aria-label', name);
-        if (wonHere(g.id)) {
-          var tick = el('div', 'home-card-tick');
-          tick.appendChild(B.svgUse('ic-check'));
-          card.appendChild(tick);
-        }
-        card.addEventListener('click', function () { onGameCardTap(g.id); });
-        rowEl.appendChild(card);
-      });
-      if (!ladder) dom.gameRows.appendChild(rowEl);
-    });
-  }
-
-  function gamesScreenVisible() {
-    return !!dom.gameScreen && !dom.gameScreen.hidden;
-  }
-
-  // Leaves Home (or the Games screen) for a screen of this file: a capture
-  // round may still be running behind the home screen, and the theme and
-  // language rows close with it.
+  // Leaves Home for a screen of this file: a capture round may still be
+  // running behind the home screen, and the theme and language rows close
+  // with it.
   function leaveHome() {
     if (FC.app && FC.app.stopRound) FC.app.stopRound();
     byId('homescreen').hidden = true;
     byId('theme-row').hidden = true;
     byId('lang-row').hidden = true;
-  }
-
-  // Scales the rows and the ladder down, as one, until they fit the window
-  // with a margin: on the tablet Silk leaves 1280 x 614 in landscape, less
-  // than the 1280 x 800 of the screen. Never scales up.
-  // The content stays clear of the Home button in the top corner: either
-  // beside it (a margin at both sides) or below it (a margin at top and
-  // bottom), whichever leaves it bigger.
-  var FIT_MARGIN = 16;
-  var FIT_HOME = 84;
-  function fitGamesScreen() {
-    var box = dom.gamesFit;
-    if (!box || !gamesScreenVisible()) return;
-    box.style.transform = '';
-    var w = box.offsetWidth;
-    var h = box.offsetHeight;
-    if (!w || !h) return;
-    var vw = window.innerWidth;
-    var vh = window.innerHeight;
-    var beside = Math.min((vw - 2 * FIT_HOME) / w, (vh - 2 * FIT_MARGIN) / h);
-    var below = Math.min((vw - 2 * FIT_MARGIN) / w, (vh - 2 * FIT_HOME) / h);
-    var scale = Math.min(1, Math.max(beside, below));
-    if (scale < 1) box.style.transform = 'scale(' + scale.toFixed(3) + ')';
-  }
-  window.addEventListener('resize', fitGamesScreen);
-  window.addEventListener('orientationchange', function () { window.setTimeout(fitGamesScreen, 200); });
-
-  function showGamesScreen() {
-    S.unlock();
-    leaveHome();
-    renderGamesScreen();
-    dom.gameScreen.hidden = false;
-    fitGamesScreen();
-    V.say('games-pick', function () {});
-  }
-
-  function hideGamesScreen() {
-    if (dom.gameScreen) dom.gameScreen.hidden = true;
-  }
-
-  // The shelf on Home: up to four stickers (earned this page load first,
-  // then the book's), drawn by js/stickers.js.
-  function renderStickerRow() {
-    if (dom.stickerRow && FC.stickers) FC.stickers.renderShelf(dom.stickerRow);
   }
 
   // The side panel's mission box: while a game (or the "turns" lesson) is
@@ -328,20 +224,40 @@
     return (p && p.teams[B.getTheme()]) || null;
   }
 
-  function onGameCardTap(id) {
+  // From the path (js/path-ui.js, or a Won card's "next" button): a game,
+  // or "turns", the Taking turns step, which plays that lesson and then goes
+  // on to Catch the knight.
+  function openFromPath(id) {
+    if (active) stop();
+    if (id === 'turns') {
+      beginGame('catch');
+      if (store) store.markSeen('turns');
+      startGameLesson('turns', afterTurns);
+      return;
+    }
+    beginGame(id);
+    enterGame();
+  }
+
+  function beginGame(id) {
     S.unlock();
     leaveHome();
-    hideGamesScreen();
     onLeaveHome();
     P.stop();
     gameId = id;
     active = true;
     prepared = false;
-    // The Team card always shows when a team game is entered from the Games
-    // screen; the remembered team is only ringed on it. Play again and the
-    // next game (on the Won card) skip it and keep childSide.
+    // The Team card always shows when a team game is entered from the path;
+    // the remembered team is only ringed on it. Play again and the next game
+    // (on the Won card) skip it and keep childSide.
     childSide = null;
-    enterGame();
+  }
+
+  // The Taking turns lesson watched (or skipped): its step on the path is
+  // done, and the team game it led to goes on to the Team card.
+  function afterTurns() {
+    if (store) store.markDone('turns');
+    showTeamCard();
   }
 
   // A game with its own lesson (js/game-list.js `lesson`, the "check"
@@ -363,7 +279,7 @@
     }
     if (!(p && p.seen.turns)) {
       if (store) store.markSeen('turns');
-      startGameLesson('turns', showTeamCard);
+      startGameLesson('turns', afterTurns);
     } else {
       showTeamCard();
     }
@@ -1182,6 +1098,7 @@
     // Winning three different games in a theme for the first time also
     // earns the golden king: its pop and the sticker line come before the
     // Won card. markWin is true exactly once per child and theme.
+    if (store) store.markDone(gameId);
     var goldenKing = !!store && store.markWin(B.getTheme(), gameId);
     if (goldenKing) {
       V.sayAfter(lineId);
@@ -1219,8 +1136,9 @@
     }
   }
 
-  function nextGameId() {
-    return GL.next(gameId);
+  // The next step on the path (js/path.js): another game, a piece or Taking turns.
+  function nextStepId() {
+    return FC.path.nextAfter(progress(), gameId);
   }
 
   function showGameWon() {
@@ -1248,17 +1166,26 @@
       });
       row.appendChild(again);
 
-      var nextId = nextGameId();
-      var next = el('button', 'rbtn');
+      // Another game keeps the team and goes on as usual; any other step
+      // starts from the path.
+      var nextId = nextStepId();
+      var next = el('button', 'rbtn rbtn-path');
       next.type = 'button';
-      next.setAttribute('aria-label', 'Next game');
-      next.appendChild(PICS.game(nextId, true));
+      next.setAttribute('aria-label', 'Next: ' + FC.pathUI.captionEn(nextId));
+      next.appendChild(FC.pathUI.stopPic(nextId, true));
+      var play = el('div', 'stop-play');
+      play.appendChild(B.svgUse('play-tri'));
+      next.appendChild(play);
       next.addEventListener('click', function (e) {
         e.stopPropagation();
         S.unlock();
         FC.app.hideCard();
-        gameId = nextId;
-        enterGame();
+        if (FC.path.kindOf(nextId) === 'game') {
+          gameId = nextId;
+          enterGame();
+        } else {
+          FC.app.startStop(nextId);
+        }
       });
       row.appendChild(next);
 
@@ -1920,7 +1847,6 @@
     if (activeSince === null) activeSince = Date.now();
   }
   function onEnterHome() {
-    renderStickerRow();
     pausedByHide = false;
     if (activeSince !== null) {
       accumMs += Date.now() - activeSince;
@@ -2094,7 +2020,6 @@
     FC.stickers.record(theme, kind);
     V.sayAfter('sticker', done);
     showStickerPop(theme, kind);
-    renderStickerRow();
   }
 
   /* ---------- stop / lifecycle ---------- */
@@ -2129,18 +2054,9 @@
   }
 
   function onLangChange() {
-    renderHomeGames();
-    if (gamesScreenVisible()) {
-      renderGamesScreen();
-      fitGamesScreen();
-    }
     refreshTeamBarLabels();
   }
   function onThemeChange() {
-    if (gamesScreenVisible()) {
-      renderGamesScreen();
-      fitGamesScreen();
-    }
     refreshTeamBarLabels();
   }
 
@@ -2164,33 +2080,29 @@
   }
 
   // A different child is now playing (or everything was replaced): the
-  // jar and the shelf belong to the child.
+  // jar belongs to the child.
   function onProfileChange() {
     var p = progress();
     jarCount = p ? p.jar : 0;
     streak = 0;
     childSide = null;
     updateJarDom();
-    renderStickerRow();
   }
 
   function init(theStore) {
     store = theStore;
     document.addEventListener('visibilitychange', onVisibilityChange);
-    if (dom.gamesHome) {
-      dom.gamesHome.appendChild(B.svgUse('house'));
-      dom.gamesHome.addEventListener('click', function () { S.unlock(); FC.app.goHome(); });
-    }
     if (dom.toolUndo) {
       dom.toolUndo.appendChild(B.svgUse('ic-undo'));
       dom.toolUndo.addEventListener('click', onUndo);
     }
-    renderHomeGames();
     onProfileChange();
   }
 
   FC.gamesUI = {
     init: init,
+    openFromPath: openFromPath,
+    caption: caption,
     active: function () { return active; },
     handleTap: handleTap,
     onSkip: onSkip,
@@ -2200,7 +2112,6 @@
     onLeaveHome: onLeaveHome,
     onEnterHome: onEnterHome,
     onProfileChange: onProfileChange,
-    hideGamesScreen: hideGamesScreen,
     stop: stop,
     captureJuice: captureJuice,
     resetStreak: resetStreak,

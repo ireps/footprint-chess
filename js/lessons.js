@@ -168,7 +168,6 @@
     'who': { en: "Who's playing today?", te: 'ఈ రోజు ఎవరు ఆడుతున్నారు?' },
 
     /* more games (stage 6): the Games screen, two new games, the quiz and the tips after a game */
-    'games-pick': { en: 'Pick a game!', te: 'ఒక ఆట ఎంచుకో!' },
 
     /* check (stage 7): the "check" lesson and the Get out of check game */
     'check-1': { en: 'Check! The rook could capture your king.', te: 'చెక్! ఏనుగు నీ రాజుని పట్టుకోగలదు.' },
@@ -296,7 +295,13 @@
     'army-passant': { en: 'En passant! A pawn captured the pawn that rushed past it.', te: 'ఆన్ పసాంట్! పక్క నుంచి దూసుకెళ్ళిన భటుడిని ఇంకో భటుడు పట్టుకున్నాడు.' },
     'army-foe-queen': { en: "Their pawn reached your side. Now it's a queen!", te: 'శత్రువు భటుడు నీ వైపుకి చేరాడు. ఇప్పుడు అది మంత్రి!' },
     'army-draw-kings': { en: 'Only the two kings remain. Nobody wins this time.', te: 'ఇద్దరు రాజులే మిగిలారు. ఈసారి ఎవరూ గెలవలేదు.' },
-    'army-undo': { en: 'Taken back, try another move!', te: 'వెనక్కి తీసుకున్నాం, ఇంకో ఎత్తు వేసి చూడు!' }
+    'army-undo': { en: 'Taken back, try another move!', te: 'వెనక్కి తీసుకున్నాం, ఇంకో ఎత్తు వేసి చూడు!' },
+
+    /* the learning journey on Home (js/path-ui.js): said when the child comes back and the path moves on */
+    'path-next': { en: "Look, here's what's next. Tap it to play!", te: 'చూడు, తర్వాత ఆడేది ఇదే. నొక్కి ఆడు!' },
+    'chapter-done': { en: "Wow, you finished this part! Let's see what's next.", te: 'అబ్బో, ఈ భాగం మొత్తం పూర్తి చేశావు! తర్వాత ఏముందో చూద్దాం.' },
+    'path-all-done': { en: 'Yay, you did them all! Now play any one you like.', te: 'భలే, అన్నీ పూర్తి చేశావు! ఇప్పుడు నీకు నచ్చినది ఏదైనా ఆడుకో.' },
+    'practise-next': { en: "Let's practise this one again!", te: 'దీన్ని మళ్ళీ ఒకసారి సాధన చేద్దాం!' }
   };
 
   /*
@@ -370,13 +375,21 @@
   var PROFILE_LINES = ['who'];
 
   /*
+   * The learning journey on Home (js/path-ui.js): lines said when the child
+   * comes back to Home and the path moves on to the next step, finishes a
+   * part, is done, or sends the child back to a piece to practise.
+   * Included in tests/lessons.test.js's line-coverage test.
+   */
+  var PATH_LINES = ['path-next', 'chapter-done', 'path-all-done', 'practise-next'];
+
+  /*
    * More games (stage 6): ids of lines said by js/games-ui.js - the Games
    * screen's prompt, the new games' mission lines, the quiz, and the tips
    * after a game (js/game-list.js names which tip belongs to which game).
    * Included in tests/lessons.test.js's line-coverage test.
    */
   var MORE_GAME_LINES = [
-    'games-pick', 'game-chain', 'game-whose',
+    'game-chain', 'game-whose',
     'quiz-ask', 'quiz-again', 'quiz-won',
     'tip-look', 'how-look', 'how-catch-1', 'how-catch-2', 'how-catch-3', 'tip-race', 'tip-battle', 'tip-chain', 'tip-whose',
     'game-hop', 'game-way', 'game-stop', 'game-safe', 'reach-won', 'king-danger',
@@ -970,7 +983,9 @@
   // Badge labels for who is in control (see FC.board.setMode).
   var UI_TEXT = {
     watch: { en: 'Watch', te: 'చూడు' },
-    turn: { en: 'Your turn!', te: 'నీ వంతు!' }
+    turn: { en: 'Your turn!', te: 'నీ వంతు!' },
+    // The caption under the "Taking turns" step on the path (js/path-ui.js).
+    takingTurns: { en: 'Taking turns', te: 'వంతుల వారీగా' }
   };
 
   var api = {
@@ -984,6 +999,7 @@
     APP_LINES: APP_LINES,
     GAME_LINES: GAME_LINES,
     PROFILE_LINES: PROFILE_LINES,
+    PATH_LINES: PATH_LINES,
     MORE_GAME_LINES: MORE_GAME_LINES,
     HAND_LINES: HAND_LINES,
     ARMY_LINES: ARMY_LINES,

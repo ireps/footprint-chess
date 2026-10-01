@@ -438,3 +438,56 @@ test('markWin: the golden king comes with any three different games in a theme (
 test('GAME_IDS follows the game list', () => {
   assert.deepEqual(ST.GAME_IDS, require('../js/game-list.js').ids());
 });
+
+test('journey steps: markDone records done steps and the last one played, per child', () => {
+  const s = ST.create(memBackend());
+  const a = s.addProfile(PIC, 'A');
+  assert.equal(s.progress().last, null);
+  assert.equal(s.markDone('r'), true);
+  assert.equal(s.markDone('r'), false);
+  assert.equal(s.markDone('nope'), false);
+  assert.equal(s.markDone('__proto__'), false);
+  assert.equal(s.markDone('mate2'), true);
+  assert.deepEqual(Object.keys(s.progress().done).sort(), ['mate2', 'r']);
+  assert.equal(s.progress().last, 'mate2');
+  s.markDone('r');
+  assert.equal(s.progress().last, 'r');
+  const b = s.addProfile(PIC, 'B');
+  s.setCurrent(b.id);
+  assert.deepEqual(Object.keys(s.progress().done), []);
+  assert.deepEqual(Object.keys(s.progressOf(a.id).done).sort(), ['mate2', 'r']);
+});
+
+test('journey steps: saved done steps are sanitised, and older saves get them from met, seen and wins', () => {
+  const doc = {
+    v: 1,
+    current: 'pa',
+    profiles: [{ id: 'pa', pic: PIC }, { id: 'pb', pic: PIC }],
+    progress: {
+      pa: { done: { r: true, b: 'yes', zzz: true }, last: 'zzz', met: { q: true } },
+      pb: { met: { r: true, k: true }, seen: { turns: true }, wins: { 'pirate:battle': true } }
+    }
+  };
+  const clean = ST.sanitize(JSON.parse(JSON.stringify(doc)));
+  assert.deepEqual(Object.keys(clean.progress.pa.done), ['r']);
+  assert.equal(clean.progress.pa.last, null);
+  assert.deepEqual(Object.keys(clean.progress.pb.done).sort(), ['battle', 'k', 'r', 'turns']);
+});
+
+test('practise again: a quiz marks a piece, its won round clears it, and saved marks are sanitised', () => {
+  const s = ST.create(memBackend());
+  s.addProfile(PIC, 'A');
+  s.markPractise('b');
+  s.markPractise('zzz');
+  s.markPractise('__proto__');
+  assert.deepEqual(Object.keys(s.progress().practise), ['b']);
+  s.markDone('whose');
+  assert.deepEqual(Object.keys(s.progress().practise), ['b']);
+  s.markDone('b');
+  assert.deepEqual(Object.keys(s.progress().practise), []);
+  const clean = ST.sanitize({
+    v: 1, current: 'pa', profiles: [{ id: 'pa', pic: PIC }],
+    progress: { pa: { practise: { n: true, q: 'yes', whose: true, zz: true } } }
+  });
+  assert.deepEqual(Object.keys(clean.progress.pa.practise), ['n']);
+});

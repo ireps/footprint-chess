@@ -17,7 +17,6 @@
   var FC = window.FC;
   var A = FC.army;
   var B = FC.board;
-  var GL = FC.gameList;
 
   function el(tag, cls) { var n = document.createElement(tag); if (cls) n.className = cls; return n; }
   function textEl(tag, cls, str) { var n = el(tag, cls); n.textContent = str; return n; }
@@ -166,10 +165,6 @@
     } else if (id === 'whose') {
       pic.appendChild(buildWhoseMark());
       pic.appendChild(B.pieceSvg('n', 'me'));
-    } else if (id === 'games') {
-      // Home's Games button: the three rows' marks side by side.
-      pic.classList.add('game-pic-entry');
-      GL.ROWS.forEach(function (row) { pic.appendChild(buildRowMark(row)); });
     } else {
       pic.classList.add('game-pic-3');
       pic.appendChild(B.pieceSvg('r', 'me'));

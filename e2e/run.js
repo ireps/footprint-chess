@@ -6,11 +6,13 @@
  *
  * Plays the app in headless Chromium, the way a child would, and fails on
  * any page error, console error or Content Security Policy report:
- *   - Home and the Games screen, at the tablet's landscape (1280x800) and
+ *   - Home, the learning journey, at the tablet's landscape (1280x800) and
  *     portrait (800x1280) sizes and at the smaller window Silk leaves on
- *     the tablet (1280x614, 800x1094), with touch; every game card inside
- *     the window and clear of the Home button;
- *   - every game on the Games screen, from its card through any first-time
+ *     the tablet (1280x614, 800x1094), with touch: on every part, every
+ *     step, its name and the flag inside the window and clear of each
+ *     other, the part buttons and the tools;
+ *   - every game on the path, from its step (the part's button, then the
+ *     step, as a child taps them) through any first-time
  *     lesson (skipped), the Team card, the Mission card and the whole
  *     "watch how to play" scene (js/games-how.js, watched to its end),
  *     until the child's turn begins;
@@ -80,8 +82,22 @@ async function newPage(viewport) {
   page.on('console', m => { if (m.type() === 'error' || /Content Security Policy/.test(m.text())) page.errors.push(m.text()); });
   page.on('pageerror', e => page.errors.push('page error: ' + e.message));
   await page.goto(base + '/index.html?break=off');
-  await page.waitForSelector('.games-entry');
+  await page.waitForSelector('.path-stop');
   return page;
+}
+
+/* Opens a step of the learning journey by its name, the way a child would:
+ * the part's picture button first (when another part is showing), then the
+ * step itself. */
+async function openStep(page, label) {
+  const part = await page.evaluate(l => {
+    const id = FC.path.STOP_IDS.find(s => FC.pathUI.captionEn(s) === l);
+    return id ? FC.path.chapterOf(id) : -1;
+  }, label);
+  if (part === -1) throw new Error('no step called ' + label);
+  const sel = '.path-stop[aria-label="' + label.replace(/"/g, '\\"') + '"]';
+  if (!(await page.$(sel))) await page.click('.path-chap >> nth=' + part);
+  await page.click(sel);
 }
 
 async function done(page, name) {
@@ -152,10 +168,8 @@ async function testScreens() {
   for (const [label, viewport] of [['landscape', LANDSCAPE], ['portrait', PORTRAIT], ['tablet landscape', TABLET_LANDSCAPE], ['tablet portrait', TABLET_PORTRAIT]]) {
     const name = 'screens ' + label;
     const page = await newPage(viewport);
-    await page.click('.games-entry');
-    await page.waitForSelector('#game-rows .game-card');
-    const cards = (await page.$$('#game-rows .game-card')).length + (await page.$$('#army-ladder .game-card')).length;
-    if (cards < 20) await fail(page, name, 'only ' + cards + ' game cards');
+    const parts = (await page.$$('.path-chap')).length;
+    if (parts < 7) await fail(page, name, 'only ' + parts + ' parts of the path');
     // Decorative background shapes may reach past the edge; what matters is
     // that a child can never scroll the page sideways.
     const scrolls = await page.evaluate(() => {
@@ -163,28 +177,52 @@ async function testScreens() {
       const hidden = [document.documentElement, document.body].some(n => getComputedStyle(n).overflowX === 'hidden');
       return wide && !hidden;
     });
-    if (scrolls) await fail(page, name, 'the Games screen scrolls sideways');
-    // Every game card, and the Home button, fully inside the window and
-    // clear of each other.
-    const outside = await page.evaluate(() => {
-      const home = document.getElementById('games-home').getBoundingClientRect();
-      const bad = [];
-      document.querySelectorAll('#game-rows .game-card, #army-ladder .game-card, .row-mark').forEach(n => {
-        const r = n.getBoundingClientRect();
-        if (r.top < 0 || r.left < 0 || r.bottom > window.innerHeight || r.right > window.innerWidth) bad.push((n.getAttribute('aria-label') || 'row picture') + ' outside');
-        if (r.left < home.right && r.right > home.left && r.top < home.bottom && r.bottom > home.top) bad.push((n.getAttribute('aria-label') || 'row picture') + ' under Home');
+    if (scrolls) await fail(page, name, 'Home scrolls sideways');
+    // On every part of the path: every step, its name and the flag fully
+    // inside the window, clear of each other, of the part buttons and of the
+    // tools; the part buttons clear of the tools and the child's picture.
+    let steps = 0;
+    for (let i = 0; i < parts; i++) {
+      await page.click('.path-chap >> nth=' + i);
+      await page.waitForTimeout(150);
+      const res = await page.evaluate(() => {
+        const box = n => n.getBoundingClientRect();
+        const hit = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+        const inside = r => r.top >= 0 && r.left >= 0 && r.bottom <= window.innerHeight && r.right <= window.innerWidth;
+        const bad = [];
+        const fixed = [...document.querySelectorAll('.corner, .me-chip, .path-chap')].map(n => ({ n: n.className, r: box(n) }));
+        const tools = [...document.querySelectorAll('.corner, .me-chip')].map(box);
+        document.querySelectorAll('.path-chap').forEach(n => { if (tools.some(t => hit(box(n), t))) bad.push('a part button under the tools'); if (!inside(box(n))) bad.push('a part button outside'); });
+        const things = [];
+        document.querySelectorAll('.path-stop').forEach(n => {
+          things.push({ name: n.getAttribute('aria-label'), r: box(n) });
+          things.push({ name: n.getAttribute('aria-label') + "'s name", r: box(n.querySelector('.stop-name')) });
+        });
+        const flag = document.querySelector('.path-flag');
+        if (flag) things.push({ name: 'the flag', r: box(flag) });
+        things.forEach((t, i) => {
+          if (!inside(t.r)) bad.push(t.name + ' outside');
+          fixed.forEach(f => { if (hit(t.r, f.r)) bad.push(t.name + ' under ' + f.n); });
+          things.forEach((u, j) => {
+            if (j <= i || t.name.indexOf(u.name) === 0 || u.name.indexOf(t.name) === 0) return;
+            if (hit(t.r, u.r)) bad.push(t.name + ' over ' + u.name);
+          });
+        });
+        return { bad, steps: document.querySelectorAll('.path-stop').length };
       });
-      return bad;
-    });
-    if (outside.length) await fail(page, name, outside.join(', '));
+      steps += res.steps;
+      if (res.bad.length) await fail(page, name + ' part ' + (i + 1), res.bad.join(', '));
+    }
+    if (steps < 30) await fail(page, name, 'only ' + steps + ' steps on the path');
     await done(page, name);
   }
 }
 
 async function testEveryGame() {
   const page0 = await newPage(LANDSCAPE);
-  await page0.click('.games-entry');
-  const names = await page0.$$eval('#game-rows .game-card, #army-ladder .game-card', cards => cards.map(c => c.getAttribute('aria-label')));
+  // Every game on the path (the path is the only way in; js/path.js's tests
+  // check every game is on it).
+  const names = await page0.evaluate(() => FC.path.STOP_IDS.filter(id => FC.path.kindOf(id) === 'game').map(id => FC.pathUI.captionEn(id)));
   await done(page0, 'games list');
   // Four games at a time, each watching its scene to the end.
   const queue = names.slice();
@@ -193,8 +231,7 @@ async function testEveryGame() {
       const game = queue.shift();
       const name = 'game ' + game;
       const page = await newPage(LANDSCAPE);
-      await page.click('.games-entry');
-      await page.click('.game-card[aria-label="' + game.replace(/"/g, '\\"') + '"]');
+      await openStep(page, game);
       await reachTurn(page, name, true);
       await done(page, name);
     }
@@ -206,8 +243,7 @@ async function testEveryGame() {
 async function testPawnBattle() {
   const name = 'pawn battle to the Won card (portrait)';
   const page = await newPage(PORTRAIT);
-  await page.click('.games-entry');
-  await page.click('#army-ladder .game-card');
+  await openStep(page, 'Pawn battle');
   if (!(await reachTurn(page, name))) { await done(page, name); return; }
   let last = null;
   for (let move = 0; move < 60; move++) {
@@ -239,8 +275,7 @@ async function testPawnBattle() {
 async function testMateInTwo() {
   const name = 'checkmate in two to the Won card';
   const page = await newPage(LANDSCAPE);
-  await page.click('.games-entry');
-  await page.click('.game-card[aria-label="Checkmate in two"]');
+  await openStep(page, 'Checkmate in two');
   if (!(await reachTurn(page, name))) { await done(page, name); return; }
   let tried = false;
   for (let move = 0; move < 40; move++) {
@@ -287,8 +322,7 @@ async function testMateInTwo() {
 async function testValue() {
   const name = 'which capture is best to the Won card';
   const page = await newPage(PORTRAIT);
-  await page.click('.games-entry');
-  await page.click('.game-card[aria-label="Which capture is best?"]');
+  await openStep(page, 'Which capture is best?');
   if (!(await reachTurn(page, name))) { await done(page, name); return; }
   let tried = false;
   let solved = 0;
@@ -326,8 +360,7 @@ async function testValue() {
 async function testStale() {
   const name = 'checkmate not stalemate to the Won card';
   const page = await newPage(LANDSCAPE);
-  await page.click('.games-entry');
-  await page.click('.game-card[aria-label="Checkmate, not stalemate"]');
+  await openStep(page, 'Checkmate, not stalemate');
   if (!(await reachTurn(page, name))) { await done(page, name); return; }
   let tried = false;
   for (let step = 0; step < 30; step++) {
@@ -364,8 +397,7 @@ async function testStale() {
 async function testOpening() {
   const name = 'wake up your army to the Won card';
   const page = await newPage(LANDSCAPE);
-  await page.click('.games-entry');
-  await page.click('.game-card[aria-label="Wake up your army"]');
+  await openStep(page, 'Wake up your army');
   if (!(await reachTurn(page, name))) { await done(page, name); return; }
   for (let move = 0; move < 20; move++) {
     for (let w = 0; w < 240 && (await modeText(page)) !== 'Your turn!' && !(await page.$('#card .rbtn-home')); w++) await page.waitForTimeout(250);
@@ -411,7 +443,7 @@ async function testCorner() {
   const lines = await page.$$eval('.gu-prog', ns => ns.map(n => n.textContent));
   if (!lines.some(l => /^Lessons started: Say hello$/.test(l))) await fail(page, name, 'lessons started: ' + lines.join(' | '));
   if (!lines.some(l => /^Games won: Catch the knight$/.test(l))) await fail(page, name, 'games won: ' + lines.join(' | '));
-  if (!lines.some(l => /^A game to try next: /.test(l) && !/Catch the knight/.test(l))) await fail(page, name, 'next game: ' + lines.join(' | '));
+  if (!lines.some(l => /^What to try next: /.test(l) && !/Catch the knight/.test(l))) await fail(page, name, 'next game: ' + lines.join(' | '));
   await done(page, name);
 }
 
