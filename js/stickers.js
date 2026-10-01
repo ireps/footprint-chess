@@ -111,22 +111,6 @@
     return out;
   }
 
-  /* ---------- the shelf on Home ---------- */
-
-  function renderShelf(host) {
-    if (!host || !store) return;
-    host.textContent = '';
-    var id = currentId();
-    var list = id ? listFor(id, store.progress(), 4) : [];
-    list.forEach(function (s) {
-      var chip = document.createElement('div');
-      chip.className = 'sticker-chip';
-      chip.appendChild(art(s.theme, s.kind));
-      host.appendChild(chip);
-    });
-    host.hidden = list.length === 0;
-  }
-
   FC.stickers = {
     KINDS: KINDS,
     init: init,
@@ -137,7 +121,6 @@
     record: record,
     isNew: isNew,
     themeOrder: themeOrder,
-    listFor: listFor,
-    renderShelf: renderShelf
+    listFor: listFor
   };
 })();

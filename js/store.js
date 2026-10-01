@@ -26,6 +26,7 @@
   var isNode = typeof module !== 'undefined' && module.exports;
   var TH = isNode ? require('./themes.js') : root.FC.themes;
   var GL = isNode ? require('./game-list.js') : root.FC.gameList;
+  var PATH = isNode ? require('./path.js') : root.FC.path;
 
   var VERSION = 1;
   var STORAGE_KEY = 'footprint-chess';
@@ -102,7 +103,7 @@
   }
 
   function emptyProgress() {
-    return { seen: dict(), met: dict(), stickers: dict(), jar: 0, teams: dict(), wins: dict(), lang: null, theme: null };
+    return { seen: dict(), met: dict(), stickers: dict(), jar: 0, teams: dict(), wins: dict(), done: dict(), last: null, practise: dict(), lang: null, theme: null };
   }
 
   var DEFAULT_PIC = { theme: 'robots', type: 'n', ring: RINGS[0] };
@@ -148,6 +149,22 @@
     keysOf(p.wins).forEach(function (k) {
       var parts = k.split(':');
       if (parts.length === 2 && isTheme(parts[0]) && GAME_IDS.indexOf(parts[1]) !== -1 && p.wins[k] === true) out.wins[k] = true;
+    });
+    // The learning journey on Home (js/path.js): steps done, the last step
+    // played, and pieces marked "practise again". Progress saved before the
+    // path has no "done": it is worked out once from the cleaned met, seen
+    // and wins above, so a child keeps their ticks.
+    if (isObj(p.done)) {
+      keysOf(p.done).forEach(function (k) {
+        if (PATH.isStop(k) && p.done[k] === true) out.done[k] = true;
+      });
+    } else {
+      var legacy = PATH.legacyDone(out);
+      Object.keys(legacy).forEach(function (k) { out.done[k] = true; });
+    }
+    out.last = PATH.isStop(p.last) ? p.last : null;
+    keysOf(p.practise).forEach(function (k) {
+      if (isType(k) && p.practise[k] === true) out.practise[k] = true;
     });
     out.lang = isLang(p.lang) ? p.lang : null;
     out.theme = isTheme(p.theme) ? p.theme : null;
@@ -491,6 +508,29 @@
         changed();
         var won = GAME_IDS.filter(function (g) { return p.wins[theme + ':' + g] === true; }).length;
         return won === GL.GOLDEN_KING_GAMES;
+      },
+      // A step of the journey finished (js/path.js): it becomes done and the
+      // last step played; a piece's won round also clears its "practise
+      // again" mark. True when the step was not done before.
+      markDone: function (stopId) {
+        var p = cur();
+        if (!p || !PATH.isStop(stopId)) return false;
+        var fresh = p.done[stopId] !== true;
+        var practised = p.practise[stopId] === true;
+        if (!fresh && p.last === stopId && !practised) return false;
+        p.done[stopId] = true;
+        p.last = stopId;
+        if (practised) delete p.practise[stopId];
+        changed();
+        return fresh;
+      },
+      // A quiz had to show this piece's move: the path suggests its round
+      // again (js/path.js nextStop) until it is won.
+      markPractise: function (type) {
+        var p = cur();
+        if (!p || !isType(type) || p.practise[type] === true) return;
+        p.practise[type] = true;
+        changed();
       },
       setLang: function (id) {
         var p = cur();

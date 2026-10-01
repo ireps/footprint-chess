@@ -777,21 +777,8 @@ body {
   box-shadow: 0 0 12px 3px rgba(255, 217, 102, 0.8), 0 3px 0 rgba(0, 0, 0, 0.14), inset 0 0 0 2px #fff;
 }
 
-/* The shelf on Home: up to four stickers, earned this page load first, then
-   the book's. Flex items are spaced with margins, not gap (old browsers). */
-.sticker-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 999px;
-  padding: 8px 18px;
-}
-
-.sticker-row[hidden] { display: none; }
 
 .sticker-chip { width: 52px; height: 52px; flex: none; }
-.sticker-row > * + * { margin-left: 10px; }
 
 .tiles {
   display: grid;
@@ -1057,6 +1044,22 @@ body {
 
 .rbtn > svg { width: 52px; height: 52px; }
 
+/* The Won card's "next" button: the next step on the path (js/path.js),
+   bigger than its neighbours, glowing like the step on Home, with the same
+   play badge. */
+.rbtn.rbtn-path {
+  position: relative;
+  width: 128px;
+  height: 128px;
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 7px 0 rgba(0, 0, 0, 0.18), 0 0 0 6px var(--gold), 0 0 30px 8px rgba(255, 201, 60, 0.7);
+}
+
+.rbtn.rbtn-path .stop-art { width: 74%; height: 74%; }
+.rbtn.rbtn-path .stop-play { width: 46px; height: 46px; bottom: -8px; right: -8px; }
+.rbtn.rbtn-path .stop-play > svg { width: 20px; height: 20px; }
+
 .rbtn.rbtn-next { border: 5px solid transparent; }
 .rbtn.rbtn-next.type-r { background: var(--r-tint); border-color: var(--r); color: var(--ink); }
 .rbtn.rbtn-next.type-b { background: var(--b-tint); border-color: var(--b); color: var(--ink); }
@@ -1077,102 +1080,122 @@ body {
   left: 0;
   z-index: 20;
   background: var(--bg);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 34px;
 }
 
 .homescreen[hidden] { display: none; }
 
-.corner {
+/* ---------- Home: the path (js/path-ui.js) ----------
+ * Everything on the path is absolutely positioned by js/path-ui.js, so no
+ * flex gap is needed (old Silk). Motion is transform and opacity only, timed
+ * with --dur so reduced motion ends it at once.
+ */
+
+.path-chapters {
   position: absolute;
-  top: 24px;
-  right: 24px;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
-  gap: 14px;
+  z-index: 2;
 }
 
-.logo { display: flex; align-items: center; gap: 16px; }
-
-.logo h1 {
-  margin: 0;
-  font-size: 56px;
-  letter-spacing: 1px;
-  color: var(--title-ink);
-  text-shadow: 0 5px 0 #fff;
-}
-
-.feet { display: flex; gap: 6px; }
-.feet span { width: 20px; height: 34px; border-radius: 50%; background: var(--r); display: block; }
-.feet span:nth-child(2) { margin-top: 18px; background: var(--b); }
-
-.home-cards {
-  display: flex;
-  gap: 22px;
-  align-items: flex-end;
-  flex-wrap: wrap;
-  justify-content: center;
-  max-width: 96vw;
-}
-
-.home-card {
-  width: 150px;
-  height: 210px;
-  border-radius: 30px;
-  background: #fff;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  padding-bottom: 16px;
-  box-shadow: 0 8px 0 #9fd8d0;
+/* Seven parts fit between the child's picture and the tools, on the
+   tablet's 1280-pixel-wide window. */
+.path-chap {
   position: relative;
+  width: 64px;
+  height: 64px;
+  padding: 0;
   border: none;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 6px 0 #9fd8d0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   color: inherit;
   font: inherit;
 }
 
-.home-card > svg.bot { width: 110px; height: 110px; }
+.path-chap + .path-chap { margin-left: 10px; }
+.path-chap.cur { box-shadow: 0 5px 0 #9fd8d0, 0 0 0 5px var(--ink); }
+.path-chap:active { transform: translateY(2px); }
+.path-chap:focus-visible { outline: 4px solid var(--ink); outline-offset: 8px; }
 
-.home-card .base {
-  width: 100px;
-  height: 16px;
-  border-radius: 50%;
-  margin-top: -10px;
-}
+.chap-pics { display: flex; align-items: flex-end; }
+.chap-pics svg.pc { width: 27px; height: 27px; margin: 0 -5px; }
 
-.home-card .home-name { font-size: 20px; font-weight: bold; margin-top: 6px; color: var(--ink); }
-
-.home-card.suggested {
-  box-shadow: 0 8px 0 #9fd8d0, 0 0 0 6px var(--gold), 0 0 34px 10px rgba(255, 201, 60, 0.7);
-  transform: translateY(-10px);
-}
-
-.home-card-badge {
+.chap-tick, .chap-dot {
   position: absolute;
-  top: -12px;
-  right: -12px;
-  width: 46px;
-  height: 46px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background: #3dc46b;
-  box-shadow: 0 4px 0 #25944c;
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.home-card-badge > svg { width: 22px; height: 22px; margin-left: 3px; color: #fff; }
+.chap-tick { top: -6px; right: -6px; border: 3px solid #fff; }
+.chap-tick > svg { width: 15px; height: 15px; }
+.chap-dot { bottom: -4px; right: -4px; box-shadow: 0 3px 0 #25944c; }
+.chap-dot > svg { width: 11px; height: 11px; margin-left: 2px; }
 
-.home-card-cl {
+.path-area {
   position: absolute;
-  top: 10px;
-  left: 10px;
-  width: 38px;
-  height: 38px;
+  top: 104px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  transition: opacity calc(250ms * var(--dur)) ease-out;
+}
+
+.path-area.swap { opacity: 0; }
+
+.path-trail { position: absolute; left: 0; top: 0; overflow: visible; }
+
+/* Footprints: faint ahead, the child's ring colour (--ring) where walked. */
+.tfp {
+  fill: rgba(255, 255, 255, 0.85);
+  stroke: #9fd8d0;
+  stroke-width: 2;
+  transition: opacity calc(180ms * var(--dur)) ease-out;
+}
+
+.tfp.walked { fill: var(--ring); stroke: none; }
+.tfp.tfp-hidden { opacity: 0; }
+
+.path-stop {
+  position: absolute;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 8px 0 #9fd8d0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.path-stop.done { background: #f3fff6; }
+.path-stop.next { box-shadow: 0 8px 0 #9fd8d0, 0 0 0 7px var(--gold), 0 0 40px 14px rgba(255, 201, 60, 0.75); }
+.path-stop:active { transform: translateY(2px); }
+.path-stop:focus-visible { outline: 4px solid var(--ink); outline-offset: 6px; }
+
+.stop-art { position: relative; width: 70%; height: 70%; }
+.stop-art > svg.bot { width: 100%; height: 100%; display: block; }
+
+.stop-cl {
+  position: absolute;
+  top: -12%;
+  left: -14%;
+  width: 36%;
+  height: 36%;
   border-radius: 50%;
   background: #fff;
   color: var(--ink);
@@ -1182,34 +1205,175 @@ body {
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.12);
 }
 
-.home-card-cl > svg { width: 28px; height: 28px; }
+.stop-cl > svg { width: 74%; height: 74%; }
 
-.home-card:focus-visible { outline: 4px solid var(--ink); outline-offset: 4px; }
+.path-stop > .game-pic { flex: none; }
 
-/* Games row (stage 3; js/games-ui.js): a second row of three big cards
-   below the piece cards. Shares .home-card's shape; .game-card only adds
-   what differs (no suggested-badge state, a pictogram instead of one
-   piece + a base ellipse). */
-.game-card {
-  width: 150px;
-  height: 210px;
-  border-radius: 30px;
-  background: #fff;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 12px;
-  box-shadow: 0 8px 0 #9fd8d0;
-  border: none;
-  cursor: pointer;
-  color: inherit;
-  font: inherit;
+.stop-name {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-top: 12px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 19px;
+  font-weight: bold;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.82);
+  padding: 2px 12px;
+  border-radius: 14px;
 }
 
-.game-card:active { transform: translateY(2px); }
-.game-card:focus-visible { outline: 4px solid var(--ink); outline-offset: 4px; }
+.stop-tick {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #3dc46b;
+  border: 3px solid #fff;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stop-tick > svg { width: 24px; height: 24px; }
+.path-stop.pop .stop-tick { animation: tick-pop calc(450ms * var(--dur)) cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+
+.stop-play {
+  position: absolute;
+  bottom: -6px;
+  right: -6px;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: #3dc46b;
+  box-shadow: 0 5px 0 #25944c;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stop-play > svg { width: 26px; height: 26px; margin-left: 4px; }
+
+/* The child's own picture, standing beside the step they are on. */
+.path-me { position: absolute; pointer-events: none; z-index: 3; }
+.path-me .avatar { width: 100%; height: 100%; border-width: 5px; box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2); }
+.path-me.moving { transition: transform calc(650ms * var(--dur)) cubic-bezier(0.3, 1.3, 0.5, 1); }
+.path-me.land { animation: me-land calc(500ms * var(--dur)) cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+
+/* The flag at the end of a part: low and white, then up and gold. */
+.path-flag {
+  position: absolute;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.path-flag:focus-visible { outline: 4px solid var(--ink); outline-offset: 4px; }
+
+.flag-pole {
+  position: absolute;
+  left: 20%;
+  bottom: 0;
+  width: 9%;
+  height: 100%;
+  border-radius: 6px;
+  background: #34406b;
+}
+
+.flag-cloth {
+  position: absolute;
+  left: 29%;
+  top: 48%;
+  width: 66%;
+  height: 30%;
+  background: #fff;
+  -webkit-clip-path: polygon(0 0, 100% 50%, 0 100%);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  transition: transform calc(700ms * var(--dur)) cubic-bezier(0.3, 1.3, 0.5, 1);
+}
+
+.path-flag.raised .flag-cloth { transform: translateY(-145%); background: var(--gold); }
+/* Space's night sky: a light pole, so the flag still shows. */
+.theme-space .flag-pole { background: #dfe3ff; }
+
+/* The ghost hand on Home: one tap on the glowing step, then gone. */
+.path-hand {
+  position: absolute;
+  z-index: 4;
+  pointer-events: none;
+  color: var(--ink);
+  animation: hand-tap 1600ms ease-in-out both;
+}
+
+@keyframes tick-pop {
+  0% { transform: scale(0); }
+  100% { transform: scale(1); }
+}
+
+@keyframes me-land {
+  0% { transform: translateY(-40%) scale(0.6); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes hand-tap {
+  0% { opacity: 0; transform: translateY(30%); }
+  30% { opacity: 1; transform: translateY(0); }
+  45% { transform: translateY(0) scale(0.88); }
+  60% { transform: translateY(0) scale(1); }
+  85% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(0); }
+}
+
+@keyframes hand-still {
+  0%, 85% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Space's night sky: a light pole, so the flag still shows. */
+.theme-space .flag-pole { background: #dfe3ff; }
+
+/* "Practise again" on a piece's step on the path. */
+.stop-again {
+  position: absolute;
+  bottom: -4px;
+  left: -4px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--b);
+  color: var(--b);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.stop-again > svg { width: 22px; height: 22px; }
+
+/* The part buttons' pictures: an icon (the light bulb), or a row picture
+   from the games (js/game-pics.js), made small enough to fit. */
+.chap-sym { width: 40px; height: 40px; }
+.path-chap .row-mark { width: 54px; height: 54px; border: none; background: none; box-shadow: none; }
+.path-chap .row-mark svg.pc { width: 32px; height: 32px; }
+.path-chap .row-mark .army-mark-row svg.pc { width: 16px; height: 16px; }
+.path-chap .pond-mark { width: 40px; height: 48px; }
+.path-chap .pond-mark svg.pc { width: 24px; height: 24px; }
+.path-chap .king-ring { border-width: 3px; padding: 2px; }
+.path-chap .king-ring svg.pc { width: 30px; height: 30px; }
+
+.corner {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  display: flex;
+  gap: 14px;
+}
+
 
 .game-pic {
   position: relative;
@@ -1271,73 +1435,12 @@ body {
 
 .game-name { font-size: 18px; font-weight: bold; color: var(--ink); text-align: center; }
 
-/* ---------- Games (stage 6): the Games button, the Games screen ---------- */
-
-/* Home: one wide Games button showing every row's mark, no words; as wide
-   as its marks need. */
-.game-card.games-entry { width: auto; min-width: 330px; height: 150px; padding: 12px 24px; }
-.game-pic-entry { width: auto; height: auto; gap: 12px; flex: none; }
-
-.gamescreen {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 20;
-  background: var(--bg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.gamescreen[hidden] { display: none; }
-
-.games-home { position: absolute; left: 26px; top: 24px; z-index: 1; }
-
-/* The rows and the ladder, scaled as one to fit the window (fitGamesScreen
-   in js/games-ui.js sets the transform). */
-.games-fit { display: flex; align-items: center; flex: none; transform-origin: 50% 50%; }
-
-.game-rows { display: flex; flex-direction: column; gap: 12px; }
-
-.game-row { display: flex; align-items: center; gap: 22px; }
-
-.game-row .game-card, .army-ladder .game-card { height: 138px; position: relative; gap: 4px; padding: 8px; }
-.game-row .game-pic, .army-ladder .game-pic { height: 74px; }
-
-/* The growing battle (stage 8): a ladder of two columns beside the rows,
-   climbing from the first battle at the bottom to the battle with kings at
-   the top, with the row's picture under it. A grid (grid-gap works in every
-   browser the app supports), placed by child order: the picture, then the
-   battles in order. */
-.army-ladder {
-  display: grid;
-  grid-template-columns: 150px 150px;
-  grid-gap: 12px 22px;
-  justify-items: center;
-  align-items: center;
-  margin-left: 40px;
-}
-.army-ladder:empty { display: none; }
-.army-ladder > :nth-child(1) { grid-area: 5 / 1 / 6 / 3; }
-.army-ladder > :nth-child(2) { grid-area: 4 / 1; }
-.army-ladder > :nth-child(3) { grid-area: 4 / 2; }
-.army-ladder > :nth-child(4) { grid-area: 3 / 1; }
-.army-ladder > :nth-child(5) { grid-area: 3 / 2; }
-.army-ladder > :nth-child(6) { grid-area: 2 / 1; }
-.army-ladder > :nth-child(7) { grid-area: 2 / 2; }
-/* The full game, alone at the top of the ladder. */
-.army-ladder > :nth-child(8) { grid-area: 1 / 1 / 2 / 3; }
 
 /* A whole army: three pawns in front of three pieces. */
 .row-mark-army { gap: 0; }
 .army-mark-row { display: flex; justify-content: center; }
 .row-mark .army-mark-row svg.pc { width: 26px; height: 26px; }
 
-.game-card.suggested {
-  box-shadow: 0 8px 0 #9fd8d0, 0 0 0 6px var(--gold), 0 0 26px 6px rgba(255, 201, 60, 0.6);
-}
 
 /* The picture that starts each row, a rounded tile so it reads as a label
    and not as a button. */
@@ -1371,10 +1474,6 @@ body {
 }
 .row-mark-capture svg.pc { position: relative; }
 
-.game-pic-entry .row-mark { width: 72px; height: 72px; border-radius: 22px; border-width: 3px; }
-.game-pic-entry .row-mark svg.pc { width: 38px; height: 38px; }
-.game-pic-entry .row-mark .army-mark-row svg.pc { width: 20px; height: 20px; }
-.game-pic-entry .row-mark .finish-flag { width: 48px; height: 10px; }
 
 /* Footprints and a question mark: the footprints quiz. */
 .whose-mark { display: flex; align-items: center; gap: 6px; }
@@ -1415,7 +1514,6 @@ body {
 /* The king row's mark: the king in a red ring. */
 .king-ring { border: 4px solid #e0604d; border-radius: 50%; padding: 4px; display: flex; }
 .king-ring svg.pc { width: 50px; height: 50px; }
-.game-pic-entry .king-ring svg.pc { width: 40px; height: 40px; }
 /* Checkmate in one: the ringed king and the queen side by side. */
 .game-pic .king-ring svg.pc { width: 44px; height: 44px; }
 .game-pic .king-ring + svg.pc { width: 50px; height: 50px; }
@@ -1496,13 +1594,8 @@ body {
 }
 .pond-mark svg.pc { width: 40px; height: 40px; }
 .pond-mark .pond-mark-ref { transform: scaleY(-1); opacity: 0.5; }
-.game-pic-entry .pond-mark { width: 56px; height: 64px; }
-.game-pic-entry .pond-mark svg.pc { width: 32px; height: 32px; }
 /* The Games screen's cards are shorter with five rows: the tall two-piece
    pictures shrink to fit above their names. */
-.game-row .game-pic-tight svg.pc { width: 38px; height: 38px; }
-.game-row .game-pic-check svg.pc { width: 28px; height: 28px; }
-.game-row .game-pic-check .check-line { height: 10px; }
 /* Their footprints: the dark footprints of the other side. */
 .their-feet span { background: #3b4a5a; }
 
@@ -1543,7 +1636,6 @@ body {
 .palm-right svg { transform: scaleX(-1); }
 .game-pic-mini .palm svg { width: 34px; height: 34px; }
 .rbtn .game-pic-mini .palm svg { width: 24px; height: 24px; }
-.game-row .palm svg { width: 46px; height: 46px; }
 
 /* The Won card's tip button. */
 .rbtn.rbtn-tip { background: #fff8d6; color: var(--ink); }
@@ -1810,25 +1902,6 @@ body.theme-pirate {
 
 .tool-book { background: #fff4d0; box-shadow: 0 5px 0 #e8c77a; }
 
-/* A piece that has been played: a small green tick on its Home card. The
-   suggested card shows the play badge instead. */
-.home-card-tick {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: #3dc46b;
-  border: 3px solid #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-}
-
-.home-card-tick > svg { width: 22px; height: 22px; }
-.home-card.suggested .home-card-tick { display: none; }
 
 /* Hold-to-open ring on the ? buttons (js/grownups-ui.js): fills while the
    button is held for two seconds. Transform and opacity only. */
@@ -2420,9 +2493,9 @@ body.theme-pirate {
   .gu-cols { flex-direction: column; }
   .gu-col { width: 100%; }
   .gu-col + .gu-col { margin-left: 0; }
+  .path-chapters { top: 112px; }
+  .path-area { top: 196px; }
   .app { flex-direction: column; gap: 12px; }
-  /* Three cards per row: 3 x 150px cards + 2 x 22px gaps. */
-  .home-cards { max-width: 500px; }
   .panel {
     width: 96vw; /* fallback for Chromium before 79, which lacks min() */
     width: min(96vw, calc(var(--cell) * 8 + 24px));
@@ -2453,28 +2526,6 @@ body.theme-pirate {
   .game-pic-mini .finish-flag { width: 34px; height: 8px; }
   .team-bar-name { font-size: 14px; }
   .team-bar-pawn { width: calc(var(--cell) * 0.4); height: calc(var(--cell) * 0.4); }
-  .game-card { width: 150px; }
-  .game-card.games-entry { width: auto; }
-  /* Six row marks in the Games button, inside the portrait card width. */
-  .game-pic-entry { gap: 8px; }
-  .game-pic-entry .row-mark { width: 64px; height: 64px; }
-  .game-pic-entry .row-mark svg.pc { width: 34px; height: 34px; }
-  .game-pic-entry .row-mark .army-mark-row svg.pc { width: 18px; height: 18px; }
-  .game-pic-entry .whose-mark, .game-pic-entry .pond-mark { transform: scale(0.8); }
-  .game-row .game-card { width: 140px; }
-  /* The growing battle's ladder: a row below the others. */
-  .games-fit { flex-direction: column; }
-  /* Below the rows: the picture, then two lines of four battles. */
-  .army-ladder { grid-template-columns: 88px 140px 140px 140px 140px; margin-left: 0; margin-top: 12px; }
-  .army-ladder .game-card { width: 140px; }
-  .army-ladder > :nth-child(1) { grid-area: 1 / 1 / 3 / 2; }
-  .army-ladder > :nth-child(2) { grid-area: 1 / 2; }
-  .army-ladder > :nth-child(3) { grid-area: 1 / 3; }
-  .army-ladder > :nth-child(4) { grid-area: 1 / 4; }
-  .army-ladder > :nth-child(5) { grid-area: 1 / 5; }
-  .army-ladder > :nth-child(6) { grid-area: 2 / 2; }
-  .army-ladder > :nth-child(7) { grid-area: 2 / 3; }
-  .army-ladder > :nth-child(8) { grid-area: 2 / 4; }
   .row-mark { width: 88px; height: 88px; }
   /* flex-wrap, not a fixed-column grid: Skip only shows during a lesson,
      so the tools row has 4 or 5 buttons depending on mode. */
@@ -2513,6 +2564,9 @@ body.theme-pirate {
   /* The hold ring is progress, not decoration: it still shows, without the
      growing motion. */
   .help-link.holding .hold-ring { animation-name: hold-fade; }
+  .path-hand { animation-name: hand-still; }
+  .path-me.moving { transition: transform 650ms ease-in-out; }
+  .tfp { transition: opacity 180ms ease-out; }
 }
 
 /* ---------- flex "gap" fallback (Chromium before 84) ----------
@@ -2550,25 +2604,11 @@ body.theme-pirate {
 .no-flexgap .team-option > * + * { margin-top: 12px; }
 .no-flexgap .btn-row > * + * { margin-left: 26px; }
 
-/* The home screen's corner and theme row are absolutely positioned, so only
-   the items after the logo take the column's 34px gap. */
-.no-flexgap .homescreen > .logo ~ * { margin-top: 34px; }
-/* The wrapping .home-cards row carries its own margins, so its top margin is
-   34px less those. (The sticker shelf spaces its items with margins, so it
-   takes the plain 34px above.) */
-.no-flexgap .homescreen > .logo ~ .home-cards { margin-top: 23px; }
 .no-flexgap .corner > * + * { margin-left: 14px; }
-.no-flexgap .logo > * + * { margin-left: 16px; }
-.no-flexgap .feet > * + * { margin-left: 6px; }
 .no-flexgap .theme-row > * + * { margin-left: 12px; }
 .no-flexgap .lang-row > * + * { margin-left: 12px; }
 
-/* .home-cards wraps, so every card carries the 22px gap as a margin and the
-   container's negative margin takes the outer half back. */
-.no-flexgap .home-cards { margin: -11px; max-width: calc(96vw + 22px); }
-.no-flexgap .home-cards > * { margin: 11px; }
 
-.no-flexgap .game-card > * + * { margin-top: 12px; }
 
 .no-flexgap .game-pic > * + * { margin-left: 8px; }
 .no-flexgap .game-pic-stack > * + * { margin-top: 8px; }
@@ -2578,10 +2618,7 @@ body.theme-pirate {
 .no-flexgap .game-pic-3 > * + * { margin-left: 0; }
 .no-flexgap .game-pic-mini > * + * { margin-left: 4px; }
 .no-flexgap .game-pic-mini .game-pic-stack > * + * { margin-top: 4px; }
-.no-flexgap .game-rows > * + * { margin-top: 12px; }
-.no-flexgap .game-row > * + * { margin-left: 22px; }
 .no-flexgap .row-mark > * + * { margin-top: 4px; }
-.no-flexgap .game-pic-entry > * + * { margin-left: 12px; }
 .no-flexgap .whose-mark > * + * { margin-left: 6px; }
 .no-flexgap .whose-feet > * + * { margin-left: 5px; }
 .no-flexgap .game-pic-chain > * + * { margin-left: 2px; }
@@ -2592,9 +2629,6 @@ body.theme-pirate {
 
 @media (orientation: portrait) {
   .no-flexgap .app > * + * { margin-left: 0; margin-top: 12px; }
-  .no-flexgap .game-pic-entry > * + * { margin-left: 8px; }
-  /* Three cards a row: 3 x (150px + 22px of margin). */
-  .no-flexgap .home-cards { max-width: 522px; }
   .no-flexgap .mission > * + * { margin-top: 0; margin-left: 8px; }
   .no-flexgap .mission.game-mode > .mission-pic { margin: 0; }
   .no-flexgap .goal > * + * { margin-left: 4px; }

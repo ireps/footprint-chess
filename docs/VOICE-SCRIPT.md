@@ -113,7 +113,6 @@ naming a direction.
 | sticker | Yay, you got a sticker! | భలే, నీకు ఒక స్టిక్కర్ వచ్చింది! | Big and celebratory; said when the capture jar fills. |
 | break | Great playing! How about a little break? | బాగా ఆడావు! కొంచెం విశ్రాంతి తీసుకుందామా? | Warm and gentle, never scolding; offered, not required. |
 | who | Who's playing today? | ఈ రోజు ఎవరు ఆడుతున్నారు? | Warm and curious, like asking a friend; said on the Who's playing screen, and shown there as its heading. |
-| games-pick | Pick a game! | ఒక ఆట ఎంచుకో! | Warm and inviting; said when the Games screen opens. |
 | check-1 | Check! The rook could capture your king. | చెక్! ఏనుగు నీ రాజుని పట్టుకోగలదు. | Clear and a little urgent, not scary; the red line on the board shows the danger. |
 | check-2 | Move your king out of danger! | నీ రాజుని ప్రమాదం నుంచి తప్పించు! | Calm instruction; the king then steps out of the line. |
 | check-3 | Your king is safe now! | ఇప్పుడు నీ రాజు క్షేమంగా ఉన్నాడు! | Relieved and warm; also said after each solved Get out of check puzzle. |
@@ -238,6 +237,10 @@ naming a direction.
 | army-foe-queen | Their pawn reached your side. Now it's a queen! | శత్రువు భటుడు నీ వైపుకి చేరాడు. ఇప్పుడు అది మంత్రి! | Calm, a fact not a threat; the opponent's pawn turns into a queen. |
 | army-draw-kings | Only the two kings remain. Nobody wins this time. | ఇద్దరు రాజులే మిగిలారు. ఈసారి ఎవరూ గెలవలేదు. | Calm and kind; a game that ends with nobody winning. |
 | army-undo | Taken back, try another move! | వెనక్కి తీసుకున్నాం, ఇంకో ఎత్తు వేసి చూడు! | Warm and encouraging, never "wrong"; said after the Undo button. |
+| path-next | Look, here's what's next. Tap it to play! | చూడు, తర్వాత ఆడేది ఇదే. నొక్కి ఆడు! | Bright and encouraging; said on Home when the child's picture hops along the path to the next step. |
+| chapter-done | Wow, you finished this part! Let's see what's next. | అబ్బో, ఈ భాగం మొత్తం పూర్తి చేశావు! తర్వాత ఏముందో చూద్దాం. | Proud, a small celebration; said when the last step of a part of the path is done and its flag goes up. |
+| path-all-done | Yay, you did them all! Now play any one you like. | భలే, అన్నీ పూర్తి చేశావు! ఇప్పుడు నీకు నచ్చినది ఏదైనా ఆడుకో. | Warm and proud; said once every step on the path is done. |
+| practise-next | Let's practise this one again! | దీన్ని మళ్ళీ ఒకసారి సాధన చేద్దాం! | Warm and upbeat, never a telling-off; on Home when the path suggests a piece to practise again. |
 
 ## How the clips are made
 

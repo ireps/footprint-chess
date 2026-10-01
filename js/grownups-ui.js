@@ -88,7 +88,7 @@
       lessonsDone: 'Lessons started',
       lessonsLeft: 'Not started yet',
       gamesWon: 'Games won',
-      nextGame: 'A game to try next',
+      nextGame: 'What to try next',
       none: 'None yet',
       allDone: 'All of them',
       secBackup: 'Move progress to another device',
@@ -321,6 +321,15 @@
 
   // A game's English name: the first clause of its mission line (the same
   // words as the caption on its card).
+  // The next step of the child's journey (js/path.js), by name: a piece, the
+  // Taking turns lesson, or a game.
+  function stepName(id) {
+    var kind = FC.path.kindOf(id);
+    if (kind === 'piece') return LS.PIECE_NAMES.en[id];
+    if (kind === 'lesson') return LS.UI_TEXT.takingTurns.en;
+    return gameName(GL.get(id));
+  }
+
   function gameName(g) {
     var line = LS.LINES[g.mission];
     var text = (line && line.en) || g.id;
@@ -369,13 +378,13 @@
       var won = {};
       Object.keys(prog.wins).forEach(function (k) { won[k.split(':')[1]] = true; });
       var wonNames = [];
-      var next = null;
       GL.ROWS.forEach(function (row) {
         GL.inRow(row).forEach(function (g) {
           if (won[g.id]) wonNames.push(gameName(g));
-          else if (!next) next = gameName(g);
         });
       });
+      // What the path suggests next: the same glowing step the child sees.
+      var next = stepName(FC.path.nextStop(prog));
       kid.appendChild(listLine(t('lessonsDone'), started, t('none')));
       kid.appendChild(listLine(t('lessonsLeft'), left, t('allDone')));
       kid.appendChild(listLine(t('gamesWon'), wonNames, t('none')));

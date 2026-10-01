@@ -20,6 +20,7 @@
   var V = FC.voice;
   var B = FC.board;
   var P = FC.player;
+  var PATH = FC.path;
 
   var TYPE_ORDER = LS.TYPE_ORDER;
   var svgUse = B.svgUse;
@@ -51,8 +52,6 @@
     homeLang: byId('home-lang-toggle'),
     homeLangGlyph: byId('home-lang-glyph'),
     homeSound: byId('home-sound-toggle'),
-    homeCards: byId('home-cards'),
-    stickerRow: byId('sticker-row'),
     bookToggle: byId('book-toggle'),
     themeToggle: byId('theme-toggle'),
     themeRow: byId('theme-row'),
@@ -84,7 +83,7 @@
   var mode = 'home';
   var store = null;         // the progress store (js/store.js), made at startup
   var activeProfileId = null; // the child whose language, theme and progress are loaded
-  var EMPTY_PROGRESS = { seen: {}, met: {}, stickers: {}, jar: 0, teams: {}, wins: {}, lang: null, theme: null };
+  var EMPTY_PROGRESS = { seen: {}, met: {}, stickers: {}, jar: 0, teams: {}, wins: {}, done: {}, last: null, practise: {}, lang: null, theme: null };
   // A copy of the current child's progress, refreshed after every change
   // to the store: seen (lesson id -> true) and met (piece type -> true) are
   // read from here.
@@ -253,7 +252,7 @@
     if (B.getMode() !== 'none') B.setMode(B.getMode(), modeText(B.getMode()));
     setUrlLang(next);
     renderTiles();
-    if (!dom.homescreen.hidden) renderHomeCards();
+    if (!dom.homescreen.hidden) FC.pathUI.refresh();
     if (rerenderCard) rerenderCard();
     if (FC.gamesUI && FC.gamesUI.onLangChange) FC.gamesUI.onLangChange();
     // Load the current lesson's lines first, then everything else.
@@ -425,46 +424,22 @@
 
   /* ---------- home screen ---------- */
 
-  function suggestedType() {
-    for (var i = 0; i < TYPE_ORDER.length; i++) {
-      if (!progress.met[TYPE_ORDER[i]]) return TYPE_ORDER[i];
+  // Starts a step of the learning journey (js/path.js), from Home or from a
+  // Won card's "next" button. A piece plays its lessons (the first time)
+  // and its capture round; Taking turns plays that lesson and then Catch the
+  // knight; a game starts the usual way (its lesson the first time, the Team
+  // card for a team game, the Mission card).
+  function startStop(id) {
+    S.unlock();
+    if (PATH.kindOf(id) === 'piece') {
+      hideOverlay();
+      hideHomeScreen();
+      choosePiece(id);
+    } else if (FC.gamesUI && FC.gamesUI.openFromPath) {
+      hideOverlay();
+      stopRound();
+      FC.gamesUI.openFromPath(id);
     }
-    return TYPE_ORDER[0];
-  }
-
-  function renderHomeCards() {
-    clear(dom.homeCards);
-    var suggested = suggestedType();
-    TYPE_ORDER.forEach(function (type) {
-      var isSuggested = type === suggested;
-      var card = el('button', 'home-card' + (isSuggested ? ' suggested' : ''));
-      card.type = 'button';
-      var cl = el('div', 'home-card-cl');
-      cl.appendChild(svgUse('cl-' + type));
-      card.appendChild(cl);
-      var bot = pieceSvg(type, 'me');
-      bot.classList.add('bot');
-      card.appendChild(bot);
-      card.appendChild(el('div', 'base tint-' + type));
-      card.appendChild(textEl('div', 'home-name', pieceName(type)));
-      if (isSuggested) {
-        var badge = el('div', 'home-card-badge');
-        badge.appendChild(svgUse('play-tri'));
-        card.appendChild(badge);
-      }
-      if (progress.met[type]) {
-        // A small green tick: this piece has been played before.
-        var tick = el('div', 'home-card-tick');
-        tick.appendChild(svgUse('ic-check'));
-        card.appendChild(tick);
-      }
-      card.setAttribute('aria-label', pieceNameEn(type));
-      card.addEventListener('click', function () {
-        hideHomeScreen();
-        choosePiece(type);
-      });
-      dom.homeCards.appendChild(card);
-    });
   }
 
   // Stops whatever is going on (a game, a lesson, a round, a card) before
@@ -483,8 +458,8 @@
   }
 
   function hideScreens() {
+    FC.pathUI.leave();
     dom.homescreen.hidden = true;
-    if (FC.gamesUI && FC.gamesUI.hideGamesScreen) FC.gamesUI.hideGamesScreen();
     FC.profileUI.hide();
     FC.bookUI.close();
   }
@@ -492,9 +467,10 @@
   function showHomeScreen() {
     goIdle();
     hideScreens();
-    renderHomeCards();
     FC.profileUI.renderChip();
     dom.homescreen.hidden = false;
+    // Drawn once Home is visible, so the path can measure its area.
+    FC.pathUI.render();
     if (FC.gamesUI && FC.gamesUI.onEnterHome) FC.gamesUI.onEnterHome();
   }
 
@@ -523,6 +499,7 @@
   }
 
   function hideHomeScreen() {
+    FC.pathUI.leave();
     dom.homescreen.hidden = true;
     dom.themeRow.hidden = true;
     hideLangRow();
@@ -693,7 +670,7 @@
 
   /* ---------- won card ---------- */
 
-  function wonContent(type, nextType) {
+  function wonContent(type, nextId) {
     var frag = document.createDocumentFragment();
     var trophy = el('div', 'trophy');
     trophy.appendChild(el('div', 'ray'));
@@ -711,10 +688,13 @@
     again.appendChild(svgUse('again'));
     row.appendChild(again);
 
-    var next = el('button', 'rbtn rbtn-next type-' + nextType);
+    var next = el('button', 'rbtn rbtn-path');
     next.type = 'button';
-    next.setAttribute('aria-label', 'Next piece: ' + pieceNameEn(nextType));
-    next.appendChild(pieceSvg(nextType, 'me'));
+    next.setAttribute('aria-label', 'Next: ' + FC.pathUI.captionEn(nextId));
+    next.appendChild(FC.pathUI.stopPic(nextId, true));
+    var play = el('div', 'stop-play');
+    play.appendChild(svgUse('play-tri'));
+    next.appendChild(play);
     row.appendChild(next);
 
     var home = el('button', 'rbtn rbtn-home');
@@ -739,11 +719,13 @@
     B.setMode('none');
     mode = 'won';
     updateToolButtons();
-    var nextType = TYPE_ORDER[(TYPE_ORDER.indexOf(type) + 1) % TYPE_ORDER.length];
+    // This piece's step on the path is done (a won capture round).
+    store.markDone(type);
+    var nextId = PATH.nextAfter(store.progress(), type);
 
     function build() {
       clear(dom.card);
-      var parts = wonContent(type, nextType);
+      var parts = wonContent(type, nextId);
       dom.card.appendChild(parts.frag);
       parts.again.addEventListener('click', function (e) {
         e.stopPropagation();
@@ -751,7 +733,7 @@
       });
       parts.next.addEventListener('click', function (e) {
         e.stopPropagation();
-        onWonNext(nextType);
+        onWonNext(nextId);
       });
       parts.home.addEventListener('click', function (e) {
         e.stopPropagation();
@@ -772,10 +754,8 @@
     playOrRound(type);
   }
 
-  function onWonNext(type) {
-    S.unlock();
-    hideOverlay();
-    playOrRound(type);
+  function onWonNext(id) {
+    startStop(id);
   }
 
   function onWonHome() {
@@ -1141,7 +1121,7 @@
       // On Who's playing the first tap says its prompt; a tap on a child's
       // picture is the answer, and Home (next) greets instead.
       var answering = e && e.target && e.target.closest && e.target.closest('.who');
-      V.say(FC.profileUI.isVisible() && !answering ? 'who' : 'pick', function () {});
+      V.say(FC.profileUI.isVisible() && !answering ? 'who' : FC.pathUI.greetingLine(), function () {});
       document.removeEventListener('pointerdown', onFirst, true);
     }
     document.addEventListener('pointerdown', onFirst, true);
@@ -1195,6 +1175,7 @@
 
   FC.app = {
     goHome: showHomeScreen,
+    startStop: startStop,
     stopRound: stopRound,
     showWho: showWho,
     showCustomCard: showCustomCard,
@@ -1339,6 +1320,7 @@
     FC.stickers.init(store);
     FC.profileUI.init(store, { onPick: onWhoPick, onChip: onChip });
     FC.bookUI.init(store, { onHome: showHomeScreen });
+    FC.pathUI.init(store, { onStart: startStop });
     FC.grownupsUI.init(store, { onClose: onGrownupsClosed, onReplaced: onProgressReplaced });
     if (FC.gamesUI && FC.gamesUI.init) FC.gamesUI.init(store);
     if (store.profiles().length >= 2) showWho();

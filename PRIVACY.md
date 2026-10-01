@@ -7,7 +7,7 @@ Footprint Chess is made for young children. It has no accounts, no cookies, no a
 Since stage 5 the app remembers progress, so a child can pick up where they left off. It stores, for each child (up to four), in this browser's local storage on this device:
 
 - The child's picture (a piece, a theme and a ring colour) and an optional name that a grown-up may type in the grown-ups' corner.
-- Progress: which lessons (and tips after a game) have been seen, which pieces have been played, stickers earned, the state of the capture jar, which team was picked in each theme, which games have been won in each theme, and the language and theme the child last chose.
+- Progress: which lessons (and tips after a game) have been seen, which pieces have been played, which steps of the path on Home are done, the last one played and which pieces are marked to practise again, stickers earned, the state of the capture jar, which team was picked in each theme, which games have been won in each theme, and the language and theme the child last chose.
 
 It also stores the grown-up settings: calm mode, and the break reminder (on or off, and its length).
 

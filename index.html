@@ -313,32 +313,12 @@
        have to appear in an aria-label only). js/app.js fills this with one
        round swatch per FC.themes.THEMES entry. -->
   <div class="theme-row" id="theme-row" hidden></div>
-  <div class="logo">
-    <div class="feet"><span></span><span></span></div>
-    <h1>Footprint Chess</h1>
-  </div>
-  <div class="home-cards" id="home-cards"></div>
-  <!-- Games (stage 6): one Games button, filled in by js/games-ui.js,
-       which opens the Games screen. The sticker shelf shows underneath once
-       there are any stickers. -->
-  <div class="home-cards home-games" id="home-games"></div>
-  <div class="sticker-row" id="sticker-row" hidden></div>
-</div>
-
-<!-- Games screen (stage 6; js/games-ui.js): one row per kind of game
-     (capture, reach the other side, thinking), each marked with a picture,
-     never a word. Every game can be tapped. -->
-<div class="gamescreen" id="gamescreen" hidden>
-  <button class="tool games-home" id="games-home" type="button" aria-label="Home"></button>
-  <!-- The rows and the ladder, scaled down by js/games-ui.js when the
-       browser window is smaller than they are (Silk shows 1280 x 614 on the
-       tablet in landscape). -->
-  <div class="games-fit" id="games-fit">
-    <div class="game-rows" id="game-rows"></div>
-    <!-- The growing battle (stage 8): its levels as a ladder beside the rows
-         (below them in portrait), built by js/games-ui.js. -->
-    <div class="army-ladder" id="army-ladder"></div>
-  </div>
+  <!-- The learning journey (js/path-ui.js; parts and steps in js/path.js),
+       the only way into the lessons and games: picture-only part buttons,
+       then the current part as steps joined by footprints, the suggested
+       next step glowing with the child's picture beside it. -->
+  <div class="path-chapters" id="path-chapters" role="group" aria-label="Parts of the path"></div>
+  <div class="path-area" id="path-area"></div>
 </div>
 
 <!-- Who's playing (stage 5; js/profile-ui.js): full screen like the home
@@ -381,6 +361,7 @@
 <script src="js/pond.js"></script>
 <script src="js/hands.js"></script>
 <script src="js/game-list.js"></script>
+<script src="js/path.js"></script>
 <script src="js/lessons.js"></script>
 <script src="js/themes.js"></script>
 <script src="js/store.js"></script>
@@ -396,6 +377,7 @@
 <script src="js/game-pics.js"></script>
 <script src="js/games-how.js"></script>
 <script src="js/games-ui.js"></script>
+<script src="js/path-ui.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
